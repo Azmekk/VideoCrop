@@ -17,19 +17,29 @@ function App() {
     setFfmpegExsts(await invoke("check_ffmpeg_and_ffprobe"));
   }
 
-  async function OnStart(){
+  async function OnStart() {
     checkFfmpegAndFfprobe();
   }
-  useEffect(() => {OnStart()}, []);
+  useEffect(() => { OnStart() }, []);
 
-  return (
-    <main className="app-container">
-      <div className="video-view-container">
-        <VideoView />
+  if (ffmpegExsts) {
+    return (
+      <div className="ffmpeg-not-downloaded">
+        Ffmpeg and Ffprobe were not located. Please download them and add them to path.
       </div>
-      
-    </main>
-  );
+    )
+  }
+  else {
+    return (
+      <main className="app-container">
+        <div className="video-view-container">
+          <VideoView />
+        </div>
+
+      </main>
+    );
+  }
+
 }
 
 export default App;
