@@ -1,0 +1,53 @@
+body{
+  margin: 0;
+  padding: 0;
+  font-family: 'Roboto', sans-serif;
+}
+
+.app-container{
+  display: flex;
+  background-color: #F5F5F5;
+  height: calc(100vh - 50px);
+  width: 100vw;
+  padding-top: 40px;
+}
+
+.video-view-container{
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.video-view{
+  display: flex;
+  max-width: 70%;
+  max-height: 70%;
+}
+
+.empty-video-container{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border-width: 2px;
+  border-style: dashed;
+  border-color: #7A7A7A;
+  width:  640px;
+  height: 360px;
+  transition: background-color 0.2s ease;
+}
+
+.video-crop-canvas{
+  position: absolute;
+}
+
+video{
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.empty-video-container:hover {
+  background-color: #E0E0E0;
+  cursor: pointer;
+}
