@@ -7,22 +7,26 @@ body{
 .app-container{
   display: flex;
   background-color: #F5F5F5;
-  height: calc(100vh - 50px);
-  width: 100vw;
-  padding-top: 40px;
+  flex-direction: column;
+  height: calc(100vh - 20px);
+  width: calc(100vw - 20px);
+  padding: 10px;
 }
 
 .video-view-container{
   display: flex;
   justify-content: center;
   width: 100%;
-  height: 100%;
+  height: 60%;
+  margin-bottom: 10px;
+  padding: 2px;
 }
 
 .video-view{
-  display: flex;
-  max-width: 70%;
-  max-height: 70%;
+  display: flex;;
+  height: 100%;
+  width: 100%;
+  justify-content: center;
 }
 
 .empty-video-container{
@@ -33,9 +37,23 @@ body{
   border-width: 2px;
   border-style: dashed;
   border-color: #7A7A7A;
-  width:  640px;
-  height: 360px;
+  width:  100%;
+  height: 100%;
   transition: background-color 0.2s ease;
+}
+
+.empty-video-container:hover {
+  background-color: #E0E0E0;
+  cursor: pointer;
+}
+
+.selected-video-container{
+  display: flex;
+  width: 100%;
+  height: 100%;
+  justify-content: center;
+  background-color: black;
+  border-radius: 5px;
 }
 
 .video-crop-canvas{
@@ -47,11 +65,6 @@ video{
   max-height: 100%;
 }
 
-.empty-video-container:hover {
-  background-color: #E0E0E0;
-  cursor: pointer;
-}
-
 .ffmpeg-not-downloaded{
   display: flex;
   align-items: center;
@@ -61,4 +74,22 @@ video{
   background-color: #3d3d3d;
   text-align: center;
   color: #c2bfbf;
+  font-size: 25px;
+}
+
+.cut-segment{
+  margin-top: 10px;
+  width: 100%;
+}
+
+.cut-segment-toggle{
+  display: flex;
+}
+
+.cut-segment-body{
+  border: 1px solid #979797;
+  border-radius: 10px;
+  height: auto;
+  margin-top: 10px;
+  padding: 10px;
 }

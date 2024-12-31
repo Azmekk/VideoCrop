@@ -1,20 +1,42 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
 import VideoView from "./components/VideoView";
+import { Button, Divider } from "antd";
+import CutSegment from "./components/CutSegment";
+import { videoPathIsValid } from "./App";
+import "./App.css";
 
+interface VideoInfo {
+  width: number,
+  height: number,
+  duration: string,
+}
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
-
-  const [ffmpegExsts, setFfmpegExsts] = useState(false);
-
-  async function greet() {
-    setGreetMsg(await invoke("greet", { name }));
-  }
-
+  const [ffmpegExsts, setFfmpegExsts] = useState(true);
+  const [videoPath, setVideoPath] = useState("");
+  const [videoInfo, setVideoInfo] = useState<VideoInfo | undefined>(undefined);
   async function checkFfmpegAndFfprobe() {
     setFfmpegExsts(await invoke("check_ffmpeg_and_ffprobe"));
+  }
+
+  let video_selector_open: boolean = false;
+  async function get_video_path() {
+    if (video_selector_open === true) {
+      return;
+    }
+    else {
+      video_selector_open = true;
+    }
+    let path: string = await invoke("open_video");
+    if (path !== "") {
+      setVideoPath(path);
+    }
+
+    let vidInfo: VideoInfo = await invoke("get_video_info", { videoPath: path });
+    setVideoInfo(vidInfo);
+
+    console.log(vidInfo);
+    video_selector_open = false;
   }
 
   async function OnStart() {
@@ -22,10 +44,10 @@ function App() {
   }
   useEffect(() => { OnStart() }, []);
 
-  if (ffmpegExsts) {
+  if (!ffmpegExsts) {
     return (
       <div className="ffmpeg-not-downloaded">
-        Ffmpeg and Ffprobe were not located. Please download them and add them to path.
+        FFmpeg and FFprobe were not located. Please download them and add them to path.
       </div>
     )
   }
@@ -33,9 +55,16 @@ function App() {
     return (
       <main className="app-container">
         <div className="video-view-container">
-          <VideoView />
+          <VideoView videoPath={videoPath} onVideoPathClick={function (): void {
+            get_video_path();
+          }} />
         </div>
 
+        <Button onClick={get_video_path} type="primary">Select video</Button>
+        {videoPathIsValid(videoPath) &&
+          <CutSegment videoPath={videoPath} videoDuration={videoInfo?.duration ?? "0:00:00.000"} />
+        }
+        
       </main>
     );
   }

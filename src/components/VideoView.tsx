@@ -1,32 +1,26 @@
-import { convertFileSrc, invoke } from "@tauri-apps/api/core";
-import { useEffect, useRef, useState } from "react";
+import { convertFileSrc} from "@tauri-apps/api/core";
+import { videoPathIsValid } from "../App";
 
-function VideoView() {
-    const [videoIsLoaded, setVideoIsLoaded] = useState(false);
-    const [videoPath, setVideoPath] = useState("");
-    async function get_video_path() {
-        let path: string = await invoke("open_video");
-        if (path !== "") {
-            setVideoPath(path);
-            setVideoIsLoaded(true);
-        }
-    }
+interface VideoViewProps {
+    videoPath: string;
+    onVideoPathClick: () => void;
+}
+
+function VideoView({ videoPath, onVideoPathClick }: VideoViewProps) {
 
     function RenderVideoElement() {
-        if (videoIsLoaded) {
+        if (videoPathIsValid(videoPath)) {
             return (
                 <div className="selected-video-container">
-                    <video controls>
+                    <video key={videoPath} controls>
                         <source src={convertFileSrc(videoPath)}></source>
                     </video>
-                    <canvas className="video-crop-canvas">
-
-                    </canvas>
+                    <canvas className="video-crop-canvas"></canvas>
                 </div>
             );
         } else {
             return (
-                <div onClick={async () => await get_video_path()} className="empty-video-container">
+                <div onClick={onVideoPathClick} className="empty-video-container">
                     No video loaded. Click to open a video file.
                 </div>
             );
