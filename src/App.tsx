@@ -1,20 +1,32 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import VideoView from "./components/VideoView";
-import { Button, Divider } from "antd";
+import { Button, Divider, Switch } from "antd";
 import CutSegment from "./components/CutSegment";
-import { videoPathIsValid } from "./App";
+import CropSegment from "./components/CropSegment";
+import { VideoCropPoints, videoPathIsValid } from "./Utils";
 import "./App.css";
+import CompressSegment from "./components/CompressSegment";
 
 interface VideoInfo {
   width: number,
   height: number,
   duration: string,
 }
+
+interface OpenSegments {
+  crop: boolean,
+  cut: boolean,
+  compress: boolean,
+}
+
 function App() {
   const [ffmpegExsts, setFfmpegExsts] = useState(true);
   const [videoPath, setVideoPath] = useState("");
   const [videoInfo, setVideoInfo] = useState<VideoInfo | undefined>(undefined);
+  const [videoCropPoints, setVideoCropPoints] = useState<VideoCropPoints>({ left: 0, right: 0, bottom: 0, top: 0 });
+  const [openSegments, setOpenSegments] = useState<OpenSegments>({ crop: false, cut: false, compress: false });
+
   async function checkFfmpegAndFfprobe() {
     setFfmpegExsts(await invoke("check_ffmpeg_and_ffprobe"));
   }
@@ -55,16 +67,35 @@ function App() {
     return (
       <main className="app-container">
         <div className="video-view-container">
-          <VideoView videoPath={videoPath} onVideoPathClick={function (): void {
+          <VideoView videoCropPoints={videoCropPoints} videoPath={videoPath} onVideoPathClick={function (): void {
             get_video_path();
           }} />
         </div>
 
         <Button onClick={get_video_path} type="primary">Select video</Button>
+
+        <div className="segment-toggles">
+          <div className="edit-segment-toggle">
+          <label>Cut: </label>
+            <Switch defaultChecked={false} onChange={(e) => setOpenSegments({ ...openSegments, cut: e })} />
+          </div>
+          <div className="edit-segment-toggle">
+             <label>Crop: </label>
+            <Switch defaultChecked={false} onChange={(e) => setOpenSegments({ ...openSegments, crop: e })} />
+          </div>
+          <div className="edit-segment-toggle">
+             <label>Compress: </label>
+            <Switch defaultChecked={false} onChange={(e) => setOpenSegments({ ...openSegments, compress: e })} />
+          </div>
+        </div>
         {videoPathIsValid(videoPath) &&
-          <CutSegment videoPath={videoPath} videoDuration={videoInfo?.duration ?? "0:00:00.000"} />
+          <>
+            <CropSegment segmentOpen={openSegments.crop} videoCropPoints={videoCropPoints} />
+            <CutSegment segmentOpen={openSegments.cut} videoPath={videoPath} videoDuration={videoInfo?.duration ?? "0:00:00.000"} />
+            <CompressSegment segmentOpen={openSegments.compress} />
+          </>
         }
-        
+
       </main>
     );
   }

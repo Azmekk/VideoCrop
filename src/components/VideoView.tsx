@@ -1,9 +1,10 @@
 import { convertFileSrc} from "@tauri-apps/api/core";
-import { videoPathIsValid } from "../App";
+import { VideoCropPoints, videoPathIsValid } from "../Utils";
 
 interface VideoViewProps {
     videoPath: string;
     onVideoPathClick: () => void;
+    videoCropPoints: VideoCropPoints;
 }
 
 function VideoView({ videoPath, onVideoPathClick }: VideoViewProps) {

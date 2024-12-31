@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 interface CutSegmentProps {
     videoPath: string;
     videoDuration: string;
+    segmentOpen: boolean;
 }
 
 interface VideoDuration {
@@ -14,17 +15,19 @@ interface VideoDuration {
 }
 
 function CutSegment(props: CutSegmentProps) {
-    const [cutsegmentOpen, setCutSegmentOpen] = useState(false);
     const [totalSeconds, setTotalSeconds] = useState(0);
     const [videoDuration, setVideoDuration] = useState<VideoDuration>({ hours: 0, minutes: 0, seconds: 0, microseconds: 0 });
 
-    const[startingSecond, setStartingSecond] = useState(0);
-    const[endingSecond, setEndingSecond] = useState(0);
+    const [startingSecond, setStartingSecond] = useState(0);
+    const [endingSecond, setEndingSecond] = useState(0);
+
+    const [startingInputError, setStartingInputError] = useState(false);
+    const [endingInputError, setEndingInputError] = useState(false);
 
     useEffect(() => {
         const vidDuration = parseVideoDuration(props.videoDuration);
         setVideoDuration(vidDuration);
-        
+
         const totalSecs = convertToSeconds(vidDuration);
         setTotalSeconds(totalSecs)
 
@@ -39,10 +42,10 @@ function CutSegment(props: CutSegmentProps) {
             [seconds, microseconds] = secs.split('.');
             microseconds = microseconds.padEnd(6, '0');
         }
-        else{
+        else {
             seconds = secs;
         }
-        
+
         return {
             hours: parseInt(hours, 10),
             minutes: parseInt(minutes, 10),
@@ -92,32 +95,29 @@ function CutSegment(props: CutSegmentProps) {
         var secs = convertToSeconds(duration);
 
         if (starting) {
-            setStartingSecond(secs < 0 ? 0 : secs);
-        }else{
-            setEndingSecond(secs > totalSeconds ? totalSeconds : secs);
+            secs < 0 ? (setStartingInputError(true), setStartingSecond(0)) : (setStartingInputError(false), setStartingSecond(secs));
+
+        } else {
+            secs > totalSeconds ? (setEndingInputError(true), setEndingSecond(totalSeconds)) : (setEndingInputError(false), setEndingSecond(secs));
         }
     }
 
     return (
-        <div className="cut-segment">
-            <div className="cut-segment-toggle">
-                <Switch defaultChecked={false} onChange={setCutSegmentOpen} />
-                <div style={{ marginLeft: "7px", marginTop: "1px" }}>Cut Video</div>
-            </div>
-
-            {cutsegmentOpen && (
-                <div className="cut-segment-body">
-                    <Slider range max={totalSeconds} value={[startingSecond, endingSecond]} step={0.25} onChange={handleSliderInput}/>
+        <div className="edit-segment">
+            {props.segmentOpen && (
+                <div className="edit-segment-body">
+                    <p style={{ fontSize: "1.5em", fontWeight: "bold" }}>Cut</p>
+                    <Slider range max={totalSeconds} value={[startingSecond, endingSecond]} step={0.25} onChange={handleSliderInput} />
                     <div style={{ display: "flex", justifyContent: "space-between" }}>
                         <div>
                             <label>Start time:</label>
-                            <p style={{cursor: "default"}}>{videoDurationToString(convertFromSeconds(startingSecond))}</p>
-                            <Input placeholder="00:00:00.000" onChange={(e) => handleDurationInput(e.target.value, false)}/>
+                            <p style={{ cursor: "default" }}>{videoDurationToString(convertFromSeconds(startingSecond))}</p>
+                            <Input status={startingInputError ? "error" : ""} placeholder="00:00:00.000" onChange={(e) => handleDurationInput(e.target.value, true)} onBlur={() => setStartingInputError(false)} onFocus={(e) => handleDurationInput(e.target.value, true)} />
                         </div>
                         <div>
                             <label>End time:</label>
-                            <p style={{cursor: "default"}}>{videoDurationToString(convertFromSeconds(endingSecond))}</p>
-                            <Input placeholder="00:00:00.000" onChange={(e) => handleDurationInput(e.target.value, false)}/>
+                            <p style={{ cursor: "default" }}>{videoDurationToString(convertFromSeconds(endingSecond))}</p>
+                            <Input status={endingInputError ? "error" : ""} placeholder="00:00:00.000" onChange={(e) => handleDurationInput(e.target.value, false)} onBlur={() => setEndingInputError(false)} onFocus={(e) => handleDurationInput(e.target.value, false)} />
                         </div>
                     </div>
                 </div>

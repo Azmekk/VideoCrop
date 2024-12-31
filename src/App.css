@@ -2,14 +2,12 @@ body{
   margin: 0;
   padding: 0;
   font-family: 'Roboto', sans-serif;
+  background-color: #F5F5F5;
 }
 
 .app-container{
   display: flex;
-  background-color: #F5F5F5;
   flex-direction: column;
-  height: calc(100vh - 20px);
-  width: calc(100vw - 20px);
   padding: 10px;
 }
 
@@ -24,7 +22,7 @@ body{
 
 .video-view{
   display: flex;;
-  height: 100%;
+  max-height: 720px;
   width: 100%;
   justify-content: center;
 }
@@ -77,18 +75,20 @@ video{
   font-size: 25px;
 }
 
-.cut-segment{
+.edit-segment{
   margin-top: 10px;
   width: 100%;
 }
 
-.cut-segment-toggle{
+.edit-segment-toggle{
+  margin: 5px;
+}
+
+.segment-toggles{
   display: flex;
 }
 
-.cut-segment-body{
-  border: 1px solid #979797;
-  border-radius: 10px;
+.edit-segment-body{
   height: auto;
   margin-top: 10px;
   padding: 10px;
