@@ -21,7 +21,7 @@ body{
 }
 
 .video-view{
-  display: flex;;
+  display: flex;
   max-height: 720px;
   width: 100%;
   justify-content: center;
