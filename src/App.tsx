@@ -13,19 +13,11 @@ interface VideoInfo {
   height: number,
   duration: string,
 }
-
-interface OpenSegments {
-  crop: boolean,
-  cut: boolean,
-  compress: boolean,
-}
-
 function App() {
   const [ffmpegExsts, setFfmpegExsts] = useState(true);
   const [videoPath, setVideoPath] = useState("");
   const [videoInfo, setVideoInfo] = useState<VideoInfo | undefined>(undefined);
   const [videoCropPoints, setVideoCropPoints] = useState<VideoCropPoints>({ left: 0, right: 0, bottom: 0, top: 0 });
-  const [openSegments, setOpenSegments] = useState<OpenSegments>({ crop: false, cut: false, compress: false });
 
   async function checkFfmpegAndFfprobe() {
     setFfmpegExsts(await invoke("check_ffmpeg_and_ffprobe"));
@@ -66,35 +58,26 @@ function App() {
   else {
     return (
       <main className="app-container">
-        <div className="video-view-container">
+        <div className="general-video-options-container">
+          <div style={{ width: "20%",  display: "flex", flexDirection: "column", alignItems: "start" }}>
+            <Button size="large" onClick={get_video_path} type="primary">Select new video</Button>
+            <CompressSegment disabled={!videoPathIsValid(videoPath)} />
+          </div>
           <VideoView videoCropPoints={videoCropPoints} videoPath={videoPath} onVideoPathClick={function (): void {
             get_video_path();
           }} />
+          <div style={{ width: "20%", display: "flex", flexDirection: "column", alignItems: "end" }}>
+            <div>
+            <Button disabled={true} type="primary">Placeholder</Button>
+            </div>
+          </div>
+
         </div>
 
-        <Button onClick={get_video_path} type="primary">Select video</Button>
-
-        <div className="segment-toggles">
-          <div className="edit-segment-toggle">
-          <label>Cut: </label>
-            <Switch defaultChecked={false} onChange={(e) => setOpenSegments({ ...openSegments, cut: e })} />
-          </div>
-          <div className="edit-segment-toggle">
-             <label>Crop: </label>
-            <Switch defaultChecked={false} onChange={(e) => setOpenSegments({ ...openSegments, crop: e })} />
-          </div>
-          <div className="edit-segment-toggle">
-             <label>Compress: </label>
-            <Switch defaultChecked={false} onChange={(e) => setOpenSegments({ ...openSegments, compress: e })} />
-          </div>
+        <div style={{ opacity: videoPathIsValid(videoPath) ? 1 : 0.5, pointerEvents: videoPathIsValid(videoPath) ? 'auto' : 'none', }}>
+          <CropSegment videoCropPoints={videoCropPoints} />
+          <CutSegment videoPath={videoPath} videoDuration={videoInfo?.duration ?? "0:00:00.000"} />
         </div>
-        {videoPathIsValid(videoPath) &&
-          <>
-            <CropSegment segmentOpen={openSegments.crop} videoCropPoints={videoCropPoints} />
-            <CutSegment segmentOpen={openSegments.cut} videoPath={videoPath} videoDuration={videoInfo?.duration ?? "0:00:00.000"} />
-            <CompressSegment segmentOpen={openSegments.compress} />
-          </>
-        }
 
       </main>
     );

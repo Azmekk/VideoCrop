@@ -11,10 +11,11 @@ body{
   padding: 10px;
 }
 
-.video-view-container{
+.general-video-options-container{
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   width: 100%;
+  min-height: 400px;
   height: 60%;
   margin-bottom: 10px;
   padding: 2px;
@@ -22,9 +23,10 @@ body{
 
 .video-view{
   display: flex;
-  max-height: 720px;
-  width: 100%;
+  aspect-ratio: 16 / 9;
+  width: 60%;
   justify-content: center;
+  align-items: center;
 }
 
 .empty-video-container{
@@ -61,6 +63,7 @@ body{
 video{
   max-width: 100%;
   max-height: 100%;
+  border: 1px dashed rgba(136, 136, 136, 0.5);
 }
 
 .ffmpeg-not-downloaded{

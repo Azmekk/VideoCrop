@@ -1,10 +1,9 @@
-import { Input, Slider, Switch } from "antd";
+import { Input, Slider, SliderSingleProps, Switch } from "antd";
 import { useEffect, useState } from "react";
 
 interface CutSegmentProps {
     videoPath: string;
     videoDuration: string;
-    segmentOpen: boolean;
 }
 
 interface VideoDuration {
@@ -23,6 +22,8 @@ function CutSegment(props: CutSegmentProps) {
 
     const [startingInputError, setStartingInputError] = useState(false);
     const [endingInputError, setEndingInputError] = useState(false);
+
+    const [segmentEnabled, setSegmentEnabled] = useState(false);
 
     useEffect(() => {
         const vidDuration = parseVideoDuration(props.videoDuration);
@@ -102,26 +103,29 @@ function CutSegment(props: CutSegmentProps) {
         }
     }
 
+    const formatter: NonNullable<SliderSingleProps['tooltip']>['formatter'] = (value) => `${videoDurationToString(convertFromSeconds(Number(value)))}`;
+
     return (
         <div className="edit-segment">
-            {props.segmentOpen && (
-                <div className="edit-segment-body">
-                    <p style={{ fontSize: "1.5em", fontWeight: "bold" }}>Cut</p>
-                    <Slider range max={totalSeconds} value={[startingSecond, endingSecond]} step={0.25} onChange={handleSliderInput} />
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <div>
-                            <label>Start time:</label>
-                            <p style={{ cursor: "default" }}>{videoDurationToString(convertFromSeconds(startingSecond))}</p>
-                            <Input status={startingInputError ? "error" : ""} placeholder="00:00:00.000" onChange={(e) => handleDurationInput(e.target.value, true)} onBlur={() => setStartingInputError(false)} onFocus={(e) => handleDurationInput(e.target.value, true)} />
-                        </div>
-                        <div>
-                            <label>End time:</label>
-                            <p style={{ cursor: "default" }}>{videoDurationToString(convertFromSeconds(endingSecond))}</p>
-                            <Input status={endingInputError ? "error" : ""} placeholder="00:00:00.000" onChange={(e) => handleDurationInput(e.target.value, false)} onBlur={() => setEndingInputError(false)} onFocus={(e) => handleDurationInput(e.target.value, false)} />
-                        </div>
+            <div style={{ fontSize: "1.5em", fontWeight: "bold" }}>Cut</div>
+            <Switch title="Cut Video" style={{ marginBottom: "5px" }} defaultChecked={false} onChange={setSegmentEnabled} />
+
+
+            <div className="edit-segment-body" style={{ pointerEvents: segmentEnabled ? 'auto' : 'none', opacity: segmentEnabled ? 1 : 0.5 }}>
+                <Slider tooltip={{ formatter, placement: "left" }} range max={totalSeconds} value={[startingSecond, endingSecond]} step={0.25} onChange={handleSliderInput} />
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <div>
+                        <label>Start time:</label>
+                        <p style={{ cursor: "default" }}>{videoDurationToString(convertFromSeconds(startingSecond))}</p>
+                        <Input status={startingInputError ? "error" : ""} placeholder="00:00:00.000" onChange={(e) => handleDurationInput(e.target.value, true)} onBlur={() => setStartingInputError(false)} onFocus={(e) => handleDurationInput(e.target.value, true)} />
+                    </div>
+                    <div>
+                        <label>End time:</label>
+                        <p style={{ cursor: "default" }}>{videoDurationToString(convertFromSeconds(endingSecond))}</p>
+                        <Input status={endingInputError ? "error" : ""} placeholder="00:00:00.000" onChange={(e) => handleDurationInput(e.target.value, false)} onBlur={() => setEndingInputError(false)} onFocus={(e) => handleDurationInput(e.target.value, false)} />
                     </div>
                 </div>
-            )}
+            </div>
         </div>
     );
 }
