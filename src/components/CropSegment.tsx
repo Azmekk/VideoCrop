@@ -5,7 +5,7 @@ interface CropSegmentProps{
 }
 function CropSegment(props: CropSegmentProps){
     return (
-        <div className="edit-segment">
+        <div>
         </div>
     );
 }

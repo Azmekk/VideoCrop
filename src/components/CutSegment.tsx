@@ -1,4 +1,4 @@
-import { Input, Slider, SliderSingleProps, Switch } from "antd";
+import { Checkbox, Input, Slider, SliderSingleProps, Switch } from "antd";
 import { useEffect, useState } from "react";
 
 interface CutSegmentProps {
@@ -106,12 +106,14 @@ function CutSegment(props: CutSegmentProps) {
     const formatter: NonNullable<SliderSingleProps['tooltip']>['formatter'] = (value) => `${videoDurationToString(convertFromSeconds(Number(value)))}`;
 
     return (
-        <div className="edit-segment">
-            <div style={{ fontSize: "1.5em", fontWeight: "bold" }}>Cut</div>
-            <Switch title="Cut Video" style={{ marginBottom: "5px" }} defaultChecked={false} onChange={setSegmentEnabled} />
+        <div style={{ padding: "20px" }}>
+            <div style={{ marginBottom: "10px", display: 'flex', gap: "10px" }}>
+                <div style={{ fontSize: "1.2em", fontWeight: "bold" }}>Cut</div>
+                <Checkbox defaultChecked={false} onChange={(e) => setSegmentEnabled(e.target.checked)} />
+            </div>
 
 
-            <div className="edit-segment-body" style={{ pointerEvents: segmentEnabled ? 'auto' : 'none', opacity: segmentEnabled ? 1 : 0.5 }}>
+            <div className={segmentEnabled ? "" : "disabled"}>
                 <Slider tooltip={{ formatter, placement: "left" }} range max={totalSeconds} value={[startingSecond, endingSecond]} step={0.25} onChange={handleSliderInput} />
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <div>

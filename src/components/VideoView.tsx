@@ -12,7 +12,7 @@ function VideoView({ videoPath, onVideoPathClick }: VideoViewProps) {
     function RenderVideoElement() {
         if (videoPathIsValid(videoPath)) {
             return (
-                <div className="selected-video-container">
+                <div className="video-container">
                     <video key={videoPath} controls>
                         <source src={convertFileSrc(videoPath)}></source>
                     </video>

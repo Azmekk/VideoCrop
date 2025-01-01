@@ -59,8 +59,10 @@ function App() {
     return (
       <main className="app-container">
         <div className="general-video-options-container">
-          <div style={{ width: "20%",  display: "flex", flexDirection: "column", alignItems: "start" }}>
-            <Button size="large" onClick={get_video_path} type="primary">Select new video</Button>
+          <div style={{ width: "20%"}}>
+            <div style={{marginBottom: "20px"}}>
+              <Button size="large" onClick={get_video_path} type="primary">Select new video</Button>
+            </div>
             <CompressSegment disabled={!videoPathIsValid(videoPath)} />
           </div>
           <VideoView videoCropPoints={videoCropPoints} videoPath={videoPath} onVideoPathClick={function (): void {
@@ -68,14 +70,14 @@ function App() {
           }} />
           <div style={{ width: "20%", display: "flex", flexDirection: "column", alignItems: "end" }}>
             <div>
-            <Button disabled={true} type="primary">Placeholder</Button>
+              <Button disabled={true} type="primary">Placeholder</Button>
+              <CropSegment videoCropPoints={videoCropPoints} />
             </div>
           </div>
 
         </div>
 
-        <div style={{ opacity: videoPathIsValid(videoPath) ? 1 : 0.5, pointerEvents: videoPathIsValid(videoPath) ? 'auto' : 'none', }}>
-          <CropSegment videoCropPoints={videoCropPoints} />
+        <div className={videoPathIsValid(videoPath) ? "" : "disabled"}>
           <CutSegment videoPath={videoPath} videoDuration={videoInfo?.duration ?? "0:00:00.000"} />
         </div>
 
