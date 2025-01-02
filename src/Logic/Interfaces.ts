@@ -35,8 +35,12 @@ export interface ResizeOptions {
 }
 
 export interface VideoEditOptions {
+  cutOptionsEnabled: boolean;
   cutOptions: VideoCutOptions | undefined;
+  cropPointsEnabled: boolean;
   cropPoints: VideoCropPoints | undefined;
+  compressionEnabled: boolean;
   compressionOptions: VideoCompressionOptions | undefined;
+  resizeEnabled: boolean;
   resizeOptions: ResizeOptions | undefined;
 }

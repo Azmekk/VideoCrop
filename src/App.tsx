@@ -4,7 +4,7 @@ import VideoView from "./components/VideoView";
 import { Button } from "antd";
 import CutSegment from "./components/CutSegment";
 import CropSegment from "./components/CropSegment";
-import type { VideoCropPoints, VideoInfo } from "./Logic/Interfaces";
+import type { VideoCropPoints, VideoEditOptions, VideoInfo } from "./Logic/Interfaces";
 import "./App.css";
 import CompressSegment from "./components/CompressSegment";
 import ResizeSegment from "./components/ResizeSegment";
@@ -17,6 +17,17 @@ function App() {
   const [videoInfo, setVideoInfo] = useState<VideoInfo | undefined>(undefined);
 
   const [cropPointPositions, setCropPointPositions] = useState<VideoCropPoints>(initiateVideoCropPoints());
+
+  const [videoEditOptions, setvideoEditOptions] = useState<VideoEditOptions>({
+    cutOptionsEnabled: false,
+    cutOptions: undefined,
+    cropPointsEnabled: false,
+    cropPoints: undefined,
+    compressionEnabled: false,
+    compressionOptions: undefined,
+    resizeEnabled: false,
+    resizeOptions: undefined,
+  });
 
   let video_selector_open = false;
   async function getVideoPath() {
@@ -79,11 +90,15 @@ function App() {
           onVideoPathClick={(): void => {
             getVideoPath();
           }}
+          enabled={videoEditOptions.cropPointsEnabled}
         />
         <div style={{ width: "20%", display: "flex", flexDirection: "column", alignItems: "end" }}>
           <div>
             <CropPointsContext.Provider value={{ cropPointPositions, setCropPointPositions }}>
-              <CropSegment disabled={!videoPathIsValid(videoPath)} />
+              <CropSegment
+                onSegmentEnabledChanged={(e) => setvideoEditOptions({ ...videoEditOptions, cropPointsEnabled: e })}
+                disabled={!videoPathIsValid(videoPath)}
+              />
             </CropPointsContext.Provider>
           </div>
         </div>

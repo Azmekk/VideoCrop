@@ -1,5 +1,4 @@
 import { useContext, useEffect, useState } from "react";
-import type { VideoCropPoints, VideoInfo } from "../Logic/Interfaces";
 import { Checkbox, InputNumber } from "antd";
 import { CropPointsContext } from "../Logic/GlobalContexts";
 
