@@ -1,10 +1,13 @@
 import { useContext, useEffect, useState } from "react";
-import { Checkbox, InputNumber } from "antd";
+import { Button, Checkbox, InputNumber } from "antd";
 import { CropPointsContext } from "../Logic/GlobalContexts";
+import { LockOutlined, UnlockOutlined } from "@ant-design/icons";
 
 interface CropSegmentProps {
   disabled: boolean;
   onSegmentEnabledChanged?: (enabled: boolean) => void;
+  onCropLinesEnabledChanged?: (enabled: boolean) => void;
+  onReset?: () => void;
 }
 
 enum CropPointInput {
@@ -20,6 +23,7 @@ enum CropPointInput {
 
 function CropSegment(props: CropSegmentProps) {
   const [segmentEnabled, setSegmentEnabled] = useState(false);
+  const [cropLinesEnabled, setCropLinesEnabled] = useState(false);
 
   const { cropPointPositions, setCropPointPositions } = useContext(CropPointsContext);
 
@@ -174,6 +178,23 @@ function CropSegment(props: CropSegmentProps) {
               value={cropPointPositions?.bottomRight.y}
             />
           </div>
+        </div>
+
+        <div style={{ display: "flex", gap: "5px" }}>
+          <Button
+            variant="outlined"
+            color={cropLinesEnabled ? "danger" : "primary"}
+            onClick={() => {
+              const newCropLinesEnabled = !cropLinesEnabled;
+              setCropLinesEnabled(newCropLinesEnabled);
+              props.onCropLinesEnabledChanged?.(newCropLinesEnabled);
+            }}
+          >
+            {cropLinesEnabled ? <UnlockOutlined /> : <LockOutlined />}
+          </Button>
+          <Button onClick={props.onReset} type="primary">
+            Reset
+          </Button>
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import VideoView from "./components/VideoView";
 import { Button } from "antd";
@@ -15,12 +15,14 @@ function App() {
   const [ffmpegExsts, setFfmpegExsts] = useState(true);
   const [videoPath, setVideoPath] = useState("");
   const [videoInfo, setVideoInfo] = useState<VideoInfo | undefined>(undefined);
+  const [resetCropPoints, setResetCropPoints] = useState(0);
 
   const [cropPointPositions, setCropPointPositions] = useState<VideoCropPoints>(initiateVideoCropPoints());
 
   const [videoEditOptions, setvideoEditOptions] = useState<VideoEditOptions>({
     cutOptionsEnabled: false,
     cutOptions: undefined,
+    cropLinesEnabled: false,
     cropPointsEnabled: false,
     cropPoints: undefined,
     compressionEnabled: false,
@@ -28,6 +30,8 @@ function App() {
     resizeEnabled: false,
     resizeOptions: undefined,
   });
+
+  const videoViewRef = useRef<HTMLVideoElement>(null);
 
   let video_selector_open = false;
   async function getVideoPath() {
@@ -90,14 +94,17 @@ function App() {
           onVideoPathClick={(): void => {
             getVideoPath();
           }}
-          enabled={videoEditOptions.cropPointsEnabled}
+          resizerEnabled={videoEditOptions.cropLinesEnabled && videoEditOptions.cropPointsEnabled}
+          reset={resetCropPoints}
         />
         <div style={{ width: "20%", display: "flex", flexDirection: "column", alignItems: "end" }}>
           <div>
             <CropPointsContext.Provider value={{ cropPointPositions, setCropPointPositions }}>
               <CropSegment
+                onCropLinesEnabledChanged={(e) => setvideoEditOptions({ ...videoEditOptions, cropLinesEnabled: e })}
                 onSegmentEnabledChanged={(e) => setvideoEditOptions({ ...videoEditOptions, cropPointsEnabled: e })}
                 disabled={!videoPathIsValid(videoPath)}
+                onReset={() => setResetCropPoints(resetCropPoints + 1)}
               />
             </CropPointsContext.Provider>
           </div>
