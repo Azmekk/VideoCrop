@@ -35,12 +35,15 @@ pub fn check_ffmpeg_and_ffprobe() -> bool {
 
 #[tauri::command]
 pub fn get_video_info(video_path: &str) -> Result<VideoInfo, String> {
-
     let args = [
-        "-v", "error",
-        "-select_streams", "v:0",
-        "-show_entries", "stream=width,height",
-        "-of", "default=noprint_wrappers=1:nokey=1",
+        "-v",
+        "error",
+        "-select_streams",
+        "v:0",
+        "-show_entries",
+        "stream=width,height",
+        "-of",
+        "default=noprint_wrappers=1:nokey=1",
         video_path,
     ];
 
@@ -66,14 +69,9 @@ pub fn get_video_info(video_path: &str) -> Result<VideoInfo, String> {
         ));
     }
 
-    let mut output_str = "";
-    match std::str::from_utf8(&output.stdout) {
-        Ok(str) => {
-            output_str = str;
-        }
-        Err(err) => {
-            return Err(err.to_string());
-        }
+    let output_str = match std::str::from_utf8(&output.stdout) {
+        Ok(str) => str,
+        Err(err) => return Err(err.to_string()),
     };
 
     let mut lines = output_str.lines();
@@ -117,8 +115,8 @@ pub fn get_video_info(video_path: &str) -> Result<VideoInfo, String> {
         .to_string();
 
     Ok(VideoInfo {
-        width, 
-        height, 
-        duration, 
+        width,
+        height,
+        duration,
     })
 }
