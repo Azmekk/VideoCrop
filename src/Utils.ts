@@ -1,5 +1,5 @@
 export function videoPathIsValid(videoPath: string){
-    return (videoPath != "" && videoPath != "No file selected")
+    return (videoPath !== "" && videoPath !== "No file selected")
 }
 
 export interface VideoCropPoints{

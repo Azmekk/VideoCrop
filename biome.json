@@ -1,0 +1,25 @@
+{
+    "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+    "formatter": {
+        "enabled": false,
+        "indentStyle": "space",
+        "lineWidth": 120
+    },
+    "linter": {
+        "enabled": true,
+        "rules": {
+            "style": {
+                "noParameterAssign": "error"
+            },
+            "a11y": {
+                "useMediaCaption": "off"
+            },
+            "correctness": {
+                "useExhaustiveDependencies": "off"
+            }
+        }
+    },
+    "organizeImports": {
+        "enabled": true
+    }
+}

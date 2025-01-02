@@ -4,7 +4,7 @@ import VideoView from "./components/VideoView";
 import { Button, Divider, Switch } from "antd";
 import CutSegment from "./components/CutSegment";
 import CropSegment from "./components/CropSegment";
-import { VideoCropPoints, videoPathIsValid } from "./Utils";
+import { type VideoCropPoints, videoPathIsValid } from "./Utils";
 import "./App.css";
 import CompressSegment from "./components/CompressSegment";
 
@@ -19,34 +19,34 @@ function App() {
   const [videoInfo, setVideoInfo] = useState<VideoInfo | undefined>(undefined);
   const [videoCropPoints, setVideoCropPoints] = useState<VideoCropPoints>({ left: 0, right: 0, bottom: 0, top: 0 });
 
+  let video_selector_open = false;
+  async function getVideoPath() {
+    if (video_selector_open === true) {
+      return;
+    }
+    
+    video_selector_open = true;
+    const path: string = await invoke("open_video");
+    if (!videoPathIsValid(path)) {
+      video_selector_open = false;
+      return;
+    }
+
+    setVideoPath(path);
+
+    const vidInfo: VideoInfo = await invoke("get_video_info", { videoPath: path });
+    setVideoInfo(vidInfo);
+
+    console.log(vidInfo);
+  }
+
   async function checkFfmpegAndFfprobe() {
     setFfmpegExsts(await invoke("check_ffmpeg_and_ffprobe"));
   }
 
-  let video_selector_open: boolean = false;
-  async function get_video_path() {
-    if (video_selector_open === true) {
-      return;
-    }
-    else {
-      video_selector_open = true;
-    }
-    let path: string = await invoke("open_video");
-    if (path !== "") {
-      setVideoPath(path);
-    }
-
-    let vidInfo: VideoInfo = await invoke("get_video_info", { videoPath: path });
-    setVideoInfo(vidInfo);
-
-    console.log(vidInfo);
-    video_selector_open = false;
-  }
-
-  async function OnStart() {
+  useEffect(() => {
     checkFfmpegAndFfprobe();
-  }
-  useEffect(() => { OnStart() }, []);
+  }, []);
 
   if (!ffmpegExsts) {
     return (
@@ -55,18 +55,18 @@ function App() {
       </div>
     )
   }
-  else {
+  
     return (
       <main className="app-container">
         <div className="general-video-options-container">
           <div style={{ width: "20%"}}>
             <div style={{marginBottom: "20px"}}>
-              <Button size="large" onClick={get_video_path} type="primary">Select new video</Button>
+              <Button size="large" onClick={getVideoPath} type="primary">Select new video</Button>
             </div>
             <CompressSegment disabled={!videoPathIsValid(videoPath)} />
           </div>
-          <VideoView videoCropPoints={videoCropPoints} videoPath={videoPath} onVideoPathClick={function (): void {
-            get_video_path();
+          <VideoView videoCropPoints={videoCropPoints} videoPath={videoPath} onVideoPathClick={(): void => {
+            getVideoPath();
           }} />
           <div style={{ width: "20%", display: "flex", flexDirection: "column", alignItems: "end" }}>
             <div>
@@ -83,7 +83,6 @@ function App() {
 
       </main>
     );
-  }
 
 }
 
