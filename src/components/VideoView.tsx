@@ -29,10 +29,10 @@ function VideoView(props: VideoViewProps) {
   const [currentlyHovering, setCurrentlyHovering] = useState<HoveringOver | undefined>(undefined);
 
   useEffect(() => {
-    canvasLineDisplacementRef.bottom = 0;
-    canvasLineDisplacementRef.left = 0;
-    canvasLineDisplacementRef.right = 0;
-    canvasLineDisplacementRef.top = 0;
+    canvasLineDisplacementRef.bottom = 1;
+    canvasLineDisplacementRef.left = 1;
+    canvasLineDisplacementRef.right = 1;
+    canvasLineDisplacementRef.top = 1;
     redrawCanvas();
   }, [props.reset]);
 
@@ -41,7 +41,7 @@ function VideoView(props: VideoViewProps) {
   }, [props.resizerEnabled]);
 
   useEffect(() => {
-    if (props.resizerEnabled && !clickedLineInfo.clickedLine && videoRef.current) {
+    if (!clickedLineInfo.clickedLine && videoRef.current) {
       const { widthDiff, heightDiff } = getCanvasToVideoSizeDifference();
 
       canvasLineDisplacementRef.left = Math.round(cropPointPositions.startingXOffset * widthDiff);
@@ -141,6 +141,7 @@ function VideoView(props: VideoViewProps) {
     const { left, right, top, bottom } = canvasLineDisplacementRef;
 
     ctx.strokeStyle = props.resizerEnabled ? "red" : "gray";
+    ctx.lineWidth = 2;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.beginPath();
@@ -181,32 +182,21 @@ function VideoView(props: VideoViewProps) {
     }
   };
 
-  const drawInitialLines = (canvas: HTMLCanvasElement) => {
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      return;
-    }
-
-    const width = canvas.width;
-    const height = canvas.height;
-
-    ctx.strokeStyle = "red";
-    ctx.lineWidth = 2;
-
-    ctx.rect(0, 0, width, height);
-    ctx.stroke();
-  };
-
   function updateCanvasSize() {
     if (videoRef.current && canvasRef.current) {
       const rect = videoRef.current.getBoundingClientRect();
       canvasRef.current.width = rect.width;
       canvasRef.current.height = rect.height;
-      drawInitialLines(canvasRef.current);
+      redrawCanvas();
     }
   }
 
   useEffect(() => {
+    canvasLineDisplacementRef.bottom = 1;
+    canvasLineDisplacementRef.left = 1;
+    canvasLineDisplacementRef.right = 1;
+    canvasLineDisplacementRef.top = 1;
+
     const handleLoadedMetadata = () => {
       updateCanvasSize();
     };
