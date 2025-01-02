@@ -16,16 +16,39 @@ function CropSegment(props: ResizeSegmentProps) {
         <Checkbox defaultChecked={false} onChange={(e) => setSegmentEnabled(e.target.checked)} />
       </div>
 
-      <div className={segmentEnabled ? "" : "disabled"} style={{ display: "flex", gap: "5px", alignItems: "center" }}>
-        W:
-        <InputNumber key={props.videoInfo?.width} defaultValue={props.videoInfo?.width} placeholder="1920" /> x
-        <InputNumber
-          key={props.videoInfo?.height}
-          defaultValue={props.videoInfo?.height}
-          title="height"
-          placeholder="1080"
-        />
-        :H
+      <div
+        className={segmentEnabled ? "" : "disabled"}
+        style={{ display: "flex", gap: "5px", flexDirection: "column" }}
+      >
+        <div
+          style={{
+            display: "flex",
+            gap: "5px",
+            alignItems: "center",
+            justifyContent: "space-between",
+            width: "150px",
+          }}
+        >
+          <div>Width:</div>
+          <InputNumber key={props.videoInfo?.width} defaultValue={props.videoInfo?.width} placeholder="1920" />
+        </div>
+        <div
+          style={{
+            display: "flex",
+            gap: "5px",
+            alignItems: "center",
+            justifyContent: "space-between",
+            width: "150px",
+          }}
+        >
+          <div>Height:</div>
+          <InputNumber
+            key={props.videoInfo?.height}
+            defaultValue={props.videoInfo?.height}
+            title="height"
+            placeholder="1080"
+          />
+        </div>
       </div>
     </div>
   );

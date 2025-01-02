@@ -5,7 +5,6 @@ import { CropPointsContext } from "../Logic/GlobalContexts";
 
 interface CropSegmentProps {
   disabled: boolean;
-
   onSegmentEnabledChanged?: (enabled: boolean) => void;
 }
 
