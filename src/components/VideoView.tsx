@@ -1,217 +1,133 @@
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { useContext, useEffect, useRef, useState } from "react";
 import { videoPathIsValid } from "../Logic/Utils";
-import { CropPointsContext } from "../Logic/GlobalContexts";
-import type { VideoCropPoints } from "../Logic/Interfaces";
+import {
+  canvasLineDisplacementRef,
+  clickedLineInfo,
+  cropInputManuallyChangedInfo,
+  CropPointsContext,
+} from "../Logic/GlobalContexts";
+import type { VideoCropPoints, VideoInfo } from "../Logic/Interfaces";
+import { HoveringOver } from "../Logic/Enums";
+import { determineIfHoveringOverLine, updateCanvasLineDisplacement } from "../Logic/VideoCropLinesLogic";
 
 interface VideoViewProps {
+  videoInfo: VideoInfo | undefined;
   videoPath: string;
   onVideoPathClick: () => void;
   resizerEnabled: boolean;
   reset: number;
-}
-
-enum HoveringOver {
-  Left = 1,
-  Right = 2,
-  Top = 3,
-  Bottom = 4,
-  TopLeftCorner = 5,
-  TopRightCorner = 6,
-  BottomLeftCorner = 7,
-  BottomRightCorner = 8,
+  cropEnabled: boolean;
 }
 
 function VideoView(props: VideoViewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  //const { cropPointPositions, setCropPointPositions } = useContext(CropPointsContext);
+  const { cropPointPositions, setCropPointPositions } = useContext(CropPointsContext);
 
   const [currentlyHovering, setCurrentlyHovering] = useState<HoveringOver | undefined>(undefined);
 
-  const canvasLineDisplacementRef = useRef({
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-  });
-
-  let clickedLine: HoveringOver | undefined = undefined;
-
   useEffect(() => {
-    canvasLineDisplacementRef.current.bottom = 0;
-    canvasLineDisplacementRef.current.left = 0;
-    canvasLineDisplacementRef.current.right = 0;
-    canvasLineDisplacementRef.current.top = 0;
+    canvasLineDisplacementRef.bottom = 0;
+    canvasLineDisplacementRef.left = 0;
+    canvasLineDisplacementRef.right = 0;
+    canvasLineDisplacementRef.top = 0;
     redrawCanvas();
   }, [props.reset]);
 
-  const determineIfHoveringOverLine = (
-    e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
-  ): HoveringOver | undefined => {
-    if (!props.resizerEnabled) return;
+  useEffect(() => {
+    redrawCanvas();
+  }, [props.resizerEnabled]);
 
-    const canvasRect = e.currentTarget.getBoundingClientRect();
-    const offsetX = e.clientX - canvasRect.left;
-    const offsetY = e.clientY - canvasRect.top;
+  useEffect(() => {
+    if (props.resizerEnabled && !clickedLineInfo.clickedLine && videoRef.current) {
+      const { widthDiff, heightDiff } = getCanvasToVideoSizeDifference();
 
-    console.log(offsetX, offsetY);
-    const tolerance = 15;
+      canvasLineDisplacementRef.left = Math.round(cropPointPositions.startingXOffset * widthDiff);
+      canvasLineDisplacementRef.top = Math.round(cropPointPositions.startingYOffset * heightDiff);
+      canvasLineDisplacementRef.right = Math.max(
+        0,
+        Math.round(
+          (videoRef.current.videoWidth - (cropPointPositions.startingXOffset + cropPointPositions.width)) * widthDiff,
+        ),
+      );
+      canvasLineDisplacementRef.bottom = Math.max(
+        0,
+        Math.round(
+          (videoRef.current.videoHeight - (cropPointPositions.startingYOffset + cropPointPositions.height)) *
+            heightDiff,
+        ),
+      );
+      redrawCanvas();
+    }
+  }, [cropInputManuallyChangedInfo.manuallyChanged]);
 
-    const { left, right, top, bottom } = canvasLineDisplacementRef.current;
+  const updateCropPositions = () => {
+    if (props.resizerEnabled && canvasRef.current) {
+      const { widthDiff, heightDiff } = getCanvasToVideoSizeDifference();
 
-    const isHoveringOverLeftLine = Math.abs(offsetX - left) < tolerance;
-    const isHoveringOverRightLine = Math.abs(offsetX - (canvasRect.width - right)) < tolerance;
-    const isHoveringOverTopLine = Math.abs(offsetY - top) < tolerance;
-    const isHoveringOverBottomLine = Math.abs(offsetY - (canvasRect.height - bottom)) < tolerance;
+      const newCropPointPositions: VideoCropPoints = {
+        startingXOffset: Math.round(canvasLineDisplacementRef.left / widthDiff / 2) * 2,
+        startingYOffset: Math.round(canvasLineDisplacementRef.top / heightDiff / 2) * 2,
+        width:
+          Math.round(
+            (canvasRef.current.width - (canvasLineDisplacementRef.right + canvasLineDisplacementRef.left)) /
+              widthDiff /
+              2,
+          ) * 2,
+        height:
+          Math.round(
+            (canvasRef.current.height - (canvasLineDisplacementRef.bottom + canvasLineDisplacementRef.top)) /
+              heightDiff /
+              2,
+          ) * 2,
+      };
 
-    const isHoveringOverTopLeftCorner = isHoveringOverTopLine && isHoveringOverLeftLine;
-    const isHoveringOverTopRightCorner = isHoveringOverTopLine && isHoveringOverRightLine;
-    const isHoveringOverBottomLeftCorner = isHoveringOverBottomLine && isHoveringOverLeftLine;
-    const isHoveringOverBottomRightCorner = isHoveringOverBottomLine && isHoveringOverRightLine;
+      setCropPointPositions(newCropPointPositions);
+    }
+  };
 
-    if (isHoveringOverTopLeftCorner) {
-      console.log("Hovering over the top-left corner");
-      return HoveringOver.TopLeftCorner;
-    }
-    if (isHoveringOverTopRightCorner) {
-      console.log("Hovering over the top-right corner");
-      return HoveringOver.TopRightCorner;
-    }
-    if (isHoveringOverBottomLeftCorner) {
-      console.log("Hovering over the bottom-left corner");
-      return HoveringOver.BottomLeftCorner;
-    }
-    if (isHoveringOverBottomRightCorner) {
-      console.log("Hovering over the bottom-right corner");
-      return HoveringOver.BottomRightCorner;
-    }
+  const getCanvasToVideoSizeDifference = () => {
+    if (!videoRef.current) return { widthDiff: 0, heightDiff: 0 };
 
-    if (isHoveringOverLeftLine) {
-      console.log("Hovering over the left line");
-      return HoveringOver.Left;
-    }
-    if (isHoveringOverRightLine) {
-      console.log("Hovering over the right line");
-      return HoveringOver.Right;
-    }
-    if (isHoveringOverTopLine) {
-      console.log("Hovering over the top line");
-      return HoveringOver.Top;
-    }
-    if (isHoveringOverBottomLine) {
-      console.log("Hovering over the bottom line");
-      return HoveringOver.Bottom;
-    }
+    const videoWidth = videoRef.current.videoWidth;
+    const videoHeight = videoRef.current.videoHeight;
 
-    return undefined;
+    const rect = videoRef.current.getBoundingClientRect();
+    const elementWidth = rect.width;
+    const elementHeight = rect.height;
+
+    return {
+      widthDiff: elementWidth / videoWidth,
+      heightDiff: elementHeight / videoHeight,
+    };
+  };
+
+  const getVideoToCanvasSizeDifference = () => {
+    if (!videoRef.current) return { widthDiff: 0, heightDiff: 0 };
+
+    const videoWidth = videoRef.current.videoWidth;
+    const videoHeight = videoRef.current.videoHeight;
+    const rect = videoRef.current.getBoundingClientRect();
+    const elementWidth = rect.width;
+    const elementHeight = rect.height;
+
+    return {
+      widthDiff: videoWidth / elementWidth,
+      heightDiff: videoHeight / elementHeight,
+    };
   };
 
   const onCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
     if (!props.resizerEnabled) return;
 
-    if (!clickedLine) {
-      setCurrentlyHovering(determineIfHoveringOverLine(e));
+    if (!clickedLineInfo.clickedLine) {
+      setCurrentlyHovering(determineIfHoveringOverLine(e, canvasLineDisplacementRef));
     } else {
-      const minimumSeparation = 25;
-      switch (clickedLine) {
-        case undefined:
-          return;
-        case HoveringOver.Left: {
-          const updatedLeftValue = e.clientX - e.currentTarget.getBoundingClientRect().left;
-
-          if (updatedLeftValue + canvasLineDisplacementRef.current.right + minimumSeparation > e.currentTarget.width) {
-            return;
-          }
-          canvasLineDisplacementRef.current.left = updatedLeftValue;
-          break;
-        }
-        case HoveringOver.Right: {
-          const updatedRightValue = e.currentTarget.getBoundingClientRect().right - e.clientX;
-
-          if (updatedRightValue + canvasLineDisplacementRef.current.left + minimumSeparation > e.currentTarget.width) {
-            return;
-          }
-          canvasLineDisplacementRef.current.right = updatedRightValue;
-          break;
-        }
-        case HoveringOver.Top: {
-          const updatedTopValue = e.clientY - e.currentTarget.getBoundingClientRect().top;
-
-          if (updatedTopValue + canvasLineDisplacementRef.current.bottom + minimumSeparation > e.currentTarget.height) {
-            return;
-          }
-          canvasLineDisplacementRef.current.top = updatedTopValue;
-          break;
-        }
-        case HoveringOver.Bottom: {
-          const updatedBottomValue = e.currentTarget.getBoundingClientRect().bottom - e.clientY;
-
-          if (updatedBottomValue + canvasLineDisplacementRef.current.top + minimumSeparation > e.currentTarget.height) {
-            return;
-          }
-          canvasLineDisplacementRef.current.bottom = updatedBottomValue;
-          break;
-        }
-        case HoveringOver.TopLeftCorner: {
-          const updatedLeftValue = e.clientX - e.currentTarget.getBoundingClientRect().left;
-          const updatedTopValue = e.clientY - e.currentTarget.getBoundingClientRect().top;
-
-          if (
-            updatedLeftValue + canvasLineDisplacementRef.current.right + minimumSeparation > e.currentTarget.width ||
-            updatedTopValue + canvasLineDisplacementRef.current.bottom + minimumSeparation > e.currentTarget.height
-          ) {
-            return;
-          }
-          canvasLineDisplacementRef.current.left = updatedLeftValue;
-          canvasLineDisplacementRef.current.top = updatedTopValue;
-          break;
-        }
-        case HoveringOver.TopRightCorner: {
-          const updatedRightValue = e.currentTarget.getBoundingClientRect().right - e.clientX;
-          const updatedTopValue = e.clientY - e.currentTarget.getBoundingClientRect().top;
-
-          if (
-            updatedRightValue + canvasLineDisplacementRef.current.left + minimumSeparation > e.currentTarget.width ||
-            updatedTopValue + canvasLineDisplacementRef.current.bottom + minimumSeparation > e.currentTarget.height
-          ) {
-            return;
-          }
-          canvasLineDisplacementRef.current.right = updatedRightValue;
-          canvasLineDisplacementRef.current.top = updatedTopValue;
-          break;
-        }
-        case HoveringOver.BottomLeftCorner: {
-          const updatedLeftValue = e.clientX - e.currentTarget.getBoundingClientRect().left;
-          const updatedBottomValue = e.currentTarget.getBoundingClientRect().bottom - e.clientY;
-
-          if (
-            updatedLeftValue + canvasLineDisplacementRef.current.right + minimumSeparation > e.currentTarget.width ||
-            updatedBottomValue + canvasLineDisplacementRef.current.top + minimumSeparation > e.currentTarget.height
-          ) {
-            return;
-          }
-          canvasLineDisplacementRef.current.left = updatedLeftValue;
-          canvasLineDisplacementRef.current.bottom = updatedBottomValue;
-          break;
-        }
-        case HoveringOver.BottomRightCorner: {
-          const updatedRightValue = e.currentTarget.getBoundingClientRect().right - e.clientX;
-          const updatedBottomValue = e.currentTarget.getBoundingClientRect().bottom - e.clientY;
-
-          if (
-            updatedRightValue + canvasLineDisplacementRef.current.left + minimumSeparation > e.currentTarget.width ||
-            updatedBottomValue + canvasLineDisplacementRef.current.top + minimumSeparation > e.currentTarget.height
-          ) {
-            return;
-          }
-          canvasLineDisplacementRef.current.right = updatedRightValue;
-          canvasLineDisplacementRef.current.bottom = updatedBottomValue;
-          break;
-        }
-      }
+      updateCanvasLineDisplacement(canvasLineDisplacementRef, clickedLineInfo.clickedLine, e);
       redrawCanvas();
+      updateCropPositions();
     }
   };
 
@@ -222,7 +138,9 @@ function VideoView(props: VideoViewProps) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const { left, right, top, bottom } = canvasLineDisplacementRef.current;
+    const { left, right, top, bottom } = canvasLineDisplacementRef;
+
+    ctx.strokeStyle = props.resizerEnabled ? "red" : "gray";
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.beginPath();
@@ -235,8 +153,8 @@ function VideoView(props: VideoViewProps) {
     if (!props.resizerEnabled) return;
 
     if (currentlyHovering) {
-      clickedLine = currentlyHovering;
-      console.log("Clicked line: ", HoveringOver[clickedLine]);
+      clickedLineInfo.clickedLine = currentlyHovering;
+      console.log("Clicked line: ", HoveringOver[clickedLineInfo.clickedLine]);
     }
   };
 
@@ -317,7 +235,7 @@ function VideoView(props: VideoViewProps) {
           </video>
           <canvas
             style={{
-              display: props.resizerEnabled ? "" : "none",
+              display: props.cropEnabled ? "" : "none",
               pointerEvents: props.resizerEnabled ? "all" : "none",
               cursor: determineCursor(currentlyHovering),
             }}
@@ -326,12 +244,12 @@ function VideoView(props: VideoViewProps) {
             onMouseDown={onCanvasMouseDown}
             onMouseMove={onCanvasMouseMove}
             onMouseUp={() => {
-              clickedLine = undefined;
+              clickedLineInfo.clickedLine = undefined;
               console.log("Released line");
               console.log(canvasLineDisplacementRef);
             }}
             onMouseLeave={() => {
-              clickedLine = undefined;
+              clickedLineInfo.clickedLine = undefined;
             }}
           />
         </div>

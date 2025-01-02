@@ -52,10 +52,10 @@ function App() {
     setVideoInfo(vidInfo);
 
     setCropPointPositions({
-      topLeft: { x: 0, y: 0 },
-      topRight: { x: vidInfo.width, y: 0 },
-      bottomLeft: { x: 0, y: vidInfo.height },
-      bottomRight: { x: vidInfo.width, y: vidInfo.height },
+      startingXOffset: 0,
+      startingYOffset: 0,
+      width: vidInfo.width,
+      height: vidInfo.height,
     });
 
     console.log(vidInfo);
@@ -89,22 +89,35 @@ function App() {
           <CompressSegment disabled={!videoPathIsValid(videoPath)} />
           <ResizeSegment disabled={!videoPathIsValid(videoPath)} videoInfo={videoInfo} />
         </div>
-        <VideoView
-          videoPath={videoPath}
-          onVideoPathClick={(): void => {
-            getVideoPath();
-          }}
-          resizerEnabled={videoEditOptions.cropLinesEnabled && videoEditOptions.cropPointsEnabled}
-          reset={resetCropPoints}
-        />
+        <CropPointsContext.Provider value={{ cropPointPositions, setCropPointPositions }}>
+          <VideoView
+            videoInfo={videoInfo}
+            videoPath={videoPath}
+            onVideoPathClick={(): void => {
+              getVideoPath();
+            }}
+            resizerEnabled={videoEditOptions.cropLinesEnabled && videoEditOptions.cropPointsEnabled}
+            reset={resetCropPoints}
+            cropEnabled={videoEditOptions.cropPointsEnabled}
+          />
+        </CropPointsContext.Provider>
         <div style={{ width: "20%", display: "flex", flexDirection: "column", alignItems: "end" }}>
           <div>
             <CropPointsContext.Provider value={{ cropPointPositions, setCropPointPositions }}>
               <CropSegment
+                videoInfo={videoInfo}
                 onCropLinesEnabledChanged={(e) => setvideoEditOptions({ ...videoEditOptions, cropLinesEnabled: e })}
                 onSegmentEnabledChanged={(e) => setvideoEditOptions({ ...videoEditOptions, cropPointsEnabled: e })}
                 disabled={!videoPathIsValid(videoPath)}
-                onReset={() => setResetCropPoints(resetCropPoints + 1)}
+                onReset={() => {
+                  setResetCropPoints(resetCropPoints + 1);
+                  setCropPointPositions({
+                    startingXOffset: 0,
+                    startingYOffset: 0,
+                    width: videoInfo?.width ?? 0,
+                    height: videoInfo?.height ?? 0,
+                  });
+                }}
               />
             </CropPointsContext.Provider>
           </div>

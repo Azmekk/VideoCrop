@@ -1,13 +1,8 @@
-export interface VideoCropPoints{
-  topLeft: CropPointPosition,
-  topRight: CropPointPosition,
-  bottomLeft: CropPointPosition,
-  bottomRight: CropPointPosition
-}
-
-export interface CropPointPosition{
-  x: number,
-  y: number
+export interface VideoCropPoints {
+  startingXOffset: number;
+  startingYOffset: number;
+  width: number;
+  height: number;
 }
 
 export interface VideoCompressionOptions {
@@ -24,14 +19,14 @@ export interface VideoCutOptions {
 }
 
 export interface VideoInfo {
-  width: number,
-  height: number,
-  duration: string,
+  width: number;
+  height: number;
+  duration: string;
 }
 
 export interface ResizeOptions {
-  width: number,
-  height: number,
+  width: number;
+  height: number;
 }
 
 export interface VideoEditOptions {
@@ -44,4 +39,11 @@ export interface VideoEditOptions {
   compressionOptions: VideoCompressionOptions | undefined;
   resizeEnabled: boolean;
   resizeOptions: ResizeOptions | undefined;
+}
+
+export interface VideoCropLineDisplacements {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
 }

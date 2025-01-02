@@ -1,24 +1,15 @@
 import { useContext, useEffect, useState } from "react";
 import { Button, Checkbox, InputNumber } from "antd";
-import { CropPointsContext } from "../Logic/GlobalContexts";
+import { cropInputManuallyChangedInfo, CropPointsContext } from "../Logic/GlobalContexts";
 import { LockOutlined, UnlockOutlined } from "@ant-design/icons";
+import type { VideoInfo } from "../Logic/Interfaces";
 
 interface CropSegmentProps {
+  videoInfo: VideoInfo | undefined;
   disabled: boolean;
   onSegmentEnabledChanged?: (enabled: boolean) => void;
   onCropLinesEnabledChanged?: (enabled: boolean) => void;
   onReset?: () => void;
-}
-
-enum CropPointInput {
-  TopLeftX = "topLeftX",
-  TopLeftY = "topLeftY",
-  TopRightX = "topRightX",
-  TopRightY = "topRightY",
-  BottomLeftX = "bottomLeftX",
-  BottomLeftY = "bottomLeftY",
-  BottomRightX = "bottomRightX",
-  BottomRightY = "bottomRightY",
 }
 
 function CropSegment(props: CropSegmentProps) {
@@ -26,41 +17,6 @@ function CropSegment(props: CropSegmentProps) {
   const [cropLinesEnabled, setCropLinesEnabled] = useState(false);
 
   const { cropPointPositions, setCropPointPositions } = useContext(CropPointsContext);
-
-  const handleCropPointChange = (point: CropPointInput, value: number) => {
-    const newCropPoints = { ...cropPointPositions };
-
-    switch (point) {
-      case CropPointInput.TopLeftX:
-        newCropPoints.topLeft.x = value;
-        break;
-      case CropPointInput.TopLeftY:
-        newCropPoints.topLeft.y = value;
-        break;
-      case CropPointInput.TopRightX:
-        newCropPoints.topRight.x = value;
-        break;
-      case CropPointInput.TopRightY:
-        newCropPoints.topRight.y = value;
-        break;
-      case CropPointInput.BottomLeftX:
-        newCropPoints.bottomLeft.x = value;
-        break;
-      case CropPointInput.BottomLeftY:
-        newCropPoints.bottomLeft.y = value;
-        break;
-      case CropPointInput.BottomRightX:
-        newCropPoints.bottomRight.x = value;
-        break;
-      case CropPointInput.BottomRightY:
-        newCropPoints.bottomRight.y = value;
-        break;
-      default:
-        break;
-    }
-
-    setCropPointPositions(newCropPoints);
-  };
 
   return (
     <div className={props.disabled ? "disabled" : ""}>
@@ -89,95 +45,86 @@ function CropSegment(props: CropSegmentProps) {
             width: "100%",
           }}
         >
-          <div style={{ marginRight: "5px" }}>TL:</div>
-
-          <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
-            <div>x:</div>
-            <InputNumber
-              onChange={(e) => {
-                handleCropPointChange(CropPointInput.TopLeftX, e ?? 0);
-              }}
-              style={{ maxWidth: "65px" }}
-              value={cropPointPositions.topLeft.x}
-            />
-            <div>y:</div>
-            <InputNumber
-              onChange={(e) => {
-                handleCropPointChange(CropPointInput.TopLeftY, e ?? 0);
-              }}
-              style={{ maxWidth: "65px" }}
-              value={cropPointPositions.topLeft.y}
-            />
-          </div>
+          <div style={{ marginRight: "5px" }}>Start X:</div>
+          <InputNumber
+            onChange={(e) => {
+              setCropPointPositions({ ...cropPointPositions, startingXOffset: e ?? 0 });
+              cropInputManuallyChangedInfo.manuallyChanged++;
+            }}
+            style={{ maxWidth: "65px" }}
+            value={cropPointPositions.startingXOffset}
+            max={(props.videoInfo?.width ?? 0) - cropPointPositions.width}
+            min={0}
+          />
         </div>
 
-        <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
-          <div style={{ marginRight: "5px" }}>TR:</div>
-
-          <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
-            <div>x:</div>
-            <InputNumber
-              onChange={(e) => {
-                handleCropPointChange(CropPointInput.TopRightX, e ?? 0);
-              }}
-              style={{ maxWidth: "65px" }}
-              value={cropPointPositions?.topRight.x}
-            />
-            <div>y:</div>
-            <InputNumber
-              onChange={(e) => {
-                handleCropPointChange(CropPointInput.TopRightY, e ?? 0);
-              }}
-              style={{ maxWidth: "65px" }}
-              value={cropPointPositions?.topRight.y}
-            />
-          </div>
+        <div
+          style={{
+            display: "flex",
+            gap: "5px",
+            alignItems: "center",
+            justifyContent: "space-between",
+            placeSelf: "end",
+            width: "100%",
+          }}
+        >
+          <div style={{ marginRight: "5px" }}>Start Y:</div>
+          <InputNumber
+            onChange={(e) => {
+              setCropPointPositions({ ...cropPointPositions, startingYOffset: e ?? 0 });
+              cropInputManuallyChangedInfo.manuallyChanged++;
+            }}
+            style={{ maxWidth: "65px" }}
+            value={cropPointPositions.startingYOffset}
+            max={(props.videoInfo?.height ?? 0) - cropPointPositions.height}
+            min={0}
+          />
         </div>
 
-        <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
-          <div style={{ marginRight: "5px" }}>BL:</div>
-
-          <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
-            <div>x:</div>
-            <InputNumber
-              onChange={(e) => {
-                handleCropPointChange(CropPointInput.BottomLeftX, e ?? 0);
-              }}
-              style={{ maxWidth: "65px" }}
-              value={cropPointPositions?.bottomLeft.x}
-            />
-            <div>y:</div>
-            <InputNumber
-              onChange={(e) => {
-                handleCropPointChange(CropPointInput.BottomLeftY, e ?? 0);
-              }}
-              style={{ maxWidth: "65px" }}
-              value={cropPointPositions?.bottomLeft.y}
-            />
-          </div>
+        <div
+          style={{
+            display: "flex",
+            gap: "5px",
+            alignItems: "center",
+            justifyContent: "space-between",
+            placeSelf: "end",
+            width: "100%",
+          }}
+        >
+          <div style={{ marginRight: "5px" }}>Width:</div>
+          <InputNumber
+            onChange={(e) => {
+              setCropPointPositions({ ...cropPointPositions, width: e ?? 0 });
+              cropInputManuallyChangedInfo.manuallyChanged++;
+            }}
+            style={{ maxWidth: "65px" }}
+            value={cropPointPositions.width}
+            min={50}
+            max={(props.videoInfo?.width ?? 0) - cropPointPositions.startingXOffset}
+          />
         </div>
 
-        <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
-          <div style={{ marginRight: "5px" }}>BR:</div>
-
-          <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
-            <div>x:</div>
-            <InputNumber
-              onChange={(e) => {
-                handleCropPointChange(CropPointInput.BottomRightX, e ?? 0);
-              }}
-              style={{ maxWidth: "65px" }}
-              value={cropPointPositions?.bottomRight.x}
-            />
-            <div>y:</div>
-            <InputNumber
-              onChange={(e) => {
-                handleCropPointChange(CropPointInput.BottomRightY, e ?? 0);
-              }}
-              style={{ maxWidth: "65px" }}
-              value={cropPointPositions?.bottomRight.y}
-            />
-          </div>
+        <div
+          style={{
+            display: "flex",
+            gap: "5px",
+            alignItems: "center",
+            justifyContent: "space-between",
+            placeSelf: "end",
+            width: "100%",
+          }}
+        >
+          <div style={{ marginRight: "5px" }}>Height:</div>
+          <InputNumber
+            onChange={(e) => {
+              setCropPointPositions({ ...cropPointPositions, height: e ?? 0 });
+              cropInputManuallyChangedInfo.manuallyChanged++;
+            }}
+            style={{ maxWidth: "65px" }}
+            value={cropPointPositions.height}
+            min={50}
+            max={(props.videoInfo?.height ?? 0) - cropPointPositions.startingYOffset}
+          />
         </div>
 
         <div style={{ display: "flex", gap: "5px" }}>

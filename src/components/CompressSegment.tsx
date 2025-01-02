@@ -91,13 +91,15 @@ function CropSegment(props: CompressSegmentProps) {
   const handleCodecDropdownMenuClick: MenuProps["onClick"] = (e) => {
     setCodecDropdownTitle(`Codec: ${codecDropdownItems.find((x) => x.key === e.key)?.label}` || "Select a codec");
     setSelectedCodec(e.key);
+  };
 
-    const defaultPreset = getDefaultPreset(e.key);
+  useEffect(() => {
+    const defaultPreset = getDefaultPreset(selectedCodec);
     setPresetDropdownTitle(
       `Preset: ${determinePreset().find((x) => x.key === defaultPreset)?.label}` || "Select a preset",
     );
     setSelectedPreset(defaultPreset);
-  };
+  }, [selectedCodec]);
 
   const handlePresetDropdownMenuClick: MenuProps["onClick"] = (e) => {
     setPresetDropdownTitle(`Preset: ${determinePreset().find((x) => x.key === e.key)?.label}` || "Select a preset");

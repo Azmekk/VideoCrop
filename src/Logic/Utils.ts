@@ -1,14 +1,14 @@
-import type { VideoCropPoints } from "./Interfaces"
+import type { VideoCropPoints } from "./Interfaces";
 
-export function videoPathIsValid(videoPath: string){
-    return (videoPath !== "" && videoPath !== "No file selected")
+export function videoPathIsValid(videoPath: string) {
+  return videoPath !== "" && videoPath !== "No file selected";
 }
 
-export function initiateVideoCropPoints() : VideoCropPoints{
+export function initiateVideoCropPoints(): VideoCropPoints {
   return {
-    topLeft: { x: 0, y: 0 },
-    topRight: { x: 0, y: 0 },
-    bottomLeft: { x: 0, y: 0 },
-    bottomRight: { x: 0, y: 0 }
-  }
+    startingXOffset: 0,
+    startingYOffset: 0,
+    width: 0,
+    height: 0,
+  };
 }
