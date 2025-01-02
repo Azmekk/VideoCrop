@@ -59,7 +59,6 @@ body {
 
 .video-crop-canvas {
 	position: absolute;
-	pointer-events: none;
 }
 
 video {

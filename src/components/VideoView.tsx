@@ -2,6 +2,7 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { useContext, useEffect, useRef } from "react";
 import { videoPathIsValid } from "../Logic/Utils";
 import { CropPointsContext } from "../Logic/GlobalContexts";
+import type { VideoCropPoints } from "../Logic/Interfaces";
 
 interface VideoViewProps {
   videoPath: string;
@@ -13,7 +14,66 @@ function VideoView(props: VideoViewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  const canvasLineDisplacement = {
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  };
+
   //const { cropPointPositions, setCropPointPositions } = useContext(CropPointsContext);
+
+  const determineIfHoveringOverLine = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
+    if (!props.enabled) return;
+
+    const canvasRect = e.currentTarget.getBoundingClientRect();
+    const offsetX = e.clientX - canvasRect.left;
+    const offsetY = e.clientY - canvasRect.top;
+
+    console.log(offsetX, offsetY);
+    const tolerance = 15;
+
+    const { left, right, top, bottom } = canvasLineDisplacement;
+
+    const isHoveringOverLeftLine = Math.abs(offsetX - left) < tolerance;
+    const isHoveringOverRightLine = Math.abs(offsetX - (canvasRect.width - right)) < tolerance;
+    const isHoveringOverTopLine = Math.abs(offsetY - top) < tolerance;
+    const isHoveringOverBottomLine = Math.abs(offsetY - (canvasRect.height - bottom)) < tolerance;
+
+    if (isHoveringOverLeftLine) {
+      console.log("Hovering over the left line");
+    }
+    if (isHoveringOverRightLine) {
+      console.log("Hovering over the right line");
+    }
+    if (isHoveringOverTopLine) {
+      console.log("Hovering over the top line");
+    }
+    if (isHoveringOverBottomLine) {
+      console.log("Hovering over the bottom line");
+    }
+    if (!isHoveringOverLeftLine && !isHoveringOverRightLine && !isHoveringOverTopLine && !isHoveringOverBottomLine) {
+      console.log("Not hovering over any line");
+    }
+
+    const isHoveringOverTopLeftCorner = isHoveringOverTopLine && isHoveringOverLeftLine;
+    const isHoveringOverTopRightCorner = isHoveringOverTopLine && isHoveringOverRightLine;
+    const isHoveringOverBottomLeftCorner = isHoveringOverBottomLine && isHoveringOverLeftLine;
+    const isHoveringOverBottomRightCorner = isHoveringOverBottomLine && isHoveringOverRightLine;
+
+    if (isHoveringOverTopLeftCorner) {
+      console.log("Hovering over the top-left corner");
+    }
+    if (isHoveringOverTopRightCorner) {
+      console.log("Hovering over the top-right corner");
+    }
+    if (isHoveringOverBottomLeftCorner) {
+      console.log("Hovering over the bottom-left corner");
+    }
+    if (isHoveringOverBottomRightCorner) {
+      console.log("Hovering over the bottom-right corner");
+    }
+  };
 
   const drawInitialLines = (canvas: HTMLCanvasElement) => {
     const ctx = canvas.getContext("2d");
@@ -70,10 +130,11 @@ function VideoView(props: VideoViewProps) {
             <source src={convertFileSrc(props.videoPath)} />
           </video>
           <canvas
-            style={{ display: props.enabled ? "" : "none" }}
+            style={{ display: props.enabled ? "" : "none", pointerEvents: props.enabled ? "all" : "none" }}
             ref={canvasRef}
             className="video-crop-canvas"
             onMouseDown={determineClickedCanvasLine}
+            onMouseMove={determineIfHoveringOverLine}
           />
         </div>
       );
