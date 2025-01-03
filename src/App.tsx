@@ -4,7 +4,7 @@ import VideoView from "./components/VideoView";
 import { Button, Progress } from "antd";
 import CutSegment from "./components/CutSegment";
 import CropSegment from "./components/CropSegment";
-import type { VideoCropPoints, VideoEditOptions, VideoInfo } from "./Logic/Interfaces";
+import type { VideoCropPoints, VideoEditOptions, VideoEditProgress, VideoInfo } from "./Logic/Interfaces";
 import "./App.css";
 import CompressSegment from "./components/CompressSegment";
 import ResizeSegment from "./components/ResizeSegment";
@@ -15,7 +15,6 @@ import VideoPathSelection from "./components/VideoPathSelection";
 function App() {
   const [ffmpegExsts, setFfmpegExsts] = useState(true);
   const [interactingWithPaths, setInteractingWithPaths] = useState(false);
-  const [videoPath, setVideoPath] = useState("");
   const [videoInfo, setVideoInfo] = useState<VideoInfo | undefined>(undefined);
   const [resetCropPoints, setResetCropPoints] = useState(0);
 
@@ -26,6 +25,7 @@ function App() {
   const [cropLinesEnabled, setCropLinesEnabled] = useState(false);
 
   const [videoEditOptions, setvideoEditOptions] = useState<VideoEditOptions>({
+    input_video_path: "",
     output_video_path: "",
     cut_options_enabled: false,
     cut_options: { starting_time_string: "0:00:00.000", end_time_string: "0:00:00.000" },
@@ -58,7 +58,7 @@ function App() {
         return;
       }
 
-      setVideoPath(path);
+      setvideoEditOptions({ ...videoEditOptions, input_video_path: path });
 
       const vidInfo: VideoInfo = await invoke("get_video_info", { videoPath: path });
       setVideoInfo(vidInfo);
@@ -80,6 +80,9 @@ function App() {
     try {
       setInteractingWithPaths(true);
       const path: string = await invoke("pick_output_path");
+      if (videoPathIsValid(path) === false) {
+        return;
+      }
       setvideoEditOptions({ ...videoEditOptions, output_video_path: path });
     } finally {
       setInteractingWithPaths(false);
@@ -92,18 +95,31 @@ function App() {
     setProcessingVideo(true);
     setProcessingProgress(0);
 
-    const interval = setInterval(() => {
-      setProcessingProgress((prevProgress) => {
-        if (prevProgress >= 100) {
-          clearInterval(interval);
-          setProcessingVideo(false);
-          return 100;
-        }
-        return prevProgress + 10;
-      });
-    }, 1000);
+    while (true) {
+      const newVideoInfo = await invoke<VideoEditProgress>("get_video_progress_info");
 
-    setProcessingProgress(0);
+      if (newVideoInfo.last_error) {
+        setProcessingVideo(false);
+        setProcessingProgress(0);
+
+        alert(`Something went wrong: ${newVideoInfo.last_error}`);
+        break;
+      }
+
+      if (newVideoInfo.working) {
+        setProcessingProgress(newVideoInfo.progress);
+      }
+
+      if (newVideoInfo.progress === 100) {
+        setProcessingProgress(100);
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        setProcessingVideo(false);
+        setProcessingProgress(0);
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
   }
 
   async function checkFfmpegAndFfprobe() {
@@ -114,16 +130,10 @@ function App() {
     checkFfmpegAndFfprobe();
   }, []);
 
-  if (!ffmpegExsts) {
-    return <div className="app-disabled">FFmpeg and FFprobe were not located. Please download them and add them to path.</div>;
-  }
-
-  if (interactingWithPaths) {
-    return <div className="app-disabled">Please select path or cancel selection before continuing.</div>;
-  }
-
   return (
     <div>
+      {!ffmpegExsts && <div className="app-disabled">FFmpeg and FFprobe were not located. Please download them and add them to path.</div>}
+      {interactingWithPaths && <div className="app-disabled">Please select path or cancel selection before continuing.</div>}
       <main className={`app-container ${processingVideo && "disabled"} `}>
         <div className="general-video-options-container">
           <div style={{ width: "20%", display: "flex", flexDirection: "column", gap: "20px" }}>
@@ -132,10 +142,13 @@ function App() {
                 Select new video
               </Button>
             </div>
-            <CompressSegment onChange={(x, enabled) => setvideoEditOptions({ ...videoEditOptions, compression_enabled: enabled, compression_options: x })} disabled={!videoPathIsValid(videoPath)} />
+            <CompressSegment
+              onChange={(x, enabled) => setvideoEditOptions({ ...videoEditOptions, compression_enabled: enabled, compression_options: x })}
+              disabled={!videoPathIsValid(videoEditOptions.input_video_path)}
+            />
             <ResizeSegment
               onChange={(x, enabled) => setvideoEditOptions({ ...videoEditOptions, resize_enabled: enabled, resize_options: x })}
-              disabled={!videoPathIsValid(videoPath)}
+              disabled={!videoPathIsValid(videoEditOptions.input_video_path)}
               videoInfo={videoInfo}
               videoNotCropped={videoEditOptions.crop_enabled === false}
             />
@@ -143,7 +156,7 @@ function App() {
           <CropPointsContext.Provider value={{ cropPointPositions, setCropPointPositions }}>
             <VideoView
               videoInfo={videoInfo}
-              videoPath={videoPath}
+              videoPath={videoEditOptions.input_video_path}
               onVideoPathClick={(): void => {
                 getVideoPath();
               }}
@@ -154,13 +167,13 @@ function App() {
           </CropPointsContext.Provider>
           <div style={{ width: "20%", display: "flex", flexDirection: "column", alignItems: "end" }}>
             <div>
-              <VideoPathSelection videoEditOptions={videoEditOptions} videoPath={videoPath} onClick={pickOutputPath} />
+              <VideoPathSelection videoEditOptions={videoEditOptions} videoPath={videoEditOptions.input_video_path} onClick={pickOutputPath} />
               <CropPointsContext.Provider value={{ cropPointPositions, setCropPointPositions }}>
                 <CropSegment
                   videoInfo={videoInfo}
                   onCropLinesEnabledChanged={(e) => setCropLinesEnabled(e)}
                   onSegmentEnabledChanged={(e) => setvideoEditOptions({ ...videoEditOptions, crop_enabled: e })}
-                  disabled={!videoPathIsValid(videoPath)}
+                  disabled={!videoPathIsValid(videoEditOptions.input_video_path)}
                   onReset={() => {
                     setResetCropPoints(resetCropPoints + 1);
                     setCropPointPositions({
@@ -183,10 +196,10 @@ function App() {
           </div>
         </div>
 
-        <div className={videoPathIsValid(videoPath) ? "" : "disabled"}>
+        <div className={videoPathIsValid(videoEditOptions.input_video_path) ? "" : "disabled"}>
           <CutSegment
             onChange={(x, enabled) => setvideoEditOptions({ ...videoEditOptions, cut_options_enabled: enabled, cut_options: x })}
-            videoPath={videoPath}
+            videoPath={videoEditOptions.input_video_path}
             videoDuration={videoInfo?.duration ?? "0:00:00.000"}
           />
         </div>

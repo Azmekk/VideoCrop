@@ -30,6 +30,7 @@ export interface ResizeOptions {
 }
 
 export interface VideoEditOptions {
+  input_video_path: string;
   output_video_path: string;
   cut_options_enabled: boolean;
   cut_options: VideoCutOptions;
@@ -46,4 +47,10 @@ export interface VideoCropLineDisplacements {
   right: number;
   top: number;
   bottom: number;
+}
+
+export interface VideoEditProgress {
+  progress: number;
+  working: boolean;
+  last_error: string | undefined;
 }

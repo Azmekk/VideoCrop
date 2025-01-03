@@ -1,7 +1,7 @@
 import type { VideoCropPoints } from "./Interfaces";
 
 export function videoPathIsValid(videoPath: string) {
-  return videoPath !== "" && videoPath !== "No file selected";
+  return videoPath !== "" && videoPath !== "No file selected" && videoPath !== "No path selected";
 }
 
 export function initiateVideoCropPoints(): VideoCropPoints {

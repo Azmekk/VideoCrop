@@ -77,6 +77,8 @@ video {
 	text-align: center;
 	color: #e9e6e6;
 	font-size: 25px;
+	position: absolute;
+	z-index: 5;
 }
 
 .disabled {
