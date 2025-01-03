@@ -1,9 +1,11 @@
-import { Checkbox, Input, Slider, type SliderSingleProps, Switch } from "antd";
+import { Checkbox, Input, Segmented, Slider, type SliderSingleProps, Switch } from "antd";
 import { useEffect, useState } from "react";
+import type { VideoCutOptions } from "../Logic/Interfaces";
 
 interface CutSegmentProps {
   videoPath: string;
   videoDuration: string;
+  onChange: (x: VideoCutOptions, enabled: boolean) => void;
 }
 
 interface VideoDuration {
@@ -39,7 +41,17 @@ function CutSegment(props: CutSegmentProps) {
 
     setStartingSecond(0);
     setEndingSecond(totalSecs);
-  }, [props]);
+  }, [props.videoDuration]);
+
+  useEffect(() => {
+    props.onChange(
+      {
+        startingTimeString: videoDurationToString(convertFromSeconds(startingSecond)),
+        endTimeString: videoDurationToString(convertFromSeconds(endingSecond)),
+      },
+      segmentEnabled,
+    );
+  }, [startingSecond, endingSecond, segmentEnabled]);
 
   const parseVideoDuration = (duration: string) => {
     const [hours, minutes, secs] = duration.split(":");

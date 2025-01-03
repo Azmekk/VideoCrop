@@ -10,6 +10,7 @@ interface CropSegmentProps {
   onSegmentEnabledChanged?: (enabled: boolean) => void;
   onCropLinesEnabledChanged?: (enabled: boolean) => void;
   onReset?: () => void;
+  onChange: (x: { width: number; height: number; startingXOffset: number; startingYOffset: number }) => void;
 }
 
 function CropSegment(props: CropSegmentProps) {
@@ -17,6 +18,10 @@ function CropSegment(props: CropSegmentProps) {
   const [cropLinesEnabled, setCropLinesEnabled] = useState(false);
 
   const { cropPointPositions, setCropPointPositions } = useContext(CropPointsContext);
+
+  useEffect(() => {
+    props.onChange(cropPointPositions);
+  }, [cropPointPositions]);
 
   return (
     <div className={props.disabled ? "disabled" : ""}>

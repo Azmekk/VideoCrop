@@ -1,27 +1,37 @@
 import { Button, Checkbox, Dropdown, InputNumber, Radio, Space, type MenuProps } from "antd";
 import { useEffect, useState } from "react";
 import { DownOutlined } from "@ant-design/icons";
+import type { VideoCompressionOptions, VideoEditOptions } from "../Logic/Interfaces";
 
 interface CompressSegmentProps {
   disabled?: boolean;
+  onChange: (x: VideoCompressionOptions, enabled: boolean) => void;
 }
 function CropSegment(props: CompressSegmentProps) {
-  const [codecDropdownTitle, setCodecDropdownTitle] = useState("Select a codec");
-  const [presetDropdownTitle, setPresetDropdownTitle] = useState("Select a preset");
+  const [codecDropdownTitle, setCodecDropdownTitle] = useState("Codec: H.264");
+  const [presetDropdownTitle, setPresetDropdownTitle] = useState("Medium (Default)");
 
   const [segmentEnabled, setSegmentEnabled] = useState(false);
-  const [selectedCodec, setSelectedCodec] = useState("");
-  const [selectedPreset, setSelectedPreset] = useState("");
+  const [selectedCodec, setSelectedCodec] = useState("libx264");
+  const [selectedPreset, setSelectedPreset] = useState("medium");
 
-  const [selectedCRF, setSelectedCRF] = useState(0);
-  const [selectedBitrate, setSelectedBitrate] = useState(0);
+  const [selectedCRF, setSelectedCRF] = useState(29);
+  const [selectedBitrate, setSelectedBitrate] = useState(5550);
 
   const [selectedQualityOption, setSelectedQualityOption] = useState(1);
 
   useEffect(() => {
-    setSelectedCRF(27);
-    setSelectedBitrate(5500);
-  }, []);
+    props.onChange(
+      {
+        codec: selectedCodec,
+        preset: selectedPreset,
+        crf: selectedCRF,
+        bitrate: selectedBitrate,
+        usingCrf: selectedQualityOption === 1,
+      },
+      segmentEnabled,
+    );
+  }, [selectedCodec, selectedPreset, selectedCRF, selectedBitrate, selectedQualityOption, segmentEnabled]);
 
   const codecDropdownItems: { key: string; label: string }[] = [
     {
@@ -159,7 +169,7 @@ function CropSegment(props: CompressSegmentProps) {
 
           <div>
             {selectedQualityOption === 1 ? (
-              <InputNumber type="number" placeholder="CRF" defaultValue={27} onChange={(e) => setSelectedCRF(e ?? 0)} />
+              <InputNumber type="number" placeholder="CRF" defaultValue={29} onChange={(e) => setSelectedCRF(e ?? 0)} />
             ) : (
               <InputNumber
                 addonAfter={"kbps"}

@@ -18,20 +18,22 @@ function App() {
   const [resetCropPoints, setResetCropPoints] = useState(0);
 
   const [cropPointPositions, setCropPointPositions] = useState<VideoCropPoints>(initiateVideoCropPoints());
+  const [cropLinesEnabled, setCropLinesEnabled] = useState(false);
 
   const [videoEditOptions, setvideoEditOptions] = useState<VideoEditOptions>({
     cutOptionsEnabled: false,
     cutOptions: undefined,
-    cropLinesEnabled: false,
-    cropPointsEnabled: false,
-    cropPoints: undefined,
+    cropEnabled: false,
+    cropOptions: undefined,
     compressionEnabled: false,
     compressionOptions: undefined,
     resizeEnabled: false,
     resizeOptions: undefined,
   });
 
-  const videoViewRef = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    console.log(videoEditOptions);
+  }, [videoEditOptions]);
 
   let video_selector_open = false;
   async function getVideoPath() {
@@ -86,8 +88,19 @@ function App() {
               Select new video
             </Button>
           </div>
-          <CompressSegment disabled={!videoPathIsValid(videoPath)} />
-          <ResizeSegment disabled={!videoPathIsValid(videoPath)} videoInfo={videoInfo} />
+          <CompressSegment
+            onChange={(x, enabled) =>
+              setvideoEditOptions({ ...videoEditOptions, compressionEnabled: enabled, compressionOptions: x })
+            }
+            disabled={!videoPathIsValid(videoPath)}
+          />
+          <ResizeSegment
+            onChange={(x, enabled) =>
+              setvideoEditOptions({ ...videoEditOptions, resizeEnabled: enabled, resizeOptions: x })
+            }
+            disabled={!videoPathIsValid(videoPath)}
+            videoInfo={videoInfo}
+          />
         </div>
         <CropPointsContext.Provider value={{ cropPointPositions, setCropPointPositions }}>
           <VideoView
@@ -96,9 +109,9 @@ function App() {
             onVideoPathClick={(): void => {
               getVideoPath();
             }}
-            resizerEnabled={videoEditOptions.cropLinesEnabled && videoEditOptions.cropPointsEnabled}
+            resizerEnabled={cropLinesEnabled && videoEditOptions.cropEnabled}
             reset={resetCropPoints}
-            cropEnabled={videoEditOptions.cropPointsEnabled}
+            cropEnabled={videoEditOptions.cropEnabled}
           />
         </CropPointsContext.Provider>
         <div style={{ width: "20%", display: "flex", flexDirection: "column", alignItems: "end" }}>
@@ -106,8 +119,8 @@ function App() {
             <CropPointsContext.Provider value={{ cropPointPositions, setCropPointPositions }}>
               <CropSegment
                 videoInfo={videoInfo}
-                onCropLinesEnabledChanged={(e) => setvideoEditOptions({ ...videoEditOptions, cropLinesEnabled: e })}
-                onSegmentEnabledChanged={(e) => setvideoEditOptions({ ...videoEditOptions, cropPointsEnabled: e })}
+                onCropLinesEnabledChanged={(e) => setCropLinesEnabled(e)}
+                onSegmentEnabledChanged={(e) => setvideoEditOptions({ ...videoEditOptions, cropEnabled: e })}
                 disabled={!videoPathIsValid(videoPath)}
                 onReset={() => {
                   setResetCropPoints(resetCropPoints + 1);
@@ -118,6 +131,7 @@ function App() {
                     height: videoInfo?.height ?? 0,
                   });
                 }}
+                onChange={(x) => setvideoEditOptions({ ...videoEditOptions, cropOptions: x })}
               />
             </CropPointsContext.Provider>
           </div>
@@ -125,7 +139,13 @@ function App() {
       </div>
 
       <div className={videoPathIsValid(videoPath) ? "" : "disabled"}>
-        <CutSegment videoPath={videoPath} videoDuration={videoInfo?.duration ?? "0:00:00.000"} />
+        <CutSegment
+          onChange={(x, enabled) =>
+            setvideoEditOptions({ ...videoEditOptions, cutOptionsEnabled: enabled, cutOptions: x })
+          }
+          videoPath={videoPath}
+          videoDuration={videoInfo?.duration ?? "0:00:00.000"}
+        />
       </div>
     </main>
   );

@@ -14,8 +14,8 @@ export interface VideoCompressionOptions {
 }
 
 export interface VideoCutOptions {
-  startingSecond: number;
-  endingSecond: number;
+  startingTimeString: string;
+  endTimeString: string;
 }
 
 export interface VideoInfo {
@@ -32,9 +32,8 @@ export interface ResizeOptions {
 export interface VideoEditOptions {
   cutOptionsEnabled: boolean;
   cutOptions: VideoCutOptions | undefined;
-  cropLinesEnabled: boolean;
-  cropPointsEnabled: boolean;
-  cropPoints: VideoCropPoints | undefined;
+  cropEnabled: boolean;
+  cropOptions: VideoCropPoints | undefined;
   compressionEnabled: boolean;
   compressionOptions: VideoCompressionOptions | undefined;
   resizeEnabled: boolean;

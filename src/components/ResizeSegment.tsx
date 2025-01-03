@@ -1,13 +1,30 @@
 import { Checkbox, Input, InputNumber } from "antd";
 import type { VideoCropPoints, VideoInfo } from "../Logic/Interfaces";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface ResizeSegmentProps {
   videoInfo: VideoInfo | undefined;
   disabled: boolean;
+
+  onChange: (x: { width: number; height: number }, enabled: boolean) => void;
 }
 function CropSegment(props: ResizeSegmentProps) {
   const [segmentEnabled, setSegmentEnabled] = useState(false);
+  const [videoDimensions, setVideoDimensions] = useState({
+    width: props.videoInfo?.width ?? 0,
+    height: props.videoInfo?.height ?? 0,
+  });
+
+  useEffect(() => {
+    props.onChange(videoDimensions, segmentEnabled);
+  }, [videoDimensions, segmentEnabled]);
+
+  useEffect(() => {
+    setVideoDimensions({
+      width: props.videoInfo?.width ?? 0,
+      height: props.videoInfo?.height ?? 0,
+    });
+  }, [props.videoInfo]);
 
   return (
     <div className={props.disabled ? "disabled" : ""}>
@@ -30,7 +47,14 @@ function CropSegment(props: ResizeSegmentProps) {
           }}
         >
           <div>Width:</div>
-          <InputNumber key={props.videoInfo?.width} defaultValue={props.videoInfo?.width} placeholder="1920" />
+          <InputNumber
+            key={props.videoInfo?.width}
+            defaultValue={props.videoInfo?.width}
+            placeholder="1920"
+            onChange={(value) => {
+              setVideoDimensions({ width: value ?? 0, height: videoDimensions.height });
+            }}
+          />
         </div>
         <div
           style={{
@@ -47,6 +71,9 @@ function CropSegment(props: ResizeSegmentProps) {
             defaultValue={props.videoInfo?.height}
             title="height"
             placeholder="1080"
+            onChange={(value) => {
+              setVideoDimensions({ width: videoDimensions.width, height: value ?? 0 });
+            }}
           />
         </div>
       </div>
