@@ -34,6 +34,8 @@ pub fn get_video_info(video_path: &str) -> Result<VideoInfo, String> {
 
 #[tauri::command]
 pub fn submit_video_for_editing(options: VideoEditOptions) {
+    ffmpeg_utils::clear_video_progress();
+
     thread::spawn(move || {
         ffmpeg_utils::process_video(options.clone());
     });
@@ -42,4 +44,9 @@ pub fn submit_video_for_editing(options: VideoEditOptions) {
 #[tauri::command]
 pub fn get_video_progress_info() -> VideoEditProgress {
     return ffmpeg_utils::get_video_progress_info();
+}
+
+#[tauri::command]
+pub fn download_ffmpeg_windows() {
+    ffmpeg_utils::download_and_add_ffmpeg_to_path_windows();
 }

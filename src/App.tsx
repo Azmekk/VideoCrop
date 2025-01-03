@@ -11,9 +11,10 @@ import ResizeSegment from "./components/ResizeSegment";
 import { initiateVideoCropPoints, videoPathIsValid } from "./Logic/Utils";
 import { CropPointsContext } from "./Logic/GlobalContexts";
 import VideoPathSelection from "./components/VideoPathSelection";
+import { platform } from "@tauri-apps/plugin-os";
 
 function App() {
-  const [ffmpegExsts, setFfmpegExsts] = useState(true);
+  const [ffmpegExsts, setFfmpegExsts] = useState(false);
   const [interactingWithPaths, setInteractingWithPaths] = useState(false);
   const [videoInfo, setVideoInfo] = useState<VideoInfo | undefined>(undefined);
   const [resetCropPoints, setResetCropPoints] = useState(0);
@@ -23,6 +24,9 @@ function App() {
 
   const [cropPointPositions, setCropPointPositions] = useState<VideoCropPoints>(initiateVideoCropPoints());
   const [cropLinesEnabled, setCropLinesEnabled] = useState(false);
+
+  const [currentOs, setCurrentOs] = useState(platform());
+  const [downloadingDependencies, setDownloadingDependencies] = useState(false);
 
   const [videoEditOptions, setvideoEditOptions] = useState<VideoEditOptions>({
     input_video_path: "",
@@ -123,7 +127,21 @@ function App() {
   }
 
   async function checkFfmpegAndFfprobe() {
-    setFfmpegExsts(await invoke("check_ffmpeg_and_ffprobe"));
+    //setFfmpegExsts(await invoke("check_ffmpeg_and_ffprobe"));
+  }
+
+  async function downloadDependencies() {
+    try {
+      setDownloadingDependencies(true);
+      if (currentOs !== "windows") {
+        return;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      await invoke("download_ffmpeg_windows");
+    } finally {
+      setDownloadingDependencies(false);
+    }
   }
 
   useEffect(() => {
@@ -132,7 +150,16 @@ function App() {
 
   return (
     <div>
-      {!ffmpegExsts && <div className="app-disabled">FFmpeg and FFprobe were not located. Please download them and add them to path.</div>}
+      {!ffmpegExsts && (
+        <div className="app-disabled">
+          FFmpeg and FFprobe were not located. Please download them and add them to path.
+          {currentOs === "windows" && (
+            <Button loading={downloadingDependencies} onClick={downloadDependencies} size="large" type="primary">
+              Download and add to path automatically
+            </Button>
+          )}
+        </div>
+      )}
       {interactingWithPaths && <div className="app-disabled">Please select path or cancel selection before continuing.</div>}
       <main className={`app-container ${processingVideo && "disabled"} `}>
         <div className="general-video-options-container">

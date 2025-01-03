@@ -1,6 +1,12 @@
 use serde::{Deserialize, Serialize};
-use std::{io::BufRead, process::Command, sync::Mutex};
+use std::env;
+use std::fs;
+use std::fs::File;
+use std::{io::BufRead, path::PathBuf, process::Command, sync::Mutex};
 use uuid::Uuid;
+use winreg::enums::HKEY_CURRENT_USER;
+use winreg::enums::KEY_WRITE;
+use winreg::RegKey;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct VideoInfo {
@@ -278,12 +284,15 @@ pub fn process_video(options: VideoEditOptions) {
             file_stem.to_string_lossy(),
             input_path.extension().unwrap().to_str().unwrap()
         );
-        let new_output_path = output_path.join(new_file_name);
-        ffmpeg_args.push(new_output_path.to_str().unwrap().to_string());
+
+        let new_output_path = get_unique_filename(&output_path.join(new_file_name));
+        ffmpeg_args.push(new_output_path);
     } else {
         let random_guid = Uuid::new_v4().to_string();
-        let random_output_path = output_path.join(format!("VideoCrop_{}.mp4", random_guid));
-        ffmpeg_args.push(random_output_path.to_str().unwrap().to_string());
+        let random_output_path =
+            get_unique_filename(&output_path.join(format!("VideoCrop_{}.mp4", random_guid)));
+
+        ffmpeg_args.push(random_output_path);
     }
 
     let command_str = format!(
@@ -350,9 +359,110 @@ pub fn process_video(options: VideoEditOptions) {
         progress.last_error = None;
     }
     drop(progress);
+
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        clear_video_progress();
+    });
 }
 
 pub fn get_video_progress_info() -> VideoEditProgress {
     let progress = VIDEO_EDIT_PROGRESS.lock().unwrap();
     progress.clone()
+}
+
+fn get_unique_filename(path: &PathBuf) -> String {
+    let mut unique_path = path.to_path_buf();
+    let mut counter = 1;
+
+    while unique_path.exists() {
+        let file_stem = path.file_stem().unwrap().to_string_lossy();
+        let extension = path.extension().unwrap_or_default().to_string_lossy();
+        let new_file_name = format!("{}_{}.{}", file_stem, counter, extension);
+        unique_path = path.with_file_name(new_file_name);
+        counter += 1;
+    }
+
+    unique_path.to_string_lossy().to_string()
+}
+
+pub fn clear_video_progress() {
+    let mut progress = VIDEO_EDIT_PROGRESS.lock().unwrap();
+    progress.progress = 0.0;
+    progress.working = false;
+    progress.last_error = None;
+    drop(progress);
+}
+
+pub fn download_and_add_ffmpeg_to_path_windows() {
+    if !cfg!(target_os = "windows") {
+        panic!("This function is only supported on Windows.");
+    }
+
+    let user_path_var = env::var("USERPROFILE").unwrap();
+    let temp_path_var = env::var("TEMP").unwrap();
+
+    let user_path = std::path::Path::new(&user_path_var);
+    let temp_path = std::path::Path::new(&temp_path_var);
+
+    let video_crop_ffmpeg_path = user_path.join("VideoCrop_FFmpeg");
+
+    if !video_crop_ffmpeg_path.exists() {
+        fs::create_dir(&video_crop_ffmpeg_path).unwrap();
+    }
+
+    let download_url = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip";
+    let ffmpeg_zip_download_path = &temp_path.join(format!(
+        "ffmpeg-master-latest-win64-gpl_VideoCrop_{}.zip",
+        Uuid::new_v4().to_string()
+    ));
+    let extract_path = &video_crop_ffmpeg_path.join("ffmpeg-master-latest-win64-gpl_VideoCrop");
+
+    if extract_path.exists() {
+        fs::remove_dir_all(extract_path).unwrap();
+    }
+
+    let download_result = reqwest::blocking::get(download_url);
+    match download_result {
+        Ok(mut response) => {
+            let mut file = fs::File::create(ffmpeg_zip_download_path).unwrap();
+            response.copy_to(&mut file).unwrap();
+        }
+        Err(e) => {
+            panic!("Failed to download ffmpeg: {}", e);
+        }
+    }
+
+    println!("Extracting ffmpeg to: {:?}", extract_path);
+
+    let zip_cursor = File::open(&ffmpeg_zip_download_path).unwrap();
+    zip_extract::extract(zip_cursor, &extract_path, true).unwrap();
+
+    let ffmpeg_bin_path = extract_path
+        .join("ffmpeg-master-latest-win64-gpl")
+        .join("bin");
+
+    add_ffmpeg_to_path_if_not_added(ffmpeg_bin_path.to_str().unwrap());
+
+    fs::remove_file(ffmpeg_zip_download_path).unwrap();
+}
+
+pub fn add_ffmpeg_to_path_if_not_added(new_path: &str) {
+    if !cfg!(target_os = "windows") {
+        panic!("This function is only supported on Windows.");
+    }
+
+    let reg_key = RegKey::predef(HKEY_CURRENT_USER)
+        .open_subkey_with_flags("Environment", KEY_WRITE)
+        .unwrap();
+
+    let user_path: String = reg_key.get_value("Path").unwrap_or_else(|_| String::new());
+
+    if !user_path.contains(new_path) {
+        let updated_path = format!("{};{}", user_path, new_path);
+        reg_key.set_value("Path", &updated_path).unwrap();
+        println!("User PATH updated.");
+    } else {
+        println!("Path already exists in the user PATH.");
+    }
 }

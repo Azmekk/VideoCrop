@@ -78,6 +78,8 @@ video {
 	color: #e9e6e6;
 	font-size: 25px;
 	position: absolute;
+	flex-direction: column;
+	gap: 20px;
 	z-index: 5;
 }
 
