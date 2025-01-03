@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 interface ResizeSegmentProps {
   videoInfo: VideoInfo | undefined;
   disabled: boolean;
-
+  videoNotCropped: boolean;
   onChange: (x: { width: number; height: number }, enabled: boolean) => void;
 }
 function CropSegment(props: ResizeSegmentProps) {
@@ -16,8 +16,8 @@ function CropSegment(props: ResizeSegmentProps) {
   });
 
   useEffect(() => {
-    props.onChange(videoDimensions, segmentEnabled);
-  }, [videoDimensions, segmentEnabled]);
+    props.onChange(videoDimensions, segmentEnabled && props.videoNotCropped);
+  }, [videoDimensions, segmentEnabled, props.videoNotCropped]);
 
   useEffect(() => {
     setVideoDimensions({
@@ -27,15 +27,19 @@ function CropSegment(props: ResizeSegmentProps) {
   }, [props.videoInfo]);
 
   return (
-    <div className={props.disabled ? "disabled" : ""}>
-      <div style={{ marginBottom: "25px", display: "flex", gap: "10px" }}>
+    <div className={props.disabled || !props.videoNotCropped ? "disabled" : ""}>
+      <div style={{ display: "flex", gap: "10px" }}>
         <div style={{ fontSize: "1.2em", fontWeight: "bold" }}>Resize</div>
         <Checkbox defaultChecked={false} onChange={(e) => setSegmentEnabled(e.target.checked)} />
       </div>
 
+      {!props.videoNotCropped && segmentEnabled && (
+        <div style={{ color: "red", fontSize: "0.8em" }}>Cannot resize if crop is enabled.</div>
+      )}
+
       <div
         className={segmentEnabled ? "" : "disabled"}
-        style={{ display: "flex", gap: "5px", flexDirection: "column" }}
+        style={{ display: "flex", gap: "5px", flexDirection: "column", marginTop: "25px" }}
       >
         <div
           style={{

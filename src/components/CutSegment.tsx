@@ -46,8 +46,8 @@ function CutSegment(props: CutSegmentProps) {
   useEffect(() => {
     props.onChange(
       {
-        startingTimeString: videoDurationToString(convertFromSeconds(startingSecond)),
-        endTimeString: videoDurationToString(convertFromSeconds(endingSecond)),
+        starting_time_string: videoDurationToString(convertFromSeconds(startingSecond)),
+        end_time_string: videoDurationToString(convertFromSeconds(endingSecond)),
       },
       segmentEnabled,
     );
@@ -132,8 +132,7 @@ function CutSegment(props: CutSegmentProps) {
     }
   };
 
-  const formatter: NonNullable<SliderSingleProps["tooltip"]>["formatter"] = (value) =>
-    `${videoDurationToString(convertFromSeconds(Number(value)))}`;
+  const formatter: NonNullable<SliderSingleProps["tooltip"]>["formatter"] = (value) => `${videoDurationToString(convertFromSeconds(Number(value)))}`;
 
   return (
     <div style={{ padding: "20px" }}>
@@ -143,14 +142,7 @@ function CutSegment(props: CutSegmentProps) {
       </div>
 
       <div className={segmentEnabled ? "" : "disabled"}>
-        <Slider
-          tooltip={{ formatter, placement: "left" }}
-          range
-          max={totalSeconds}
-          value={[startingSecond, endingSecond]}
-          step={0.05}
-          onChange={handleSliderInput}
-        />
+        <Slider tooltip={{ formatter, placement: "left" }} range max={totalSeconds} value={[startingSecond, endingSecond]} step={0.05} onChange={handleSliderInput} />
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <div>
             <label htmlFor="startTimeInput">Start time:</label>

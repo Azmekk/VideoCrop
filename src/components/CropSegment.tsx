@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { Button, Checkbox, InputNumber } from "antd";
 import { cropInputManuallyChangedInfo, CropPointsContext } from "../Logic/GlobalContexts";
 import { LockOutlined, UnlockOutlined } from "@ant-design/icons";
-import type { VideoInfo } from "../Logic/Interfaces";
+import type { VideoCropPoints, VideoInfo } from "../Logic/Interfaces";
 
 interface CropSegmentProps {
   videoInfo: VideoInfo | undefined;
@@ -10,7 +10,7 @@ interface CropSegmentProps {
   onSegmentEnabledChanged?: (enabled: boolean) => void;
   onCropLinesEnabledChanged?: (enabled: boolean) => void;
   onReset?: () => void;
-  onChange: (x: { width: number; height: number; startingXOffset: number; startingYOffset: number }) => void;
+  onChange: (x: VideoCropPoints) => void;
 }
 
 function CropSegment(props: CropSegmentProps) {
@@ -36,10 +36,7 @@ function CropSegment(props: CropSegmentProps) {
         <div style={{ fontSize: "1.2em", fontWeight: "bold" }}>Crop</div>
       </div>
 
-      <div
-        className={segmentEnabled ? "" : "disabled"}
-        style={{ display: "flex", gap: "5px", alignItems: "center", flexDirection: "column" }}
-      >
+      <div className={segmentEnabled ? "" : "disabled"} style={{ display: "flex", gap: "5px", alignItems: "center", flexDirection: "column" }}>
         <div
           style={{
             display: "flex",
@@ -53,11 +50,11 @@ function CropSegment(props: CropSegmentProps) {
           <div style={{ marginRight: "5px" }}>Start X:</div>
           <InputNumber
             onChange={(e) => {
-              setCropPointPositions({ ...cropPointPositions, startingXOffset: e ?? 0 });
+              setCropPointPositions({ ...cropPointPositions, starting_x_offset: e ?? 0 });
               cropInputManuallyChangedInfo.manuallyChanged++;
             }}
             style={{ maxWidth: "65px" }}
-            value={cropPointPositions.startingXOffset}
+            value={cropPointPositions.starting_x_offset}
             max={(props.videoInfo?.width ?? 0) - cropPointPositions.width}
             min={0}
           />
@@ -76,11 +73,11 @@ function CropSegment(props: CropSegmentProps) {
           <div style={{ marginRight: "5px" }}>Start Y:</div>
           <InputNumber
             onChange={(e) => {
-              setCropPointPositions({ ...cropPointPositions, startingYOffset: e ?? 0 });
+              setCropPointPositions({ ...cropPointPositions, starting_y_offset: e ?? 0 });
               cropInputManuallyChangedInfo.manuallyChanged++;
             }}
             style={{ maxWidth: "65px" }}
-            value={cropPointPositions.startingYOffset}
+            value={cropPointPositions.starting_y_offset}
             max={(props.videoInfo?.height ?? 0) - cropPointPositions.height}
             min={0}
           />
@@ -104,8 +101,8 @@ function CropSegment(props: CropSegmentProps) {
             }}
             style={{ maxWidth: "65px" }}
             value={cropPointPositions.width}
-            min={50}
-            max={(props.videoInfo?.width ?? 0) - cropPointPositions.startingXOffset}
+            min={segmentEnabled ? 50 : 0}
+            max={(props.videoInfo?.width ?? 0) - cropPointPositions.starting_x_offset}
           />
         </div>
 
@@ -127,8 +124,8 @@ function CropSegment(props: CropSegmentProps) {
             }}
             style={{ maxWidth: "65px" }}
             value={cropPointPositions.height}
-            min={50}
-            max={(props.videoInfo?.height ?? 0) - cropPointPositions.startingYOffset}
+            min={segmentEnabled ? 50 : 0}
+            max={(props.videoInfo?.height ?? 0) - cropPointPositions.starting_y_offset}
           />
         </div>
 

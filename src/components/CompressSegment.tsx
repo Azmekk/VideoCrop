@@ -27,7 +27,7 @@ function CropSegment(props: CompressSegmentProps) {
         preset: selectedPreset,
         crf: selectedCRF,
         bitrate: selectedBitrate,
-        usingCrf: selectedQualityOption === 1,
+        using_crf: selectedQualityOption === 1,
       },
       segmentEnabled,
     );
@@ -105,9 +105,7 @@ function CropSegment(props: CompressSegmentProps) {
 
   useEffect(() => {
     const defaultPreset = getDefaultPreset(selectedCodec);
-    setPresetDropdownTitle(
-      `Preset: ${determinePreset().find((x) => x.key === defaultPreset)?.label}` || "Select a preset",
-    );
+    setPresetDropdownTitle(`Preset: ${determinePreset().find((x) => x.key === defaultPreset)?.label}` || "Select a preset");
     setSelectedPreset(defaultPreset);
   }, [selectedCodec]);
 
@@ -136,10 +134,7 @@ function CropSegment(props: CompressSegmentProps) {
           <Checkbox defaultChecked={false} onChange={(e) => setSegmentEnabled(e.target.checked)} />
         </div>
 
-        <div
-          className={segmentEnabled ? "" : "disabled"}
-          style={{ gap: "10px", display: "flex", flexDirection: "column" }}
-        >
+        <div className={segmentEnabled ? "" : "disabled"} style={{ gap: "10px", display: "flex", flexDirection: "column" }}>
           <div>
             <Dropdown trigger={["click"]} menu={codecDropdownProps}>
               <Button type="primary">
@@ -169,13 +164,27 @@ function CropSegment(props: CompressSegmentProps) {
 
           <div>
             {selectedQualityOption === 1 ? (
-              <InputNumber type="number" placeholder="CRF" defaultValue={29} onChange={(e) => setSelectedCRF(e ?? 0)} />
+              <InputNumber
+                style={{ maxWidth: "100px" }}
+                min={0}
+                max={51}
+                addonAfter={"crf"}
+                type="number"
+                placeholder="CRF"
+                defaultValue={29}
+                value={selectedCRF}
+                onChange={(e) => setSelectedCRF(e ?? 0)}
+              />
             ) : (
               <InputNumber
+                style={{ maxWidth: "200px" }}
+                min={100}
+                max={250000}
                 addonAfter={"kbps"}
                 type="number"
                 placeholder="Bitrate"
                 defaultValue={5500}
+                value={selectedBitrate}
                 onChange={(e) => setSelectedBitrate(e ?? 0)}
               />
             )}

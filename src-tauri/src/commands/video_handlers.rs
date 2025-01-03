@@ -11,3 +11,15 @@ pub fn open_video() -> String {
         None => String::from("No file selected"),
     }
 }
+
+#[tauri::command]
+pub fn pick_output_path() -> String {
+    let file = FileDialog::new()
+        .set_title("Select Output Path")
+        .pick_folder();
+
+    match file {
+        Some(path) => path.to_string_lossy().to_string(),
+        None => String::from("No path selected"),
+    }
+}

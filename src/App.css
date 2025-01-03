@@ -67,7 +67,7 @@ video {
 	border: 1px dashed rgba(136, 136, 136, 0.5);
 }
 
-.ffmpeg-not-downloaded {
+.app-disabled {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -75,7 +75,7 @@ video {
 	width: 100vw;
 	background-color: #3d3d3d;
 	text-align: center;
-	color: #c2bfbf;
+	color: #e9e6e6;
 	font-size: 25px;
 }
 

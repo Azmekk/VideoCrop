@@ -6,8 +6,8 @@ export function videoPathIsValid(videoPath: string) {
 
 export function initiateVideoCropPoints(): VideoCropPoints {
   return {
-    startingXOffset: 0,
-    startingYOffset: 0,
+    starting_x_offset: 0,
+    starting_y_offset: 0,
     width: 0,
     height: 0,
   };

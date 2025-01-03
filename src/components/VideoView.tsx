@@ -1,12 +1,7 @@
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { useContext, useEffect, useRef, useState } from "react";
 import { videoPathIsValid } from "../Logic/Utils";
-import {
-  canvasLineDisplacementRef,
-  clickedLineInfo,
-  cropInputManuallyChangedInfo,
-  CropPointsContext,
-} from "../Logic/GlobalContexts";
+import { canvasLineDisplacementRef, clickedLineInfo, cropInputManuallyChangedInfo, CropPointsContext } from "../Logic/GlobalContexts";
 import type { VideoCropPoints, VideoInfo } from "../Logic/Interfaces";
 import { HoveringOver } from "../Logic/Enums";
 import { determineIfHoveringOverLine, updateCanvasLineDisplacement } from "../Logic/VideoCropLinesLogic";
@@ -44,21 +39,10 @@ function VideoView(props: VideoViewProps) {
     if (!clickedLineInfo.clickedLine && videoRef.current) {
       const { widthDiff, heightDiff } = getCanvasToVideoSizeDifference();
 
-      canvasLineDisplacementRef.left = Math.round(cropPointPositions.startingXOffset * widthDiff);
-      canvasLineDisplacementRef.top = Math.round(cropPointPositions.startingYOffset * heightDiff);
-      canvasLineDisplacementRef.right = Math.max(
-        0,
-        Math.round(
-          (videoRef.current.videoWidth - (cropPointPositions.startingXOffset + cropPointPositions.width)) * widthDiff,
-        ),
-      );
-      canvasLineDisplacementRef.bottom = Math.max(
-        0,
-        Math.round(
-          (videoRef.current.videoHeight - (cropPointPositions.startingYOffset + cropPointPositions.height)) *
-            heightDiff,
-        ),
-      );
+      canvasLineDisplacementRef.left = Math.round(cropPointPositions.starting_x_offset * widthDiff);
+      canvasLineDisplacementRef.top = Math.round(cropPointPositions.starting_y_offset * heightDiff);
+      canvasLineDisplacementRef.right = Math.max(0, Math.round((videoRef.current.videoWidth - (cropPointPositions.starting_x_offset + cropPointPositions.width)) * widthDiff));
+      canvasLineDisplacementRef.bottom = Math.max(0, Math.round((videoRef.current.videoHeight - (cropPointPositions.starting_y_offset + cropPointPositions.height)) * heightDiff));
       redrawCanvas();
     }
   }, [cropInputManuallyChangedInfo.manuallyChanged]);
@@ -68,20 +52,10 @@ function VideoView(props: VideoViewProps) {
       const { widthDiff, heightDiff } = getCanvasToVideoSizeDifference();
 
       const newCropPointPositions: VideoCropPoints = {
-        startingXOffset: Math.round(canvasLineDisplacementRef.left / widthDiff / 2) * 2,
-        startingYOffset: Math.round(canvasLineDisplacementRef.top / heightDiff / 2) * 2,
-        width:
-          Math.round(
-            (canvasRef.current.width - (canvasLineDisplacementRef.right + canvasLineDisplacementRef.left)) /
-              widthDiff /
-              2,
-          ) * 2,
-        height:
-          Math.round(
-            (canvasRef.current.height - (canvasLineDisplacementRef.bottom + canvasLineDisplacementRef.top)) /
-              heightDiff /
-              2,
-          ) * 2,
+        starting_x_offset: Math.floor(canvasLineDisplacementRef.left / widthDiff / 2) * 2,
+        starting_y_offset: Math.floor(canvasLineDisplacementRef.top / heightDiff / 2) * 2,
+        width: Math.round((canvasRef.current.width - (canvasLineDisplacementRef.right + canvasLineDisplacementRef.left)) / widthDiff / 2) * 2,
+        height: Math.round((canvasRef.current.height - (canvasLineDisplacementRef.bottom + canvasLineDisplacementRef.top)) / heightDiff / 2) * 2,
       };
 
       setCropPointPositions(newCropPointPositions);
