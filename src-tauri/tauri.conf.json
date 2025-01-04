@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "videocrop",
+  "productName": "VideoCrop",
   "version": "1.0.0",
   "identifier": "net.martinyordanov.videocrop",
   "build": {
