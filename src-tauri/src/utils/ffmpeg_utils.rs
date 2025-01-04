@@ -404,7 +404,6 @@ pub fn extract_audio(mut options: VideoEditOptions) {
     let mut ffmpeg_args = vec!["-i".to_string(), options.input_video_path.clone()];
 
     let mut video_length: f64 = get_video_length_in_seconds(&options.input_video_path).unwrap();
-    let video_length_in_us = (video_length * 1_000_000.0) as u64;
 
     if options.cut_options_enabled {
         let cut_options = &options.cut_options;
@@ -418,6 +417,8 @@ pub fn extract_audio(mut options: VideoEditOptions) {
             convert_time_string_to_seconds(&cut_options.end_time_string).unwrap_or(video_length);
         video_length = end_time_seconds - start_time_seconds;
     }
+
+    let video_length_in_us = (video_length * 1_000_000.0) as u64;
 
     ffmpeg_args.extend_from_slice(&[
         "-c:a".to_string(),

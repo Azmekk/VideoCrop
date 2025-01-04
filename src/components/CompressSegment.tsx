@@ -1,4 +1,4 @@
-import { Button, Checkbox, Dropdown, InputNumber, Radio, Space, Switch, type MenuProps } from "antd";
+import { Button, Checkbox, Dropdown, InputNumber, Radio, Space, type MenuProps } from "antd";
 import { useEffect, useState } from "react";
 import { DownOutlined } from "@ant-design/icons";
 import type { VideoCompressionOptions } from "../Logic/Interfaces";
@@ -98,14 +98,6 @@ function CropSegment(props: CompressSegmentProps) {
       key: "libmp3lame",
       label: "MP3",
     },
-  ];
-
-  const audioBitrateOptions: { key: string; label: string }[] = [
-    { key: "64k", label: "64 kbps" },
-    { key: "128k", label: "128 kbps" },
-    { key: "192k", label: "192 kbps" },
-    { key: "256k", label: "256 kbps" },
-    { key: "320k", label: "320 kbps" },
   ];
 
   const determinePreset = () => {
