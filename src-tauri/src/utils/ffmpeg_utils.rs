@@ -5,6 +5,8 @@ use std::fs::File;
 use std::{io::BufRead, path::PathBuf, process::Command, sync::Mutex};
 use uuid::Uuid;
 use winreg::enums::HKEY_CURRENT_USER;
+use winreg::enums::KEY_ALL_ACCESS;
+use winreg::enums::KEY_READ;
 use winreg::enums::KEY_WRITE;
 use winreg::RegKey;
 
@@ -438,9 +440,7 @@ pub fn download_and_add_ffmpeg_to_path_windows() {
     let zip_cursor = File::open(&ffmpeg_zip_download_path).unwrap();
     zip_extract::extract(zip_cursor, &extract_path, true).unwrap();
 
-    let ffmpeg_bin_path = extract_path
-        .join("ffmpeg-master-latest-win64-gpl")
-        .join("bin");
+    let ffmpeg_bin_path = extract_path.join("bin");
 
     add_ffmpeg_to_path_if_not_added(ffmpeg_bin_path.to_str().unwrap());
 
@@ -453,15 +453,15 @@ pub fn add_ffmpeg_to_path_if_not_added(new_path: &str) {
     }
 
     let reg_key = RegKey::predef(HKEY_CURRENT_USER)
-        .open_subkey_with_flags("Environment", KEY_WRITE)
+        .open_subkey_with_flags("Environment", KEY_ALL_ACCESS)
         .unwrap();
 
-    let user_path: String = reg_key.get_value("Path").unwrap_or_else(|_| String::new());
+    let user_path: String = reg_key.get_value("Path").unwrap();
 
     if !user_path.contains(new_path) {
         let updated_path = format!("{};{}", user_path, new_path);
         reg_key.set_value("Path", &updated_path).unwrap();
-        println!("User PATH updated.");
+        println!("Updating user path to: {}", updated_path);
     } else {
         println!("Path already exists in the user PATH.");
     }
