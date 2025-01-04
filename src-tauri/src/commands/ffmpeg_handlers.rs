@@ -1,24 +1,30 @@
-use std::{process::Command, thread};
+use std::{os::windows::process::CommandExt, process::Command, thread};
 
 use crate::utils::ffmpeg_utils::{
     self, DependenciesSetUpInfo, VideoEditOptions, VideoEditProgress, VideoInfo,
 };
 
+pub const CREATE_NO_WINDOW: u32 = 0x08000000;
+
 fn is_command_available(command: &str) -> bool {
-    match Command::new(command).arg("-version").output() {
+    match Command::new(command)
+        .creation_flags(CREATE_NO_WINDOW)
+        .arg("-version")
+        .output()
+    {
         Ok(output) => {
             if output.status.success() {
                 true
             } else {
-                println!(
-                    "Command was not successful: {}. It returned with error: {:?}",
-                    command, output.stderr
-                );
+                //println(
+                //"Command was not successful: {}. It returned with error: {:?}",
+                //command, output.stderr
+                //);
                 false
             }
         }
         Err(_) => {
-            println!("Error checking for command: {}", command);
+            //println("Error checking for command: {}", command);
             false
         }
     }

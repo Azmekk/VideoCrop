@@ -2,8 +2,11 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::fs::File;
+use std::os::windows::process::CommandExt;
 use std::{io::BufRead, path::PathBuf, process::Command, sync::Mutex};
 use uuid::Uuid;
+
+pub const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct VideoInfo {
@@ -121,10 +124,11 @@ pub fn get_video_info(video_path: &str) -> Result<VideoInfo, String> {
             .collect::<Vec<String>>()
             .join(" ")
     );
-    println!("Executing command: {}", command_str);
+    //println("Executing command: {}", command_str);
 
     let output = Command::new("ffprobe")
         .args(args)
+        .creation_flags(CREATE_NO_WINDOW)
         .output()
         .map_err(|e| format!("Failed to execute ffprobe for width and height: {}", e))?;
 
@@ -155,6 +159,7 @@ pub fn get_video_info(video_path: &str) -> Result<VideoInfo, String> {
         .map_err(|e| format!("Failed to parse height: {}", e))?;
 
     let duration_output = Command::new("ffprobe")
+        .creation_flags(CREATE_NO_WINDOW)
         .args([
             "-v",
             "error",
@@ -189,6 +194,7 @@ pub fn get_video_info(video_path: &str) -> Result<VideoInfo, String> {
 
 pub fn get_video_length_in_seconds(video_path: &str) -> Result<f64, String> {
     let duration_output = Command::new("ffprobe")
+        .creation_flags(CREATE_NO_WINDOW)
         .args([
             "-v",
             "error",
@@ -312,12 +318,13 @@ pub fn process_video(options: VideoEditOptions) {
             .collect::<Vec<String>>()
             .join(" ")
     );
-    println!("Executing command: {}", command_str);
+    //println("Executing command: {}", command_str);
 
     let mut child = Command::new("ffmpeg")
         .args(&ffmpeg_args)
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
+        .creation_flags(CREATE_NO_WINDOW)
         .spawn()
         .expect("Failed to start ffmpeg process");
 
@@ -461,7 +468,7 @@ pub fn download_and_add_ffmpeg_to_path_windows() {
         }
     }
 
-    println!("Extracting ffmpeg to: {:?}", extract_path);
+    //println("Extracting ffmpeg to: {:?}", extract_path);
 
     update_ffmpeg_download_status("Extracting...", false);
     let zip_cursor = File::open(&ffmpeg_zip_download_path).unwrap();
@@ -490,9 +497,9 @@ pub fn download_and_add_ffmpeg_to_path_windows() {
 //    if !user_path.contains(new_path) {
 //        let updated_path = format!("{};{}", user_path, new_path);
 //        reg_key.set_value("Path", &updated_path).unwrap();
-//        println!("Updating user path to: {}", updated_path);
+//        //println("Updating user path to: {}", updated_path);
 //    } else {
-//        println!("Path already exists in the user PATH.");
+//        //println("Path already exists in the user PATH.");
 //    }
 //}
 
@@ -510,9 +517,9 @@ pub fn add_ffmpeg_to_app_env(new_path: &str) {
     if !current_path.contains(new_path) {
         let updated_path = format!("{}{}", current_path, new_path);
         env::set_var("PATH", updated_path.clone());
-        println!("Updating app path to: {}", updated_path);
+        //println("Updating app path to: {}", updated_path);
     } else {
-        println!("Path already exists in the app PATH.");
+        //println("Path already exists in the app PATH.");
     }
 }
 
@@ -526,9 +533,9 @@ pub fn add_ffmpeg_to_app_env_if_it_exists() -> bool {
     let extract_path = &video_crop_ffmpeg_path.join("ffmpeg-master-latest-win64-gpl_VideoCrop");
 
     let ffmpeg_bin_path = extract_path.join("bin");
-    println!("Checking for dependencies at: {:?}", ffmpeg_bin_path);
+    //println("Checking for dependencies at: {:?}", ffmpeg_bin_path);
     if ffmpeg_bin_path.exists() {
-        println!("Found dependencies at: {:?}", ffmpeg_bin_path);
+        //println("Found dependencies at: {:?}", ffmpeg_bin_path);
         add_ffmpeg_to_app_env(ffmpeg_bin_path.to_str().unwrap());
         return true;
     }
