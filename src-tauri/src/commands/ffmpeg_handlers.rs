@@ -16,15 +16,15 @@ fn is_command_available(command: &str) -> bool {
             if output.status.success() {
                 true
             } else {
-                //println(
-                //"Command was not successful: {}. It returned with error: {:?}",
-                //command, output.stderr
-                //);
+                println!(
+                    "Command was not successful: {}. It returned with error: {:?}",
+                    command, output.stderr,
+                );
                 false
             }
         }
         Err(_) => {
-            //println("Error checking for command: {}", command);
+            println!("Error checking for command: {}", command);
             false
         }
     }

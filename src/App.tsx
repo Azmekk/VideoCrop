@@ -230,9 +230,12 @@ function App() {
               </CropPointsContext.Provider>
             </div>
 
-            <div style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "end", justifyContent: "flex-end", height: "100%" }}>
-              <Button loading={processingVideo} onClick={submitVideo} style={{ width: "80%" }} size="large" type="primary" disabled={videoEditOptions.output_video_path === ""}>
+            <div style={{ width: "100%", display: "flex", gap: "10px", alignItems: "end", justifyContent: "center", height: "100%" }}>
+              <Button loading={processingVideo} onClick={submitVideo} size="large" type="primary" disabled={videoEditOptions.output_video_path === ""}>
                 Submit
+              </Button>
+              <Button type="primary" disabled={videoEditOptions.output_video_path === ""} size="large">
+                Extract audio
               </Button>
             </div>
           </div>

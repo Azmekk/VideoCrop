@@ -1,4 +1,4 @@
-import { Button, Checkbox, Dropdown, InputNumber, Radio, Space, type MenuProps } from "antd";
+import { Button, Checkbox, Dropdown, InputNumber, Radio, Space, Switch, type MenuProps } from "antd";
 import { useEffect, useState } from "react";
 import { DownOutlined } from "@ant-design/icons";
 import type { VideoCompressionOptions } from "../Logic/Interfaces";
@@ -10,13 +10,16 @@ interface CompressSegmentProps {
 function CropSegment(props: CompressSegmentProps) {
   const [codecDropdownTitle, setCodecDropdownTitle] = useState("Codec: H.264");
   const [presetDropdownTitle, setPresetDropdownTitle] = useState("Medium (Default)");
+  const [audioDropdownTitle, setAudioDropdownTitle] = useState("Audio: Copy");
 
   const [segmentEnabled, setSegmentEnabled] = useState(false);
   const [selectedCodec, setSelectedCodec] = useState("libx264");
   const [selectedPreset, setSelectedPreset] = useState("medium");
+  const [selectedAudioCodec, setSelectedAudioCodec] = useState("copy");
 
   const [selectedCRF, setSelectedCRF] = useState(29);
   const [selectedBitrate, setSelectedBitrate] = useState(5550);
+  const [selectedAudioBitrate, setSelectedAudioBitrate] = useState(128);
 
   const [selectedQualityOption, setSelectedQualityOption] = useState(1);
 
@@ -76,6 +79,33 @@ function CropSegment(props: CompressSegmentProps) {
     { key: "12", label: "12 (Slowest)" },
   ];
 
+  const audioCodecDropdownItems: { key: string; label: string }[] = [
+    {
+      key: "copy",
+      label: "Copy",
+    },
+    {
+      key: "libopus",
+      label: "Opus",
+    },
+    {
+      key: "aac",
+      label: "AAC",
+    },
+    {
+      key: "libmp3lame",
+      label: "MP3",
+    },
+  ];
+
+  const audioBitrateOptions: { key: string; label: string }[] = [
+    { key: "64k", label: "64 kbps" },
+    { key: "128k", label: "128 kbps" },
+    { key: "192k", label: "192 kbps" },
+    { key: "256k", label: "256 kbps" },
+    { key: "320k", label: "320 kbps" },
+  ];
+
   const determinePreset = () => {
     if (selectedCodec === "libx264" || selectedCodec === "libx265") {
       return libx26xPresets;
@@ -114,16 +144,33 @@ function CropSegment(props: CompressSegmentProps) {
     setSelectedPreset(e.key);
   };
 
+  const handleAudioCodecDropdownMenuClick: MenuProps["onClick"] = (e) => {
+    setAudioDropdownTitle(`Audio: ${audioCodecDropdownItems.find((x) => x.key === e.key)?.label}` || "Select an audio codec");
+    setSelectedAudioCodec(e.key);
+  };
+
   const codecDropdownProps: MenuProps = {
     items: codecDropdownItems,
     onClick: handleCodecDropdownMenuClick,
     selectable: true,
+    selectedKeys: [selectedCodec],
+    defaultSelectedKeys: ["libx264"],
   };
 
   const presetDropdownProps: MenuProps = {
     items: determinePreset(),
     onClick: handlePresetDropdownMenuClick,
     selectable: true,
+    selectedKeys: [selectedPreset],
+    defaultSelectedKeys: ["medium"],
+  };
+
+  const audioDropdownOptions: MenuProps = {
+    items: audioCodecDropdownItems,
+    onClick: handleAudioCodecDropdownMenuClick,
+    selectable: true,
+    selectedKeys: [selectedAudioCodec],
+    defaultSelectedKeys: ["copy"],
   };
 
   return (
@@ -134,35 +181,36 @@ function CropSegment(props: CompressSegmentProps) {
           <Checkbox defaultChecked={false} onChange={(e) => setSegmentEnabled(e.target.checked)} />
         </div>
 
-        <div className={segmentEnabled ? "" : "disabled"} style={{ gap: "10px", display: "flex", flexDirection: "column" }}>
-          <div>
-            <Dropdown trigger={["click"]} menu={codecDropdownProps}>
-              <Button type="primary">
-                <Space>
-                  {codecDropdownTitle}
-                  <DownOutlined />
-                </Space>
-              </Button>
-            </Dropdown>
+        <div className={segmentEnabled ? "" : "disabled"} style={{ gap: "15px", display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            <div>
+              <Dropdown trigger={["click"]} menu={codecDropdownProps}>
+                <Button type="primary">
+                  <Space>
+                    {codecDropdownTitle}
+                    <DownOutlined />
+                  </Space>
+                </Button>
+              </Dropdown>
+            </div>
+            <div>
+              <Dropdown disabled={selectedCodec === ""} trigger={["click"]} menu={presetDropdownProps}>
+                <Button>
+                  <Space>
+                    {presetDropdownTitle}
+                    <DownOutlined />
+                  </Space>
+                </Button>
+              </Dropdown>
+            </div>
           </div>
 
-          <div style={{ marginBottom: "20px" }}>
-            <Dropdown disabled={selectedCodec === ""} trigger={["click"]} menu={presetDropdownProps}>
-              <Button>
-                <Space>
-                  {presetDropdownTitle}
-                  <DownOutlined />
-                </Space>
-              </Button>
-            </Dropdown>
-          </div>
+          <div style={{ display: "flex", gap: "5px", flexDirection: "column" }}>
+            <Radio.Group onChange={(e) => setSelectedQualityOption(e.target.value)} value={selectedQualityOption}>
+              <Radio value={1}>CRF</Radio>
+              <Radio value={2}>Bitrate</Radio>
+            </Radio.Group>
 
-          <Radio.Group onChange={(e) => setSelectedQualityOption(e.target.value)} value={selectedQualityOption}>
-            <Radio value={1}>CRF</Radio>
-            <Radio value={2}>Bitrate</Radio>
-          </Radio.Group>
-
-          <div>
             {selectedQualityOption === 1 ? (
               <InputNumber
                 style={{ maxWidth: "100px" }}
@@ -186,6 +234,30 @@ function CropSegment(props: CompressSegmentProps) {
                 defaultValue={5500}
                 value={selectedBitrate}
                 onChange={(e) => setSelectedBitrate(e ?? 0)}
+              />
+            )}
+          </div>
+
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <Dropdown trigger={["click"]} menu={audioDropdownOptions}>
+              <Button>
+                <Space>
+                  {audioDropdownTitle}
+                  <DownOutlined />
+                </Space>
+              </Button>
+            </Dropdown>
+
+            {selectedAudioCodec !== "copy" && (
+              <InputNumber
+                style={{ maxWidth: "100px" }}
+                min={0}
+                addonAfter={"k"}
+                type="number"
+                placeholder="Bitrate"
+                defaultValue={128}
+                value={selectedAudioBitrate}
+                onChange={(e) => setSelectedAudioBitrate(e ?? 0)}
               />
             )}
           </div>
