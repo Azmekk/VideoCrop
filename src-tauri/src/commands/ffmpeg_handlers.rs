@@ -1,6 +1,8 @@
 use std::{process::Command, thread};
 
-use crate::utils::ffmpeg_utils::{self, VideoEditOptions, VideoEditProgress, VideoInfo};
+use crate::utils::ffmpeg_utils::{
+    self, DependenciesSetUpInfo, VideoEditOptions, VideoEditProgress, VideoInfo,
+};
 
 fn is_command_available(command: &str) -> bool {
     match Command::new(command).arg("-version").output() {
@@ -52,5 +54,12 @@ pub fn get_video_progress_info() -> VideoEditProgress {
 
 #[tauri::command]
 pub fn download_ffmpeg_windows() {
-    ffmpeg_utils::download_and_add_ffmpeg_to_path_windows();
+    thread::spawn(move || {
+        ffmpeg_utils::download_and_add_ffmpeg_to_path_windows();
+    });
+}
+
+#[tauri::command]
+pub fn get_depencencies_download_info() -> DependenciesSetUpInfo {
+    ffmpeg_utils::get_depencencies_download_info()
 }

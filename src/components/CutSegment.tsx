@@ -1,4 +1,4 @@
-import { Checkbox, Input, Segmented, Slider, type SliderSingleProps, Switch } from "antd";
+import { Checkbox, Input, Slider, type SliderSingleProps } from "antd";
 import { useEffect, useState } from "react";
 import type { VideoCutOptions } from "../Logic/Interfaces";
 
@@ -17,7 +17,7 @@ interface VideoDuration {
 
 function CutSegment(props: CutSegmentProps) {
   const [totalSeconds, setTotalSeconds] = useState(0);
-  const [videoDuration, setVideoDuration] = useState<VideoDuration>({
+  const [_, setVideoDuration] = useState<VideoDuration>({
     hours: 0,
     minutes: 0,
     seconds: 0,

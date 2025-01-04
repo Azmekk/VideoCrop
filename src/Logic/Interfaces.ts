@@ -54,3 +54,8 @@ export interface VideoEditProgress {
   working: boolean;
   last_error: string | undefined;
 }
+
+export interface DependenciesSetUpInfo {
+  status: string;
+  completed: boolean;
+}

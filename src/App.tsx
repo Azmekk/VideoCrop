@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import VideoView from "./components/VideoView";
 import { Button, Progress } from "antd";
 import CutSegment from "./components/CutSegment";
 import CropSegment from "./components/CropSegment";
-import type { VideoCropPoints, VideoEditOptions, VideoEditProgress, VideoInfo } from "./Logic/Interfaces";
+import type { DependenciesSetUpInfo, VideoCropPoints, VideoEditOptions, VideoEditProgress, VideoInfo } from "./Logic/Interfaces";
 import "./App.css";
 import CompressSegment from "./components/CompressSegment";
 import ResizeSegment from "./components/ResizeSegment";
@@ -18,6 +18,7 @@ function App() {
   const [interactingWithPaths, setInteractingWithPaths] = useState(false);
   const [videoInfo, setVideoInfo] = useState<VideoInfo | undefined>(undefined);
   const [resetCropPoints, setResetCropPoints] = useState(0);
+  const [depencenciesSetUpInfo, setDepencenciesSetUpInfo] = useState<DependenciesSetUpInfo>({ status: "", completed: false });
 
   const [processingVideo, setProcessingVideo] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
@@ -25,7 +26,7 @@ function App() {
   const [cropPointPositions, setCropPointPositions] = useState<VideoCropPoints>(initiateVideoCropPoints());
   const [cropLinesEnabled, setCropLinesEnabled] = useState(false);
 
-  const [currentOs, setCurrentOs] = useState(platform());
+  const [currentOs, _] = useState(platform());
   const [downloadingDependencies, setDownloadingDependencies] = useState(false);
 
   const [videoEditOptions, setvideoEditOptions] = useState<VideoEditOptions>({
@@ -139,9 +140,20 @@ function App() {
 
       await new Promise((resolve) => setTimeout(resolve, 100));
       await invoke("download_ffmpeg_windows");
+
+      while (true) {
+        const depSetUpInfo = await invoke<DependenciesSetUpInfo>("get_depencencies_download_info");
+        setDepencenciesSetUpInfo(depSetUpInfo);
+
+        if (depSetUpInfo.completed) {
+          break;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
     } finally {
-      setDownloadingDependencies(false);
       setFfmpegExists(await invoke("check_ffmpeg_and_ffprobe"));
+      setDownloadingDependencies(false);
     }
   }
 
@@ -153,11 +165,13 @@ function App() {
     <div>
       {!ffmpegExists && (
         <div className="app-disabled">
-          FFmpeg and FFprobe were not located. Please download them and add them to path.
+          FFmpeg and FFprobe were not located on path.
           {currentOs === "windows" && (
-            <Button loading={downloadingDependencies} onClick={downloadDependencies} size="large" type="primary">
-              Download and add to path automatically
-            </Button>
+            <div>
+              <Button loading={downloadingDependencies} onClick={downloadDependencies} size="large" type="primary">
+                {downloadingDependencies ? <div>{depencenciesSetUpInfo.status}</div> : "Download for app only"}
+              </Button>
+            </div>
           )}
         </div>
       )}

@@ -78,21 +78,6 @@ function VideoView(props: VideoViewProps) {
     };
   };
 
-  const getVideoToCanvasSizeDifference = () => {
-    if (!videoRef.current) return { widthDiff: 0, heightDiff: 0 };
-
-    const videoWidth = videoRef.current.videoWidth;
-    const videoHeight = videoRef.current.videoHeight;
-    const rect = videoRef.current.getBoundingClientRect();
-    const elementWidth = rect.width;
-    const elementHeight = rect.height;
-
-    return {
-      widthDiff: videoWidth / elementWidth,
-      heightDiff: videoHeight / elementHeight,
-    };
-  };
-
   const onCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
     if (!props.resizerEnabled) return;
 

@@ -79,7 +79,7 @@ video {
 	font-size: 25px;
 	position: absolute;
 	flex-direction: column;
-	gap: 20px;
+	gap: 10px;
 	z-index: 5;
 }
 

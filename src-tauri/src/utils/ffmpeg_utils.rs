@@ -13,6 +13,12 @@ pub struct VideoInfo {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
+pub struct DependenciesSetUpInfo {
+    status: String,
+    completed: bool,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
 pub struct VideoEditProgress {
     progress: f64,
     working: bool,
@@ -67,6 +73,11 @@ lazy_static::lazy_static! {
         progress: 0.0,
         working: false,
         last_error: None,
+    });
+
+    static ref FFMPEG_DOWNLOAD_PROGRESS: Mutex<DependenciesSetUpInfo> = Mutex::new(DependenciesSetUpInfo {
+        status: "".to_string(),
+        completed: false,
     });
 }
 
@@ -363,11 +374,6 @@ pub fn process_video(options: VideoEditOptions) {
     });
 }
 
-pub fn get_video_progress_info() -> VideoEditProgress {
-    let progress = VIDEO_EDIT_PROGRESS.lock().unwrap();
-    progress.clone()
-}
-
 fn get_unique_filename(path: &PathBuf) -> String {
     let mut unique_path = path.to_path_buf();
     let mut counter = 1;
@@ -391,6 +397,23 @@ pub fn clear_video_progress() {
     drop(progress);
 }
 
+pub fn get_video_progress_info() -> VideoEditProgress {
+    let progress = VIDEO_EDIT_PROGRESS.lock().unwrap();
+    progress.clone()
+}
+
+pub fn update_ffmpeg_download_status(status: &str, completed: bool) {
+    let mut progress = FFMPEG_DOWNLOAD_PROGRESS.lock().unwrap();
+    progress.status = status.to_string();
+    progress.completed = completed;
+    drop(progress);
+}
+
+pub fn get_depencencies_download_info() -> DependenciesSetUpInfo {
+    let progress = FFMPEG_DOWNLOAD_PROGRESS.lock().unwrap();
+    progress.clone()
+}
+
 pub fn download_and_add_ffmpeg_to_path_windows() {
     if !cfg!(target_os = "windows") {
         panic!("This function is only supported on Windows.");
@@ -402,11 +425,13 @@ pub fn download_and_add_ffmpeg_to_path_windows() {
     let user_path = std::path::Path::new(&user_path_var);
     let temp_path = std::path::Path::new(&temp_path_var);
 
-    let video_crop_ffmpeg_path = user_path.join("VideoCrop_FFmpeg");
+    let video_crop_ffmpeg_path = user_path.join("VideoCrop").join("FFmpeg");
 
     if !video_crop_ffmpeg_path.exists() {
-        fs::create_dir(&video_crop_ffmpeg_path).unwrap();
+        fs::create_dir_all(&video_crop_ffmpeg_path).unwrap();
     }
+
+    update_ffmpeg_download_status("Downloading...", false);
 
     let download_url = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip";
     let ffmpeg_zip_download_path = &temp_path.join(format!(
@@ -438,11 +463,13 @@ pub fn download_and_add_ffmpeg_to_path_windows() {
 
     println!("Extracting ffmpeg to: {:?}", extract_path);
 
+    update_ffmpeg_download_status("Extracting...", false);
     let zip_cursor = File::open(&ffmpeg_zip_download_path).unwrap();
     zip_extract::extract(zip_cursor, &extract_path, true).unwrap();
 
     add_ffmpeg_to_app_env(ffmpeg_bin_path.to_str().unwrap());
 
+    update_ffmpeg_download_status("Finalizing...", true);
     fs::remove_file(ffmpeg_zip_download_path).unwrap();
 }
 
@@ -474,10 +501,14 @@ pub fn add_ffmpeg_to_app_env(new_path: &str) {
         panic!("This function is only supported on Windows.");
     }
 
-    let current_path = env::var("PATH").unwrap_or_default();
+    let mut current_path = env::var("PATH").unwrap_or_default();
+
+    if !current_path.ends_with(";") {
+        current_path.push(';');
+    }
 
     if !current_path.contains(new_path) {
-        let updated_path = format!("{};{}", current_path, new_path);
+        let updated_path = format!("{}{}", current_path, new_path);
         env::set_var("PATH", updated_path.clone());
         println!("Updating app path to: {}", updated_path);
     } else {
@@ -490,7 +521,7 @@ pub fn add_ffmpeg_to_app_env_if_it_exists() -> bool {
 
     let user_path = std::path::Path::new(&user_path_var);
 
-    let video_crop_ffmpeg_path = user_path.join("VideoCrop_FFmpeg");
+    let video_crop_ffmpeg_path = user_path.join("VideoCrop").join("FFmpeg");
 
     let extract_path = &video_crop_ffmpeg_path.join("ffmpeg-master-latest-win64-gpl_VideoCrop");
 

@@ -1,5 +1,5 @@
-import { Checkbox, Input, InputNumber } from "antd";
-import type { VideoCropPoints, VideoInfo } from "../Logic/Interfaces";
+import { Checkbox, InputNumber } from "antd";
+import type { VideoInfo } from "../Logic/Interfaces";
 import { useEffect, useState } from "react";
 
 interface ResizeSegmentProps {
@@ -33,14 +33,9 @@ function CropSegment(props: ResizeSegmentProps) {
         <Checkbox defaultChecked={false} onChange={(e) => setSegmentEnabled(e.target.checked)} />
       </div>
 
-      {!props.videoNotCropped && segmentEnabled && (
-        <div style={{ color: "red", fontSize: "0.8em" }}>Cannot resize if crop is enabled.</div>
-      )}
+      {!props.videoNotCropped && segmentEnabled && <div style={{ color: "red", fontSize: "0.8em" }}>Cannot resize if crop is enabled.</div>}
 
-      <div
-        className={segmentEnabled ? "" : "disabled"}
-        style={{ display: "flex", gap: "5px", flexDirection: "column", marginTop: "25px" }}
-      >
+      <div className={segmentEnabled ? "" : "disabled"} style={{ display: "flex", gap: "5px", flexDirection: "column", marginTop: "25px" }}>
         <div
           style={{
             display: "flex",
