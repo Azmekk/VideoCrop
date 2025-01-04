@@ -1,7 +1,7 @@
 <div align="center">
 
  <p align="center">
-  <img src="https://github.com/Azmekk/VideoCrop/blob/master/src-tauri/icons/128x128.png" alt="YT-DLP web app">
+  <img src="https://github.com/Azmekk/VideoCrop/blob/master/src-tauri/icons/128x128.png" alt="VideoCrop">
 </p>
 
   <p align="center">
@@ -25,6 +25,10 @@
 [![Rust][rust-shield]][rust-url]
 [![TypeScript][TypeScript]][TypeScript-url]
 
+<p align="center">
+<img src="https://github.com/Azmekk/VideoCrop/blob/master/assets/VbjPsAYEJP.png" alt="App Example">
+</p>
+
 </div>
 
 # VideoCrop
@@ -38,12 +42,16 @@
 
 ### Before you start:
 
-1. **Select a video**: Choose a video from the top left corner.
+<img src="https://github.com/Azmekk/VideoCrop/blob/master/assets/3TJzID8090.png" alt="Select Video">
+1. **Select a video**: Choose a video by clicking on the video container or the top left corner 
+<p> </p>
+<img src="https://github.com/Azmekk/VideoCrop/blob/master/assets/JZ16sWFv5J.png" alt="Select Output">
 2. **Select an output path**: Specify the output path from the top right corner.
 
 ### Compression
+<img src="https://github.com/Azmekk/VideoCrop/blob/master/assets/eZwGf2DpIy.png" alt="Compression Settings">
 
-#### Video Codecs
+### Video Codecs
 
 - **libx264 (H.264)**
   - **Pros**: Widely supported, good balance of quality and file size.
@@ -73,22 +81,24 @@
   - **Pros**: Very widely supported.
   - **Cons**: Lower quality at the same bitrate compared to Opus and AAC.
 
-#### Best Default Values
+### Resize (Only works if cropping is disabled)
+<img src="https://github.com/Azmekk/VideoCrop/blob/master/assets/GOlhlrwnhP.png" alt="Resize Settings">
 
-- **Video Codec**: `libx264`
-- **Preset**: `medium`
-- **Audio Codec**: `AAC`
-
-### Resize
-
-- Adjust the **width** and **height** of the video. Note that resizing does not work with cropping.
+- Adjust the **width** and **height** of the video.
+ 
 
 ### Cropping
+<img src="https://github.com/Azmekk/VideoCrop/blob/master/assets/jvbynCFKti.png" alt="Crop Settings">
+
 - **Unlock** Use the padlock to enable dragging.
 - **Drag and adjust** the crop field to your desired area.
 - **Lock** the crop field to interact with the video.
+- Note that resizing does not work with cropping.
 
-### Cutting (Only works if cropping is disabled)
+ <img src="https://github.com/Azmekk/VideoCrop/blob/master/assets/haU09uzu0g.png" alt="No crop and resize">
+
+### Cutting
+<img src="https://github.com/Azmekk/VideoCrop/blob/master/assets/S2HWExyKX8.png" alt="Crop Settings">
 
 - Drag to select the portion of the video you want to cut. You can also use optional inputs for precision.
 
