@@ -45,7 +45,7 @@
       ]
     },
     "windows": {
-      "installMode": "passive"
+      "installMode": "basicUi"
     }
     
   }
