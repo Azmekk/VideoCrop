@@ -28,5 +28,4 @@ lazy_static = "1.5.0"
 uuid = { version = "1.11.0", features = ["v4"] }
 tauri-plugin-os = "2"
 zip-extract = "0.2.1"
-winreg = "0.52.0"
 

@@ -446,6 +446,9 @@ pub fn download_and_add_ffmpeg_to_path_windows() {
     fs::remove_file(ffmpeg_zip_download_path).unwrap();
 }
 
+//Cool code that nuked my $PATH value earlier LOL
+//DO NOT UNCOMMENT SIMPLY KEEPING THIS AS A FUNNY MEMORY
+
 //pub fn add_path_to_path_env_if_not_added(new_path: &str) {
 //    if !cfg!(target_os = "windows") {
 //        panic!("This function is only supported on Windows.");
@@ -465,6 +468,7 @@ pub fn download_and_add_ffmpeg_to_path_windows() {
 //        println!("Path already exists in the user PATH.");
 //    }
 //}
+
 pub fn add_ffmpeg_to_app_env(new_path: &str) {
     if !cfg!(target_os = "windows") {
         panic!("This function is only supported on Windows.");

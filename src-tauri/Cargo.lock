@@ -4844,7 +4844,6 @@ dependencies = [
  "tauri-plugin-opener",
  "tauri-plugin-os",
  "uuid",
- "winreg",
  "zip-extract",
 ]
 
