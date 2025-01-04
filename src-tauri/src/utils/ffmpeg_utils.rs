@@ -425,7 +425,7 @@ pub fn extract_audio(mut options: VideoEditOptions) {
         options.compression_options.audio_codec.clone(),
     ]);
 
-    if options.compression_enabled {
+    if options.compression_enabled && options.compression_options.audio_bitrate > 0 {
         ffmpeg_args.extend_from_slice(&[
             "-b:a".to_string(),
             format!("{}k", options.compression_options.audio_bitrate.clone()),
@@ -536,7 +536,6 @@ fn get_audio_extension_based_on_codec(codec: &str) -> &str {
         "aac" => "m4a",
         "libmp3lame" => "mp3",
         "libopus" => "opus",
-        "copy" => "m4a",
         _ => "mp3",
     }
 }
