@@ -24,7 +24,11 @@ fn is_command_available(command: &str) -> bool {
 
 #[tauri::command]
 pub fn check_ffmpeg_and_ffprobe() -> bool {
-    return is_command_available("ffmpeg") && is_command_available("ffprobe");
+    if is_command_available("ffmpeg") && is_command_available("ffprobe") {
+        return true;
+    }
+
+    return ffmpeg_utils::add_ffmpeg_to_app_env_if_it_exists();
 }
 
 #[tauri::command]

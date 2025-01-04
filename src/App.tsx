@@ -14,7 +14,7 @@ import VideoPathSelection from "./components/VideoPathSelection";
 import { platform } from "@tauri-apps/plugin-os";
 
 function App() {
-  const [ffmpegExsts, setFfmpegExsts] = useState(false);
+  const [ffmpegExists, setFfmpegExists] = useState(true);
   const [interactingWithPaths, setInteractingWithPaths] = useState(false);
   const [videoInfo, setVideoInfo] = useState<VideoInfo | undefined>(undefined);
   const [resetCropPoints, setResetCropPoints] = useState(0);
@@ -127,7 +127,7 @@ function App() {
   }
 
   async function checkFfmpegAndFfprobe() {
-    //setFfmpegExsts(await invoke("check_ffmpeg_and_ffprobe"));
+    setFfmpegExists(await invoke("check_ffmpeg_and_ffprobe"));
   }
 
   async function downloadDependencies() {
@@ -141,6 +141,7 @@ function App() {
       await invoke("download_ffmpeg_windows");
     } finally {
       setDownloadingDependencies(false);
+      setFfmpegExists(await invoke("check_ffmpeg_and_ffprobe"));
     }
   }
 
@@ -150,7 +151,7 @@ function App() {
 
   return (
     <div>
-      {!ffmpegExsts && (
+      {!ffmpegExists && (
         <div className="app-disabled">
           FFmpeg and FFprobe were not located. Please download them and add them to path.
           {currentOs === "windows" && (

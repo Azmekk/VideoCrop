@@ -4,11 +4,6 @@ use std::fs;
 use std::fs::File;
 use std::{io::BufRead, path::PathBuf, process::Command, sync::Mutex};
 use uuid::Uuid;
-use winreg::enums::HKEY_CURRENT_USER;
-use winreg::enums::KEY_ALL_ACCESS;
-use winreg::enums::KEY_READ;
-use winreg::enums::KEY_WRITE;
-use winreg::RegKey;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct VideoInfo {
@@ -424,6 +419,12 @@ pub fn download_and_add_ffmpeg_to_path_windows() {
         fs::remove_dir_all(extract_path).unwrap();
     }
 
+    let ffmpeg_bin_path = extract_path.join("bin");
+    if ffmpeg_bin_path.exists() {
+        add_ffmpeg_to_app_env(ffmpeg_bin_path.to_str().unwrap());
+        return;
+    }
+
     let download_result = reqwest::blocking::get(download_url);
     match download_result {
         Ok(mut response) => {
@@ -440,29 +441,62 @@ pub fn download_and_add_ffmpeg_to_path_windows() {
     let zip_cursor = File::open(&ffmpeg_zip_download_path).unwrap();
     zip_extract::extract(zip_cursor, &extract_path, true).unwrap();
 
-    let ffmpeg_bin_path = extract_path.join("bin");
-
-    add_ffmpeg_to_path_if_not_added(ffmpeg_bin_path.to_str().unwrap());
+    add_ffmpeg_to_app_env(ffmpeg_bin_path.to_str().unwrap());
 
     fs::remove_file(ffmpeg_zip_download_path).unwrap();
 }
 
-pub fn add_ffmpeg_to_path_if_not_added(new_path: &str) {
+//pub fn add_path_to_path_env_if_not_added(new_path: &str) {
+//    if !cfg!(target_os = "windows") {
+//        panic!("This function is only supported on Windows.");
+//    }
+//
+//    let reg_key = RegKey::predef(HKEY_CURRENT_USER)
+//        .open_subkey_with_flags("Environment", KEY_ALL_ACCESS)
+//        .unwrap();
+//
+//    let user_path: String = reg_key.get_value("Path").unwrap();
+//
+//    if !user_path.contains(new_path) {
+//        let updated_path = format!("{};{}", user_path, new_path);
+//        reg_key.set_value("Path", &updated_path).unwrap();
+//        println!("Updating user path to: {}", updated_path);
+//    } else {
+//        println!("Path already exists in the user PATH.");
+//    }
+//}
+pub fn add_ffmpeg_to_app_env(new_path: &str) {
     if !cfg!(target_os = "windows") {
         panic!("This function is only supported on Windows.");
     }
 
-    let reg_key = RegKey::predef(HKEY_CURRENT_USER)
-        .open_subkey_with_flags("Environment", KEY_ALL_ACCESS)
-        .unwrap();
+    let current_path = env::var("PATH").unwrap_or_default();
 
-    let user_path: String = reg_key.get_value("Path").unwrap();
-
-    if !user_path.contains(new_path) {
-        let updated_path = format!("{};{}", user_path, new_path);
-        reg_key.set_value("Path", &updated_path).unwrap();
-        println!("Updating user path to: {}", updated_path);
+    if !current_path.contains(new_path) {
+        let updated_path = format!("{};{}", current_path, new_path);
+        env::set_var("PATH", updated_path.clone());
+        println!("Updating app path to: {}", updated_path);
     } else {
-        println!("Path already exists in the user PATH.");
+        println!("Path already exists in the app PATH.");
     }
+}
+
+pub fn add_ffmpeg_to_app_env_if_it_exists() -> bool {
+    let user_path_var = env::var("USERPROFILE").unwrap();
+
+    let user_path = std::path::Path::new(&user_path_var);
+
+    let video_crop_ffmpeg_path = user_path.join("VideoCrop_FFmpeg");
+
+    let extract_path = &video_crop_ffmpeg_path.join("ffmpeg-master-latest-win64-gpl_VideoCrop");
+
+    let ffmpeg_bin_path = extract_path.join("bin");
+    println!("Checking for dependencies at: {:?}", ffmpeg_bin_path);
+    if ffmpeg_bin_path.exists() {
+        println!("Found dependencies at: {:?}", ffmpeg_bin_path);
+        add_ffmpeg_to_app_env(ffmpeg_bin_path.to_str().unwrap());
+        return true;
+    }
+
+    false
 }
