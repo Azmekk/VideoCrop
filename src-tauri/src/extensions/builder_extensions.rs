@@ -16,6 +16,7 @@ impl<R: Runtime> BuilderExt<R> for Builder<R> {
             commands::ffmpeg_handlers::get_video_progress_info,
             commands::ffmpeg_handlers::download_ffmpeg_windows,
             commands::ffmpeg_handlers::get_depencencies_download_info,
+            commands::ffmpeg_handlers::submit_audio_extraction,
         ])
     }
 }

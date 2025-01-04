@@ -16,15 +16,15 @@ fn is_command_available(command: &str) -> bool {
             if output.status.success() {
                 true
             } else {
-                //println(
-                //"Command was not successful: {}. It returned with error: {:?}",
-                //command, output.stderr
-                //);
+                println!(
+                    "Command was not successful: {}. It returned with error: {:?}",
+                    command, output.stderr,
+                );
                 false
             }
         }
         Err(_) => {
-            //println("Error checking for command: {}", command);
+            println!("Error checking for command: {}", command);
             false
         }
     }
@@ -50,6 +50,19 @@ pub fn submit_video_for_editing(options: VideoEditOptions) {
 
     thread::spawn(move || {
         ffmpeg_utils::process_video(options.clone());
+    });
+}
+
+#[tauri::command]
+pub fn submit_audio_extraction(options: VideoEditOptions) {
+    println!(
+        "Extracting audio from video: {:?}",
+        options.input_video_path.as_str()
+    );
+    ffmpeg_utils::clear_video_progress();
+
+    thread::spawn(move || {
+        ffmpeg_utils::extract_audio(options.clone());
     });
 }
 
