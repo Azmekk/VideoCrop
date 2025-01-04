@@ -21,6 +21,7 @@ function App() {
   const [depencenciesSetUpInfo, setDepencenciesSetUpInfo] = useState<DependenciesSetUpInfo>({ status: "", completed: false });
 
   const [processingVideo, setProcessingVideo] = useState(false);
+  const [processingAudio, setProcessingAudio] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
 
   const [cropPointPositions, setCropPointPositions] = useState<VideoCropPoints>(initiateVideoCropPoints());
@@ -37,7 +38,7 @@ function App() {
     crop_enabled: false,
     crop_options: { starting_x_offset: 0, starting_y_offset: 0, width: 0, height: 0 },
     compression_enabled: false,
-    compression_options: { codec: "libx264", preset: "medium", using_crf: true, crf: 23, bitrate: 5550 },
+    compression_options: { codec: "libx264", preset: "medium", using_crf: true, crf: 23, bitrate: 5550, audio_codec: "copy", audio_bitrate: 128 },
     resize_enabled: false,
     resize_options: { width: 0, height: 0 },
   });
@@ -101,6 +102,7 @@ function App() {
     setProcessingProgress(0);
 
     while (true) {
+      await new Promise((resolve) => setTimeout(resolve, 300));
       const newVideoInfo = await invoke<VideoEditProgress>("get_video_progress_info");
 
       if (newVideoInfo.last_error) {
@@ -121,6 +123,53 @@ function App() {
 
         setProcessingVideo(false);
         setProcessingProgress(0);
+      }
+
+      if (!newVideoInfo.working) {
+        setProcessingVideo(false);
+        setProcessingProgress(0);
+        break;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+  }
+
+  async function submitAudio() {
+    await invoke("submit_audio_extraction", { options: videoEditOptions });
+
+    setProcessingAudio(true);
+    setProcessingProgress(0);
+
+    while (true) {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      const newVideoInfo = await invoke<VideoEditProgress>("get_video_progress_info");
+
+      if (newVideoInfo.last_error) {
+        setProcessingAudio(false);
+        setProcessingProgress(0);
+
+        alert(`Something went wrong: ${newVideoInfo.last_error}`);
+        break;
+      }
+
+      if (newVideoInfo.working) {
+        setProcessingProgress(newVideoInfo.progress);
+      }
+
+      if (newVideoInfo.progress === 100) {
+        setProcessingProgress(100);
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        setProcessingAudio(false);
+        setProcessingProgress(0);
+      }
+
+      if (!newVideoInfo.working) {
+        setProcessingAudio(false);
+        setProcessingProgress(0);
+        break;
       }
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -176,7 +225,7 @@ function App() {
         </div>
       )}
       {interactingWithPaths && <div className="app-disabled">Please select path or cancel selection before continuing.</div>}
-      <main className={`app-container ${processingVideo && "disabled"} `}>
+      <main className={`app-container ${(processingVideo || processingAudio) && "disabled"} `}>
         <div className="general-video-options-container">
           <div style={{ width: "20%", display: "flex", flexDirection: "column", gap: "20px" }}>
             <div style={{ marginBottom: "20px" }}>
@@ -234,7 +283,7 @@ function App() {
               <Button loading={processingVideo} onClick={submitVideo} size="large" type="primary" disabled={videoEditOptions.output_video_path === ""}>
                 Submit
               </Button>
-              <Button type="primary" disabled={videoEditOptions.output_video_path === ""} size="large">
+              <Button loading={processingAudio} onClick={submitAudio} size="large" type="primary" disabled={videoEditOptions.output_video_path === ""}>
                 Extract audio
               </Button>
             </div>
@@ -249,7 +298,7 @@ function App() {
           />
         </div>
       </main>
-      <div style={{ padding: "10px" }}>{processingVideo && <Progress percent={processingProgress} status="active" />}</div>
+      <div style={{ padding: "5px" }}>{(processingVideo || processingAudio) && <Progress percent={processingProgress} status="active" />}</div>
     </div>
   );
 }

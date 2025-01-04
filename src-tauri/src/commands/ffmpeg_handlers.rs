@@ -54,6 +54,19 @@ pub fn submit_video_for_editing(options: VideoEditOptions) {
 }
 
 #[tauri::command]
+pub fn submit_audio_extraction(options: VideoEditOptions) {
+    println!(
+        "Extracting audio from video: {:?}",
+        options.input_video_path.as_str()
+    );
+    ffmpeg_utils::clear_video_progress();
+
+    thread::spawn(move || {
+        ffmpeg_utils::extract_audio(options.clone());
+    });
+}
+
+#[tauri::command]
 pub fn get_video_progress_info() -> VideoEditProgress {
     return ffmpeg_utils::get_video_progress_info();
 }

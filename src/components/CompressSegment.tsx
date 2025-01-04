@@ -31,10 +31,12 @@ function CropSegment(props: CompressSegmentProps) {
         crf: selectedCRF,
         bitrate: selectedBitrate,
         using_crf: selectedQualityOption === 1,
+        audio_codec: selectedAudioCodec,
+        audio_bitrate: selectedAudioBitrate,
       },
       segmentEnabled,
     );
-  }, [selectedCodec, selectedPreset, selectedCRF, selectedBitrate, selectedQualityOption, segmentEnabled]);
+  }, [selectedCodec, selectedPreset, selectedCRF, selectedBitrate, selectedQualityOption, segmentEnabled, selectedAudioCodec, selectedAudioBitrate]);
 
   const codecDropdownItems: { key: string; label: string }[] = [
     {
