@@ -39,7 +39,7 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.VideoCrop_Env.SIGNING_PK }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.SIGNING_PRIV_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
         with:
           tagName: v-v__VERSION__
