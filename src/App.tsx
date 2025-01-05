@@ -14,6 +14,7 @@ import VideoPathSelection from "./components/VideoPathSelection";
 import { platform } from "@tauri-apps/plugin-os";
 import { event } from "@tauri-apps/api";
 import type { UnlistenFn } from "@tauri-apps/api/event";
+import { check } from "@tauri-apps/plugin-updater";
 
 function App() {
   const [ffmpegExists, setFfmpegExists] = useState(true);
@@ -203,16 +204,40 @@ function App() {
   }
 
   async function checkForUpdates() {
-    setUpdateAvailable(await invoke("check_for_updates"));
+    const update = await check();
+    console.log("Checking for updates", update !== null);
+    setUpdateAvailable(update !== null);
   }
 
   async function updateApp() {
     try {
       setUpdatingApp(true);
-      await invoke("update_app");
-    } catch (e) {
-      console.error(e);
-      alert("Something went wrong while updating the app.");
+      const update = await check();
+      if (update) {
+        console.log(`found update ${update.version} from ${update.date} with notes ${update.body}`);
+        let downloaded = 0;
+        let contentLength = 0;
+        await update.downloadAndInstall((event) => {
+          switch (event.event) {
+            case "Started":
+              contentLength = event.data.contentLength ?? 0;
+              console.log(`started downloading ${event.data.contentLength} bytes`);
+              break;
+            case "Progress":
+              downloaded += event.data.chunkLength;
+              console.log(`downloaded ${downloaded} from ${contentLength}`);
+              break;
+            case "Finished":
+              console.log("download finished");
+              break;
+          }
+        });
+
+        console.log("update installed");
+        await relaunch();
+      }
+    } catch (error) {
+      alert(`Error while updating: ${error}`);
     } finally {
       setUpdatingApp(false);
       setUpdateAvailable(false);
@@ -394,3 +419,6 @@ function App() {
 }
 
 export default App;
+function relaunch() {
+  throw new Error("Function not implemented.");
+}

@@ -14,8 +14,6 @@ pub fn run() {
             handlers::ffmpeg_handlers::download_ffmpeg_windows,
             handlers::ffmpeg_handlers::get_depencencies_download_info,
             handlers::ffmpeg_handlers::submit_audio_extraction,
-            handlers::updates_handler::check_for_updates,
-            handlers::updates_handler::update_app
         ])
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_os::init())
