@@ -91,7 +91,7 @@
 ### Cropping
 <img src="https://github.com/Azmekk/VideoCrop/blob/master/assets/jvbynCFKti.png" alt="Crop Settings">
 
-- **Unlock** Use the padlock to enable dragging.
+- **Unlock/Lock** the padlock to enable/disable dragging respectively.
 - **Drag and adjust** the crop field to your desired area.
 - **Lock** the crop field to interact with the video.
 - Note that resizing does not work with cropping.
