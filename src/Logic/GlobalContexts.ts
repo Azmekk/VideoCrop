@@ -6,6 +6,11 @@ import type { HoveringOver } from "./Enums";
 export const CropPointsContext = React.createContext({
   cropPointPositions: initiateVideoCropPoints(),
   setCropPointPositions: (_: VideoCropPoints) => {},
+  cropLinesUnlocked: false,
+  setCropLinesUnlocked: (_: boolean) => {},
+  cropEnabled: false,
+  resetCropPoints: 0,
+  setResetCropPoints: (_: number) => {},
 });
 
 export const canvasLineDisplacementRef = {

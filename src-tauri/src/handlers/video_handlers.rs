@@ -37,5 +37,5 @@ pub fn pick_output_path() -> String {
 fn check_if_file_is_video(file_path: &str) -> bool {
     ALLOWED_VIDEO_EXTENSIONS
         .iter()
-        .any(|&ext| file_path.ends_with(ext))
+        .any(|&ext| file_path.to_lowercase().ends_with(ext))
 }

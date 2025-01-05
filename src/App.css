@@ -88,3 +88,19 @@ video {
 	opacity: 0.5;
 	cursor: not-allowed !important;
 }
+
+.dragged-file-blur{
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 100vh;
+	width: 100vw;
+	background-color: #818080d8;
+	text-align: center;
+	color: #e9e6e6;
+	font-size: 25px;
+	position: absolute;
+	flex-direction: column;
+	gap: 10px;
+	z-index: 5;
+}

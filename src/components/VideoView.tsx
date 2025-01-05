@@ -10,18 +10,17 @@ interface VideoViewProps {
   videoInfo: VideoInfo | undefined;
   videoPath: string;
   onVideoPathClick: () => void;
-  resizerEnabled: boolean;
-  reset: number;
-  cropEnabled: boolean;
 }
 
 function VideoView(props: VideoViewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const { cropPointPositions, setCropPointPositions } = useContext(CropPointsContext);
+  const { cropPointPositions, setCropPointPositions, cropLinesUnlocked, /*setCropLinesUnlocked,*/ cropEnabled, resetCropPoints /*setResetCropPoints*/ } = useContext(CropPointsContext);
 
   const [currentlyHovering, setCurrentlyHovering] = useState<HoveringOver | undefined>(undefined);
+
+  const cropLinesUnlockedRef = useRef(cropLinesUnlocked);
 
   useEffect(() => {
     canvasLineDisplacementRef.bottom = 1;
@@ -29,11 +28,12 @@ function VideoView(props: VideoViewProps) {
     canvasLineDisplacementRef.right = 1;
     canvasLineDisplacementRef.top = 1;
     redrawCanvas();
-  }, [props.reset]);
+  }, [resetCropPoints]);
 
   useEffect(() => {
+    cropLinesUnlockedRef.current = cropLinesUnlocked;
     redrawCanvas();
-  }, [props.resizerEnabled]);
+  }, [cropLinesUnlocked]);
 
   useEffect(() => {
     if (!clickedLineInfo.clickedLine && videoRef.current) {
@@ -48,7 +48,7 @@ function VideoView(props: VideoViewProps) {
   }, [cropInputManuallyChangedInfo.manuallyChanged]);
 
   const updateCropPositions = () => {
-    if (props.resizerEnabled && canvasRef.current) {
+    if (cropLinesUnlocked && canvasRef.current) {
       const { widthDiff, heightDiff } = getCanvasToVideoSizeDifference();
 
       const newCropPointPositions: VideoCropPoints = {
@@ -79,7 +79,7 @@ function VideoView(props: VideoViewProps) {
   };
 
   const onCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
-    if (!props.resizerEnabled) return;
+    if (!cropLinesUnlocked) return;
 
     if (!clickedLineInfo.clickedLine) {
       setCurrentlyHovering(determineIfHoveringOverLine(e, canvasLineDisplacementRef));
@@ -99,7 +99,8 @@ function VideoView(props: VideoViewProps) {
 
     const { left, right, top, bottom } = canvasLineDisplacementRef;
 
-    ctx.strokeStyle = props.resizerEnabled ? "red" : "gray";
+    ctx.strokeStyle = cropLinesUnlockedRef.current ? "red" : "gray";
+
     ctx.lineWidth = 2;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -110,7 +111,7 @@ function VideoView(props: VideoViewProps) {
   };
 
   const onCanvasMouseDown = () => {
-    if (!props.resizerEnabled) return;
+    if (!cropLinesUnlocked) return;
 
     if (currentlyHovering) {
       clickedLineInfo.clickedLine = currentlyHovering;
@@ -119,7 +120,7 @@ function VideoView(props: VideoViewProps) {
   };
 
   const determineCursor = (currentlyHovering: HoveringOver | undefined): string | undefined => {
-    if (!props.resizerEnabled) return;
+    if (!cropLinesUnlocked) return;
 
     switch (currentlyHovering) {
       case undefined:
@@ -156,36 +157,41 @@ function VideoView(props: VideoViewProps) {
     canvasLineDisplacementRef.right = 1;
     canvasLineDisplacementRef.top = 1;
 
-    const handleLoadedMetadata = () => {
-      updateCanvasSize();
-    };
-
-    const videoElement = videoRef.current;
-    if (videoElement) {
-      videoElement.addEventListener("loadedmetadata", handleLoadedMetadata);
+    if (videoRef.current) {
+      videoRef.current.addEventListener("loadedmetadata", updateCanvasSize);
     }
 
     window.addEventListener("resize", updateCanvasSize);
 
     return () => {
-      if (videoElement) {
-        videoElement.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      if (videoRef.current) {
+        videoRef.current.removeEventListener("loadedmetadata", updateCanvasSize);
       }
+
       window.removeEventListener("resize", updateCanvasSize);
     };
+  }, []);
+
+  useEffect(() => {
+    canvasLineDisplacementRef.bottom = 1;
+    canvasLineDisplacementRef.left = 1;
+    canvasLineDisplacementRef.right = 1;
+    canvasLineDisplacementRef.top = 1;
+    updateCanvasSize();
+    redrawCanvas();
   }, [props.videoPath]);
 
   function RenderVideoElement() {
     if (videoPathIsValid(props.videoPath)) {
       return (
         <div className="video-container">
-          <video ref={videoRef} key={props.videoPath} controls={!props.resizerEnabled}>
+          <video ref={videoRef} key={props.videoPath} controls={!cropLinesUnlocked}>
             <source src={convertFileSrc(props.videoPath)} />
           </video>
           <canvas
             style={{
-              display: props.cropEnabled ? "" : "none",
-              pointerEvents: props.resizerEnabled ? "all" : "none",
+              display: cropEnabled ? "" : "none",
+              pointerEvents: cropLinesUnlocked ? "all" : "none",
               cursor: determineCursor(currentlyHovering),
             }}
             ref={canvasRef}
@@ -206,7 +212,7 @@ function VideoView(props: VideoViewProps) {
     }
     return (
       <div onClick={props.onVideoPathClick} onKeyDown={props.onVideoPathClick} className="empty-video-container">
-        No video loaded. Click to open a video file.
+        No video loaded. Click to open a video file or drag one.
       </div>
     );
   }

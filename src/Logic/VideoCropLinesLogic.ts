@@ -1,15 +1,12 @@
 import { HoveringOver } from "./Enums";
 import type { VideoCropLineDisplacements } from "./Interfaces";
 
-export const determineIfHoveringOverLine = (
-  e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
-  canvasLineDisplacementRef: VideoCropLineDisplacements,
-): HoveringOver | undefined => {
+export const determineIfHoveringOverLine = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>, canvasLineDisplacementRef: VideoCropLineDisplacements): HoveringOver | undefined => {
   const canvasRect = e.currentTarget.getBoundingClientRect();
   const offsetX = e.clientX - canvasRect.left;
   const offsetY = e.clientY - canvasRect.top;
 
-  console.log(offsetX, offsetY);
+  //console.log(offsetX, offsetY);
   const tolerance = 15;
 
   const { left, right, top, bottom } = canvasLineDisplacementRef;
@@ -25,47 +22,43 @@ export const determineIfHoveringOverLine = (
   const isHoveringOverBottomRightCorner = isHoveringOverBottomLine && isHoveringOverRightLine;
 
   if (isHoveringOverTopLeftCorner) {
-    console.log("Hovering over the top-left corner");
+    //console.log("Hovering over the top-left corner");
     return HoveringOver.TopLeftCorner;
   }
   if (isHoveringOverTopRightCorner) {
-    console.log("Hovering over the top-right corner");
+    //console.log("Hovering over the top-right corner");
     return HoveringOver.TopRightCorner;
   }
   if (isHoveringOverBottomLeftCorner) {
-    console.log("Hovering over the bottom-left corner");
+    //console.log("Hovering over the bottom-left corner");
     return HoveringOver.BottomLeftCorner;
   }
   if (isHoveringOverBottomRightCorner) {
-    console.log("Hovering over the bottom-right corner");
+    //console.log("Hovering over the bottom-right corner");
     return HoveringOver.BottomRightCorner;
   }
 
   if (isHoveringOverLeftLine) {
-    console.log("Hovering over the left line");
+    //console.log("Hovering over the left line");
     return HoveringOver.Left;
   }
   if (isHoveringOverRightLine) {
-    console.log("Hovering over the right line");
+    //console.log("Hovering over the right line");
     return HoveringOver.Right;
   }
   if (isHoveringOverTopLine) {
-    console.log("Hovering over the top line");
+    //console.log("Hovering over the top line");
     return HoveringOver.Top;
   }
   if (isHoveringOverBottomLine) {
-    console.log("Hovering over the bottom line");
+    //console.log("Hovering over the bottom line");
     return HoveringOver.Bottom;
   }
 
   return undefined;
 };
 
-export const updateCanvasLineDisplacement = (
-  canvasLineDisplacementRef: VideoCropLineDisplacements,
-  clickedLine: HoveringOver,
-  e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
-) => {
+export const updateCanvasLineDisplacement = (canvasLineDisplacementRef: VideoCropLineDisplacements, clickedLine: HoveringOver, e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
   const minimumSeparation = 25;
   switch (clickedLine) {
     case undefined:

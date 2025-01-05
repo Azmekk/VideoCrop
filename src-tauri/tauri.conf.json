@@ -14,7 +14,8 @@
       {
         "title": "VideoCrop",
         "width": 1280,
-        "height": 720
+        "height": 720,
+        "dragDropEnabled": true
       }
     ],
     "security": {
@@ -47,7 +48,5 @@
     "windows": {
       "installMode": "basicUi"
     }
-    
   }
-  
 }

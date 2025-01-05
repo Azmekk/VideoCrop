@@ -8,7 +8,7 @@ interface CropSegmentProps {
   videoInfo: VideoInfo | undefined;
   disabled: boolean;
   onSegmentEnabledChanged?: (enabled: boolean) => void;
-  onCropLinesEnabledChanged?: (enabled: boolean) => void;
+  onCropLinesLockStateChanged: (enabled: boolean) => void;
   onReset?: () => void;
   onChange: (x: VideoCropPoints) => void;
 }
@@ -136,7 +136,7 @@ function CropSegment(props: CropSegmentProps) {
             onClick={() => {
               const newCropLinesEnabled = !cropLinesEnabled;
               setCropLinesEnabled(newCropLinesEnabled);
-              props.onCropLinesEnabledChanged?.(newCropLinesEnabled);
+              props.onCropLinesLockStateChanged(newCropLinesEnabled);
             }}
           >
             {cropLinesEnabled ? <UnlockOutlined /> : <LockOutlined />}
