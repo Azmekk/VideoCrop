@@ -17,7 +17,7 @@
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
-[![License][license-shield]][license-url]
+[![License][license-shield-GPL3]][license-url]
 [![LinkedIn][linkedin-shield]][linkedin-url]
 
 [![Tauri][tauri-shield]][tauri-url]
@@ -112,7 +112,7 @@
 [stars-url]: https://github.com/Azmekk/VideoCrop/stargazers
 [issues-shield]: https://img.shields.io/github/issues/Azmekk/VideoCrop.svg?style=for-the-badge
 [issues-url]: https://github.com/Azmekk/VideoCrop/issues
-[license-shield]: https://img.shields.io/github/license/Azmekk/VideoCrop.svg?style=for-the-badge
+[license-shield-GPL3]: https://img.shields.io/github/license/Azmekk/VideoCrop.svg?style=for-the-badge
 [license-url]: https://github.com/Azmekk/VideoCrop/blob/master/LICENSE
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://linkedin.com/in/Martin-Y
