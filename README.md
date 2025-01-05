@@ -37,7 +37,7 @@
 
 # How to use
 
-1. **Download VideoCrop_x.x.x_x64_en-US.msi from [latest](https://github.com/Azmekk/VideoCrop/releases/latest/) release**
+1. **Download `VideoCrop_x.x.x_x64_en-US.msi` from [latest](https://github.com/Azmekk/VideoCrop/releases/latest/) release**
 2. **Install the app**
 3. **Allow the app to install FFMPEG** if you don't already have it. This is essential for video processing.
 
