@@ -204,9 +204,9 @@ function App() {
   }
 
   async function checkForUpdates() {
-    const update = await check();
-    console.log("Checking for updates", update !== null);
-    setUpdateAvailable(update !== null);
+    const update_check = await check();
+    console.log("Checking for updates", update_check !== null);
+    setUpdateAvailable(update_check !== null);
   }
 
   async function updateApp() {
@@ -234,7 +234,7 @@ function App() {
         });
 
         console.log("update installed");
-        await relaunch();
+        relaunch();
       }
     } catch (error) {
       alert(`Error while updating: ${error}`);

@@ -1,3 +1,6 @@
+use tauri::http::uri;
+use tauri_plugin_updater::UpdaterExt;
+
 mod handlers;
 mod utils;
 

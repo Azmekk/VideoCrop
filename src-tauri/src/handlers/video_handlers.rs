@@ -24,6 +24,7 @@ pub fn open_video() -> String {
 
 #[tauri::command]
 pub fn pick_output_path() -> String {
+    println!("Picking output path");
     let file = FileDialog::new()
         .set_title("Select Output Path")
         .pick_folder();
