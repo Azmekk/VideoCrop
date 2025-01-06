@@ -37,8 +37,9 @@
 
 # How to use
 
-1. **Download latest release**: Ensure you have the latest version of the app.
-2. **Allow the app to install FFMPEG** if you don't already have it. This is essential for video processing.
+1. **Download `VideoCrop_x.x.x_x64_en-US.msi` from [latest](https://github.com/Azmekk/VideoCrop/releases/latest/) release**
+2. **Install the app**
+3. **Allow the app to install FFMPEG** if you don't already have it. This is essential for video processing.
 
 ### Before you start:
 
@@ -90,7 +91,7 @@
 ### Cropping
 <img src="https://github.com/Azmekk/VideoCrop/blob/master/assets/jvbynCFKti.png" alt="Crop Settings">
 
-- **Unlock** Use the padlock to enable dragging.
+- **Unlock/Lock** the padlock to enable/disable dragging respectively.
 - **Drag and adjust** the crop field to your desired area.
 - **Lock** the crop field to interact with the video.
 - Note that resizing does not work with cropping.
@@ -102,7 +103,14 @@
 
 - Drag to select the portion of the video you want to cut. You can also use optional inputs for precision.
 
-# Important Note. All of these modifications will only be applied if they have been enabled.
+### Submitting 
+
+- **Optional** you can choose to output video or audio only by clicking on the little arrow on the right of the submission button.
+- **Submit** by clicking on the actual button to the left of the arrow to start the process of editing your video.
+<img src="https://github.com/Azmekk/VideoCrop/blob/master/assets/znzpHFzhue.png" alt="Submission options">
+<img src="https://github.com/Azmekk/VideoCrop/blob/master/assets/pmGZKP9ofm.png" alt="Submission">
+
+## Important Note. All of these modifications will only be applied if they have been enabled.
 
 [contributors-shield]: https://img.shields.io/github/contributors/Azmekk/VideoCrop.svg?style=for-the-badge
 [contributors-url]: https://github.com/Azmekk/VideoCrop/graphs/contributors
