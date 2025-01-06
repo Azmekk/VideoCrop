@@ -103,7 +103,14 @@
 
 - Drag to select the portion of the video you want to cut. You can also use optional inputs for precision.
 
-# Important Note. All of these modifications will only be applied if they have been enabled.
+### Submitting 
+
+- **Optional** you can choose to output video or audio only by clicking on the little arrow on the right of the submission button.
+- **Submit** by clicking on the actual button to the left of the arrow to start the process of editing your video.
+<img src="https://github.com/Azmekk/VideoCrop/blob/master/assets/znzpHFzhue.png" alt="Submission options">
+<img src="https://github.com/Azmekk/VideoCrop/blob/master/assets/pmGZKP9ofm.png" alt="Submission">
+
+## Important Note. All of these modifications will only be applied if they have been enabled.
 
 [contributors-shield]: https://img.shields.io/github/contributors/Azmekk/VideoCrop.svg?style=for-the-badge
 [contributors-url]: https://github.com/Azmekk/VideoCrop/graphs/contributors
