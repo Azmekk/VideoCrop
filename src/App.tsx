@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import VideoView from "./components/VideoView";
-import { Button, Modal, Progress } from "antd";
+import { Button, Dropdown, type MenuProps, Modal, Progress } from "antd";
 import CutSegment from "./components/CutSegment";
 import CropSegment from "./components/CropSegment";
 import type { DependenciesSetUpInfo, VideoCropPoints, VideoEditOptions, VideoEditProgress, VideoInfo } from "./Logic/Interfaces";
@@ -15,6 +15,7 @@ import { platform } from "@tauri-apps/plugin-os";
 import { event } from "@tauri-apps/api";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import { check } from "@tauri-apps/plugin-updater";
+import { DownOutlined } from "@ant-design/icons";
 
 function App() {
   const [ffmpegExists, setFfmpegExists] = useState(true);
@@ -26,8 +27,8 @@ function App() {
   const [updatingApp, setUpdatingApp] = useState(false);
   const [draggedVideoPath, setDraggedVideoPath] = useState("");
 
-  const [processingVideo, setProcessingVideo] = useState(false);
-  const [processingAudio, setProcessingAudio] = useState(false);
+  const [selectedSubmitDropdownType, setSelectedSubmitDropdownType] = useState("default");
+  const [processingSubmission, setProcessingSubmission] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
 
   const [cropPointPositions, setCropPointPositions] = useState<VideoCropPoints>(initiateVideoCropPoints());
@@ -118,10 +119,18 @@ function App() {
     }
   }
 
-  async function submitVideo() {
-    await invoke("submit_video_for_editing", { options: videoEditOptions });
+  async function submitForProcessing() {
+    if (selectedSubmitDropdownType === "audio") {
+      await submitAudioOnly();
+    } else {
+      await submitVideo();
+    }
+  }
 
-    setProcessingVideo(true);
+  async function submitVideo() {
+    await invoke("submit_video_for_editing", { options: videoEditOptions, processAudio: selectedSubmitDropdownType !== "video" });
+
+    setProcessingSubmission(true);
     setProcessingProgress(0);
 
     while (true) {
@@ -129,7 +138,7 @@ function App() {
       const newVideoInfo = await invoke<VideoEditProgress>("get_video_progress_info");
 
       if (newVideoInfo.last_error) {
-        setProcessingVideo(false);
+        setProcessingSubmission(false);
         setProcessingProgress(0);
 
         alert(`Something went wrong: ${newVideoInfo.last_error}`);
@@ -144,12 +153,12 @@ function App() {
         setProcessingProgress(100);
         await new Promise((resolve) => setTimeout(resolve, 300));
 
-        setProcessingVideo(false);
+        setProcessingSubmission(false);
         setProcessingProgress(0);
       }
 
       if (!newVideoInfo.working) {
-        setProcessingVideo(false);
+        setProcessingSubmission(false);
         setProcessingProgress(0);
         break;
       }
@@ -158,10 +167,10 @@ function App() {
     }
   }
 
-  async function submitAudio() {
+  async function submitAudioOnly() {
     await invoke("submit_audio_extraction", { options: videoEditOptions });
 
-    setProcessingAudio(true);
+    setProcessingSubmission(true);
     setProcessingProgress(0);
 
     while (true) {
@@ -170,7 +179,7 @@ function App() {
       const newVideoInfo = await invoke<VideoEditProgress>("get_video_progress_info");
 
       if (newVideoInfo.last_error) {
-        setProcessingAudio(false);
+        setProcessingSubmission(false);
         setProcessingProgress(0);
 
         alert(`Something went wrong: ${newVideoInfo.last_error}`);
@@ -185,12 +194,12 @@ function App() {
         setProcessingProgress(100);
         await new Promise((resolve) => setTimeout(resolve, 300));
 
-        setProcessingAudio(false);
+        setProcessingSubmission(false);
         setProcessingProgress(0);
       }
 
       if (!newVideoInfo.working) {
-        setProcessingAudio(false);
+        setProcessingSubmission(false);
         setProcessingProgress(0);
         break;
       }
@@ -234,7 +243,6 @@ function App() {
         });
 
         console.log("update installed");
-        relaunch();
       }
     } catch (error) {
       alert(`Error while updating: ${error}`);
@@ -321,6 +329,33 @@ function App() {
     };
   }, []);
 
+  const codecDropdownItems: { key: string; label: string }[] = [
+    {
+      key: "default",
+      label: "Submit",
+    },
+    {
+      key: "audio",
+      label: "Audio Only",
+    },
+    {
+      key: "video",
+      label: "Video Only",
+    },
+  ];
+
+  const handleProcessingDropdownMenuSelection: MenuProps["onClick"] = (e) => {
+    setSelectedSubmitDropdownType(e.key);
+  };
+
+  const selectedSubmitDropdownTypeProps: MenuProps = {
+    items: codecDropdownItems,
+    onClick: handleProcessingDropdownMenuSelection,
+    selectable: true,
+    selectedKeys: [selectedSubmitDropdownType],
+    defaultSelectedKeys: ["libx264"],
+  };
+
   return (
     <div>
       {!ffmpegExists && (
@@ -337,13 +372,16 @@ function App() {
       )}
       {draggedVideoPath !== "" && <div className="dragged-file-blur">{draggedVideoPath === "invalid" ? <div className="dragged-file-invalid">Invalid file</div> : draggedVideoPath}</div>}
       {interactingWithPaths && <div className="app-disabled">Please select path or cancel selection before continuing.</div>}
-      <main className={`app-container ${(processingVideo || processingAudio) && "disabled"} `}>
+      <main className={`app-container ${processingSubmission && "disabled"} `}>
         <div className="general-video-options-container">
           <div style={{ width: "20%", display: "flex", flexDirection: "column", gap: "20px" }}>
-            <div style={{ marginBottom: "20px" }}>
-              <Button size="large" onClick={getVideoPath} type="primary">
-                Select new video
+            <div style={{ display: "flex", flexDirection: "column", gap: "15px", marginBottom: "20px", maxWidth: "80%" }}>
+              <Button onClick={getVideoPath} type="primary">
+                {videoPathIsValid(videoEditOptions.input_video_path) ? "Change video" : "Select video"}
               </Button>
+              <Dropdown.Button onClick={submitForProcessing} icon={<DownOutlined />} disabled={videoEditOptions.output_video_path === ""} menu={selectedSubmitDropdownTypeProps}>
+                {codecDropdownItems.find((item) => item.key === selectedSubmitDropdownType)?.label}
+              </Dropdown.Button>
             </div>
             <CompressSegment
               onChange={(x, enabled) => setvideoEditOptions({ ...videoEditOptions, compression_enabled: enabled, compression_options: x })}
@@ -380,15 +418,6 @@ function App() {
                   onChange={(x) => setvideoEditOptions({ ...videoEditOptions, crop_options: x })}
                 />
               </div>
-
-              <div style={{ width: "100%", display: "flex", gap: "10px", alignItems: "end", justifyContent: "center", height: "100%" }}>
-                <Button loading={processingVideo} onClick={submitVideo} size="large" type="primary" disabled={videoEditOptions.output_video_path === ""}>
-                  Submit
-                </Button>
-                <Button loading={processingAudio} onClick={submitAudio} size="large" type="primary" disabled={videoEditOptions.output_video_path === ""}>
-                  Extract audio
-                </Button>
-              </div>
             </div>
           </CropPointsContext.Provider>
         </div>
@@ -401,7 +430,7 @@ function App() {
           />
         </div>
       </main>
-      <div style={{ padding: "5px" }}>{(processingVideo || processingAudio) && <Progress percent={processingProgress} status="active" />}</div>
+      <div style={{ padding: "5px" }}>{processingSubmission && <Progress percent={processingProgress} status="active" />}</div>
       <Modal
         title="Update available. Would you like to update?"
         open={updateAvailable}
@@ -419,6 +448,3 @@ function App() {
 }
 
 export default App;
-function relaunch() {
-  throw new Error("Function not implemented.");
-}

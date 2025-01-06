@@ -225,7 +225,7 @@ pub fn get_video_length_in_seconds(video_path: &str) -> Result<f64, String> {
     Ok(duration)
 }
 
-pub fn process_video(options: VideoEditOptions) {
+pub fn process_video(options: VideoEditOptions, process_audio: bool) {
     let mut progress = VIDEO_EDIT_PROGRESS.lock().unwrap();
     progress.working = true;
     progress.progress = 0.0;
@@ -263,19 +263,10 @@ pub fn process_video(options: VideoEditOptions) {
         ffmpeg_args.extend_from_slice(&["-vf".to_string(), crop_filter]);
     }
 
+    let compression_options = &options.compression_options;
     if options.compression_enabled {
-        let compression_options = &options.compression_options;
         ffmpeg_args.extend_from_slice(&["-c:v".to_string(), compression_options.codec.clone()]);
         ffmpeg_args.extend_from_slice(&["-preset".to_string(), compression_options.preset.clone()]);
-        ffmpeg_args
-            .extend_from_slice(&["-c:a".to_string(), compression_options.audio_codec.clone()]);
-
-        if compression_options.audio_codec != "copy" {
-            ffmpeg_args.extend_from_slice(&[
-                "-b:a".to_string(),
-                format!("{}k", compression_options.audio_bitrate),
-            ]);
-        }
 
         if compression_options.using_crf {
             ffmpeg_args
@@ -285,6 +276,24 @@ pub fn process_video(options: VideoEditOptions) {
                 "-b:v".to_string(),
                 format!("{}{}", compression_options.bitrate.to_string(), "k"),
             ]);
+        }
+    }
+
+    if !process_audio {
+        ffmpeg_args.extend_from_slice(&["-an".to_string()]);
+    } else if options.compression_enabled {
+        ffmpeg_args
+            .extend_from_slice(&["-c:a".to_string(), compression_options.audio_codec.clone()]);
+
+        if compression_options.audio_codec != "copy" {
+            if compression_options.audio_bitrate == 0 {
+                ffmpeg_args.extend_from_slice(&["-q:a".to_string(), "0".to_string()]);
+            } else {
+                ffmpeg_args.extend_from_slice(&[
+                    "-b:a".to_string(),
+                    format!("{}k", compression_options.audio_bitrate),
+                ]);
+            }
         }
     }
 

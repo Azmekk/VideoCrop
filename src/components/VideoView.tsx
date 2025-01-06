@@ -27,13 +27,13 @@ function VideoView(props: VideoViewProps) {
     canvasLineDisplacementRef.left = 1;
     canvasLineDisplacementRef.right = 1;
     canvasLineDisplacementRef.top = 1;
-    redrawCanvas();
-  }, [resetCropPoints]);
+    updateCanvasSize();
+  }, [resetCropPoints, props.videoPath, props.videoInfo]);
 
   useEffect(() => {
     cropLinesUnlockedRef.current = cropLinesUnlocked;
-    redrawCanvas();
-  }, [cropLinesUnlocked]);
+    updateCanvasSize();
+  }, [cropLinesUnlocked, cropEnabled]);
 
   useEffect(() => {
     if (!clickedLineInfo.clickedLine && videoRef.current) {
@@ -156,6 +156,7 @@ function VideoView(props: VideoViewProps) {
     canvasLineDisplacementRef.left = 1;
     canvasLineDisplacementRef.right = 1;
     canvasLineDisplacementRef.top = 1;
+    updateCanvasSize();
 
     if (videoRef.current) {
       videoRef.current.addEventListener("loadedmetadata", updateCanvasSize);
