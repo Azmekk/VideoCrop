@@ -375,7 +375,7 @@ function App() {
       <main className={`app-container ${processingSubmission && "disabled"} `}>
         <div className="general-video-options-container">
           <div style={{ width: "20%", display: "flex", flexDirection: "column", gap: "20px" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "15px", marginBottom: "20px", maxWidth: "80%" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "7px", marginBottom: "20px", maxWidth: "80%" }}>
               <Button onClick={getVideoPath} type="primary">
                 {videoPathIsValid(videoEditOptions.input_video_path) ? "Change video" : "Select video"}
               </Button>
