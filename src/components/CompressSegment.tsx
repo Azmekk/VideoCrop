@@ -2,6 +2,7 @@ import { Button, Checkbox, Dropdown, InputNumber, Radio, Space, type MenuProps }
 import { useEffect, useState } from "react";
 import { DownOutlined } from "@ant-design/icons";
 import type { VideoCompressionOptions } from "../Logic/Interfaces";
+import { BitrateType } from "../Logic/Enums";
 
 interface CompressSegmentProps {
   disabled?: boolean;
@@ -11,6 +12,7 @@ function CropSegment(props: CompressSegmentProps) {
   const [codecDropdownTitle, setCodecDropdownTitle] = useState("Codec: H.264");
   const [presetDropdownTitle, setPresetDropdownTitle] = useState("Medium (Default)");
   const [audioDropdownTitle, setAudioDropdownTitle] = useState("Audio: Copy");
+  const [useKbps, setUseKbps] = useState(BitrateType.kbps);
 
   const [segmentEnabled, setSegmentEnabled] = useState(false);
   const [selectedCodec, setSelectedCodec] = useState("libx264");
@@ -33,6 +35,7 @@ function CropSegment(props: CompressSegmentProps) {
         using_crf: selectedQualityOption === 1,
         audio_codec: selectedAudioCodec,
         audio_bitrate: selectedAudioBitrate,
+        bitrate_type: useKbps,
       },
       segmentEnabled,
     );
@@ -218,17 +221,29 @@ function CropSegment(props: CompressSegmentProps) {
                 onChange={(e) => setSelectedCRF(e ?? 0)}
               />
             ) : (
-              <InputNumber
-                style={{ maxWidth: "200px" }}
-                min={100}
-                max={250000}
-                addonAfter={"kbps"}
-                type="number"
-                placeholder="Bitrate"
-                defaultValue={5500}
-                value={selectedBitrate}
-                onChange={(e) => setSelectedBitrate(e ?? 0)}
-              />
+              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                <InputNumber
+                  style={{ maxWidth: "200px" }}
+                  min={useKbps === BitrateType.kbps ? 100 : 1}
+                  max={250000}
+                  addonAfter={
+                    <div
+                      style={{ cursor: "pointer" }}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setUseKbps(useKbps === BitrateType.kbps ? BitrateType.mbps : BitrateType.kbps);
+                      }}
+                    >
+                      {BitrateType[useKbps]}
+                    </div>
+                  }
+                  type="number"
+                  placeholder="Bitrate"
+                  defaultValue={5500}
+                  value={selectedBitrate}
+                  onChange={(e) => setSelectedBitrate(e ?? 0)}
+                />
+              </div>
             )}
           </div>
 

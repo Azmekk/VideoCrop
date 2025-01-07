@@ -66,6 +66,7 @@ pub struct VideoCompressionOptions {
     pub bitrate: i32,
     pub audio_codec: String,
     pub audio_bitrate: i32,
+    pub bitrate_type: i32,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -274,7 +275,11 @@ pub fn process_video(options: VideoEditOptions, process_audio: bool) {
         } else {
             ffmpeg_args.extend_from_slice(&[
                 "-b:v".to_string(),
-                format!("{}{}", compression_options.bitrate.to_string(), "k"),
+                format!(
+                    "{}{}",
+                    compression_options.bitrate.to_string(),
+                    get_bitrate_type_from_int(compression_options.bitrate_type)
+                ),
             ]);
         }
     }
@@ -709,4 +714,12 @@ pub fn add_ffmpeg_to_app_env_if_it_exists() -> bool {
     }
 
     false
+}
+
+pub fn get_bitrate_type_from_int(passedType: i32) -> String {
+    match passedType {
+        1 => "k".to_string(),
+        2 => "M".to_string(),
+        _ => "k".to_string(),
+    }
 }

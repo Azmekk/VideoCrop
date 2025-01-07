@@ -8,3 +8,14 @@ export enum HoveringOver {
   BottomLeftCorner = 7,
   BottomRightCorner = 8,
 }
+
+export enum ExportTypes {
+  VideoAndAudio = 1,
+  AudioOnly = 2,
+  VideoOnly = 3,
+}
+
+export enum BitrateType {
+  kbps = 1,
+  mbps = 2,
+}
