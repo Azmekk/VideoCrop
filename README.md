@@ -44,10 +44,9 @@
 ### Before you start:
 
 <img src="https://github.com/Azmekk/VideoCrop/blob/master/assets/3TJzID8090.png" alt="Select Video">
-1. **Select a video**: Choose a video by clicking on the video container or the top left corner 
-<p> </p>
+1. Choose a video by clicking on the video container or the top left corner 
 <img src="https://github.com/Azmekk/VideoCrop/blob/master/assets/JZ16sWFv5J.png" alt="Select Output">
-2. **Select an output path**: Specify the output path from the top right corner.
+2. Specify the output path from the top right corner.
 
 ### Compression
 <img src="https://github.com/Azmekk/VideoCrop/blob/master/assets/eZwGf2DpIy.png" alt="Compression Settings">
