@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import VideoView from "./components/VideoView";
-import { Button, Dropdown, type MenuProps, Modal, Progress } from "antd";
+import { Button, Dropdown, type MenuProps, Modal, Progress, Space } from "antd";
 import CutSegment from "./components/CutSegment";
 import CropSegment from "./components/CropSegment";
 import type { DependenciesSetUpInfo, VideoCropPoints, VideoEditOptions, VideoEditProgress, VideoInfo } from "./Logic/Interfaces";
@@ -16,6 +16,7 @@ import { event } from "@tauri-apps/api";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import { check } from "@tauri-apps/plugin-updater";
 import { DownOutlined } from "@ant-design/icons";
+import { ExportTypes } from "./Logic/Enums";
 
 function App() {
   const [ffmpegExists, setFfmpegExists] = useState(true);
@@ -27,7 +28,6 @@ function App() {
   const [updatingApp, setUpdatingApp] = useState(false);
   const [draggedVideoPath, setDraggedVideoPath] = useState("");
 
-  const [selectedSubmitDropdownType, setSelectedSubmitDropdownType] = useState("default");
   const [processingSubmission, setProcessingSubmission] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
 
@@ -45,7 +45,7 @@ function App() {
     crop_enabled: false,
     crop_options: { starting_x_offset: 0, starting_y_offset: 0, width: 0, height: 0 },
     compression_enabled: false,
-    compression_options: { codec: "libx264", preset: "medium", using_crf: true, crf: 23, bitrate: 5550, audio_codec: "copy", audio_bitrate: 128 },
+    compression_options: { codec: "libx264", preset: "medium", using_crf: true, crf: 23, bitrate: 5550, audio_codec: "copy", audio_bitrate: 128, bitrate_type: 1 },
     resize_enabled: false,
     resize_options: { width: 0, height: 0 },
   });
@@ -119,16 +119,22 @@ function App() {
     }
   }
 
-  async function submitForProcessing() {
-    if (selectedSubmitDropdownType === "audio") {
-      await submitAudioOnly();
-    } else {
-      await submitVideo();
+  async function exportVideo(exportType: string) {
+    switch (exportType) {
+      case ExportTypes[1]:
+        await submitVideo(true);
+        break;
+      case ExportTypes[2]:
+        await submitAudioOnly();
+        break;
+      case ExportTypes[3]:
+        submitVideo(false);
+        break;
     }
   }
 
-  async function submitVideo() {
-    await invoke("submit_video_for_editing", { options: videoEditOptions, processAudio: selectedSubmitDropdownType !== "video" });
+  async function submitVideo(processAudio: boolean) {
+    await invoke("submit_video_for_editing", { options: videoEditOptions, processAudio });
 
     setProcessingSubmission(true);
     setProcessingProgress(0);
@@ -329,32 +335,20 @@ function App() {
     };
   }, []);
 
-  const codecDropdownItems: { key: string; label: string }[] = [
+  const items: MenuProps["items"] = [
     {
-      key: "default",
-      label: "Submit",
+      key: ExportTypes[1],
+      label: <div>Audio and Video</div>,
     },
     {
-      key: "audio",
-      label: "Audio Only",
+      key: ExportTypes[2],
+      label: <div>Audio Only</div>,
     },
     {
-      key: "video",
-      label: "Video Only",
+      key: ExportTypes[3],
+      label: <div>Video Only</div>,
     },
   ];
-
-  const handleProcessingDropdownMenuSelection: MenuProps["onClick"] = (e) => {
-    setSelectedSubmitDropdownType(e.key);
-  };
-
-  const selectedSubmitDropdownTypeProps: MenuProps = {
-    items: codecDropdownItems,
-    onClick: handleProcessingDropdownMenuSelection,
-    selectable: true,
-    selectedKeys: [selectedSubmitDropdownType],
-    defaultSelectedKeys: ["libx264"],
-  };
 
   return (
     <div>
@@ -375,13 +369,10 @@ function App() {
       <main className={`app-container ${processingSubmission && "disabled"} `}>
         <div className="general-video-options-container">
           <div style={{ width: "20%", display: "flex", flexDirection: "column", gap: "20px" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "15px", marginBottom: "20px", maxWidth: "80%" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "7px", marginBottom: "20px", maxWidth: "80%" }}>
               <Button onClick={getVideoPath} type="primary">
                 {videoPathIsValid(videoEditOptions.input_video_path) ? "Change video" : "Select video"}
               </Button>
-              <Dropdown.Button onClick={submitForProcessing} icon={<DownOutlined />} disabled={videoEditOptions.output_video_path === ""} menu={selectedSubmitDropdownTypeProps}>
-                {codecDropdownItems.find((item) => item.key === selectedSubmitDropdownType)?.label}
-              </Dropdown.Button>
             </div>
             <CompressSegment
               onChange={(x, enabled) => setvideoEditOptions({ ...videoEditOptions, compression_enabled: enabled, compression_options: x })}
@@ -417,6 +408,16 @@ function App() {
                   }}
                   onChange={(x) => setvideoEditOptions({ ...videoEditOptions, crop_options: x })}
                 />
+              </div>
+              <div style={{ placeSelf: "end", marginTop: "auto", width: "96%" }}>
+                <Dropdown disabled={videoEditOptions.output_video_path === ""} menu={{ items, onClick: (e) => exportVideo(e.key) }}>
+                  <Button block color="cyan" size="large" type="primary">
+                    <Space>
+                      Export
+                      <DownOutlined />
+                    </Space>
+                  </Button>
+                </Dropdown>
               </div>
             </div>
           </CropPointsContext.Provider>

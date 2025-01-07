@@ -11,6 +11,7 @@ export interface VideoCompressionOptions {
   using_crf: boolean;
   crf: number;
   bitrate: number;
+  bitrate_type: number;
   audio_codec: string;
   audio_bitrate: number;
 }
