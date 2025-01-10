@@ -102,12 +102,10 @@
 
 - Drag to select the portion of the video you want to cut. You can also use optional inputs for precision.
 
-### Submitting 
+### Exporting 
 
-- **Optional** you can choose to output video or audio only by clicking on the little arrow on the right of the submission button.
-- **Submit** by clicking on the actual button to the left of the arrow to start the process of editing your video.
-<img src="https://github.com/Azmekk/VideoCrop/blob/master/assets/znzpHFzhue.png" alt="Submission options">
-<img src="https://github.com/Azmekk/VideoCrop/blob/master/assets/pmGZKP9ofm.png" alt="Submission">
+- You can choose to export either audio or video separately or both of them together by hovering over the export button and selecting the appropriate option.
+<img src="https://github.com/Azmekk/VideoCrop/blob/master/assets/wBH0CC3EsS.png" alt="Exporting">
 
 ## Important Note. All of these modifications will only be applied if they have been enabled.
 
