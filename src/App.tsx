@@ -4,11 +4,11 @@ import VideoView from "./components/VideoView";
 import { Button, Dropdown, type MenuProps, Modal, Progress, Space } from "antd";
 import CutSegment from "./components/CutSegment";
 import CropSegment from "./components/CropSegment";
-import type { DependenciesSetUpInfo, VideoCropPoints, VideoEditOptions, VideoEditProgress, VideoInfo } from "./Logic/Interfaces";
+import type { DependenciesSetUpInfo, VideoCropPoints, VideoEditOptions, VideoInfo } from "./Logic/Interfaces/Interfaces";
 import "./App.css";
 import CompressSegment from "./components/CompressSegment";
 import ResizeSegment from "./components/ResizeSegment";
-import { initiateVideoCropPoints, videoPathIsValid } from "./Logic/Utils";
+import { initiateVideoCropPoints, videoPathIsValid } from "./Logic/Utils/Utils";
 import { CropPointsContext } from "./Logic/GlobalContexts";
 import VideoPathSelection from "./components/VideoPathSelection";
 import { platform } from "@tauri-apps/plugin-os";
@@ -16,7 +16,9 @@ import { event } from "@tauri-apps/api";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import { check } from "@tauri-apps/plugin-updater";
 import { DownOutlined } from "@ant-design/icons";
-import { ExportTypes } from "./Logic/Enums";
+import { ExportTypes } from "./Logic/Enums/Enums";
+import { downloadDependencies, submitAudioOnly, submitVideo } from "./Logic/Utils/FfmpegUtils";
+import { updateApp } from "./Logic/Utils/UpdaterUtils";
 
 function App() {
   const [ffmpegExists, setFfmpegExists] = useState(true);
@@ -48,6 +50,7 @@ function App() {
     compression_options: { codec: "libx264", preset: "medium", using_crf: true, crf: 23, bitrate: 5550, audio_codec: "copy", audio_bitrate: 128, bitrate_type: 1 },
     resize_enabled: false,
     resize_options: { width: 0, height: 0 },
+    process_audio: true,
   });
 
   function isValidVideoFile(filePath: string): boolean {
@@ -120,98 +123,25 @@ function App() {
   }
 
   async function exportVideo(exportType: string) {
+    const localVideoEditOptions = videoEditOptions;
+
     switch (exportType) {
       case ExportTypes[1]:
-        await submitVideo(true);
+        localVideoEditOptions.process_audio = true;
+        await submitVideo(localVideoEditOptions, setProcessingSubmission, setProcessingProgress);
         break;
       case ExportTypes[2]:
-        await submitAudioOnly();
+        await submitAudioOnly(localVideoEditOptions, setProcessingSubmission, setProcessingProgress);
         break;
       case ExportTypes[3]:
-        submitVideo(false);
+        localVideoEditOptions.process_audio = false;
+        submitVideo(localVideoEditOptions, setProcessingSubmission, setProcessingProgress);
         break;
     }
   }
 
-  async function submitVideo(processAudio: boolean) {
-    await invoke("submit_video_for_editing", { options: videoEditOptions, processAudio });
-
-    setProcessingSubmission(true);
-    setProcessingProgress(0);
-
-    while (true) {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      const newVideoInfo = await invoke<VideoEditProgress>("get_video_progress_info");
-
-      if (newVideoInfo.last_error) {
-        setProcessingSubmission(false);
-        setProcessingProgress(0);
-
-        alert(`Something went wrong: ${newVideoInfo.last_error}`);
-        break;
-      }
-
-      if (newVideoInfo.working) {
-        setProcessingProgress(newVideoInfo.progress);
-      }
-
-      if (newVideoInfo.progress === 100) {
-        setProcessingProgress(100);
-        await new Promise((resolve) => setTimeout(resolve, 300));
-
-        setProcessingSubmission(false);
-        setProcessingProgress(0);
-      }
-
-      if (!newVideoInfo.working) {
-        setProcessingSubmission(false);
-        setProcessingProgress(0);
-        break;
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 50));
-    }
-  }
-
-  async function submitAudioOnly() {
-    await invoke("submit_audio_extraction", { options: videoEditOptions });
-
-    setProcessingSubmission(true);
-    setProcessingProgress(0);
-
-    while (true) {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-
-      const newVideoInfo = await invoke<VideoEditProgress>("get_video_progress_info");
-
-      if (newVideoInfo.last_error) {
-        setProcessingSubmission(false);
-        setProcessingProgress(0);
-
-        alert(`Something went wrong: ${newVideoInfo.last_error}`);
-        break;
-      }
-
-      if (newVideoInfo.working) {
-        setProcessingProgress(newVideoInfo.progress);
-      }
-
-      if (newVideoInfo.progress === 100) {
-        setProcessingProgress(100);
-        await new Promise((resolve) => setTimeout(resolve, 300));
-
-        setProcessingSubmission(false);
-        setProcessingProgress(0);
-      }
-
-      if (!newVideoInfo.working) {
-        setProcessingSubmission(false);
-        setProcessingProgress(0);
-        break;
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 50));
-    }
+  async function updateAppButtonOnClick() {
+    updateApp(setUpdateAvailable, setUpdatingApp);
   }
 
   async function checkFfmpegAndFfprobe() {
@@ -222,66 +152,6 @@ function App() {
     const update_check = await check();
     console.log("Checking for updates", update_check !== null);
     setUpdateAvailable(update_check !== null);
-  }
-
-  async function updateApp() {
-    try {
-      setUpdatingApp(true);
-      const update = await check();
-      if (update) {
-        console.log(`found update ${update.version} from ${update.date} with notes ${update.body}`);
-        let downloaded = 0;
-        let contentLength = 0;
-        await update.downloadAndInstall((event) => {
-          switch (event.event) {
-            case "Started":
-              contentLength = event.data.contentLength ?? 0;
-              console.log(`started downloading ${event.data.contentLength} bytes`);
-              break;
-            case "Progress":
-              downloaded += event.data.chunkLength;
-              console.log(`downloaded ${downloaded} from ${contentLength}`);
-              break;
-            case "Finished":
-              console.log("download finished");
-              break;
-          }
-        });
-
-        console.log("update installed");
-      }
-    } catch (error) {
-      alert(`Error while updating: ${error}`);
-    } finally {
-      setUpdatingApp(false);
-      setUpdateAvailable(false);
-    }
-  }
-
-  async function downloadDependencies() {
-    try {
-      setDownloadingDependencies(true);
-      if (currentOs !== "windows") {
-        return;
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      await invoke("download_ffmpeg_windows");
-
-      while (true) {
-        const depSetUpInfo = await invoke<DependenciesSetUpInfo>("get_depencencies_download_info");
-        setDepencenciesSetUpInfo(depSetUpInfo);
-
-        if (depSetUpInfo.completed) {
-          break;
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, 50));
-      }
-    } finally {
-      setFfmpegExists(await invoke("check_ffmpeg_and_ffprobe"));
-      setDownloadingDependencies(false);
-    }
   }
 
   useEffect(() => {
@@ -335,6 +205,10 @@ function App() {
     };
   }, []);
 
+  async function downloadDepsButtonOnClick() {
+    downloadDependencies(setDownloadingDependencies, setDepencenciesSetUpInfo, setFfmpegExists, currentOs);
+  }
+
   const items: MenuProps["items"] = [
     {
       key: ExportTypes[1],
@@ -357,7 +231,7 @@ function App() {
           FFmpeg and FFprobe were not located on path.
           {currentOs === "windows" && (
             <div>
-              <Button loading={downloadingDependencies} onClick={downloadDependencies} size="large" type="primary">
+              <Button loading={downloadingDependencies} onClick={downloadDepsButtonOnClick} size="large" type="primary">
                 {downloadingDependencies ? <div>{depencenciesSetUpInfo.status}</div> : "Download for app only"}
               </Button>
             </div>
@@ -436,7 +310,7 @@ function App() {
         title="Update available. Would you like to update?"
         open={updateAvailable}
         footer={[
-          <Button loading={updatingApp} onClick={async () => await updateApp()} key="yes" type="primary">
+          <Button loading={updatingApp} onClick={updateAppButtonOnClick} key="yes" type="primary">
             Yes
           </Button>,
           <Button loading={updatingApp} onClick={() => setUpdateAvailable(false)} key="no" type="default">

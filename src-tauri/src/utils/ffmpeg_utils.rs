@@ -41,6 +41,7 @@ pub struct VideoEditOptions {
     pub compression_options: VideoCompressionOptions,
     pub resize_enabled: bool,
     pub resize_options: ResizeOptions,
+    pub process_audio: bool,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -226,7 +227,7 @@ pub fn get_video_length_in_seconds(video_path: &str) -> Result<f64, String> {
     Ok(duration)
 }
 
-pub fn process_video(options: VideoEditOptions, process_audio: bool) {
+pub fn process_video(options: VideoEditOptions) {
     let mut progress = VIDEO_EDIT_PROGRESS.lock().unwrap();
     progress.working = true;
     progress.progress = 0.0;
@@ -284,7 +285,7 @@ pub fn process_video(options: VideoEditOptions, process_audio: bool) {
         }
     }
 
-    if !process_audio {
+    if !options.process_audio {
         ffmpeg_args.extend_from_slice(&["-an".to_string()]);
     } else if options.compression_enabled {
         ffmpeg_args
@@ -304,10 +305,19 @@ pub fn process_video(options: VideoEditOptions, process_audio: bool) {
 
     if options.resize_enabled && !options.crop_enabled {
         let resize_options = &options.resize_options;
-        ffmpeg_args.extend_from_slice(&[
-            "-vf".to_string(),
-            format!("scale={}:{}", resize_options.width, resize_options.height),
-        ]);
+
+        let width = if resize_options.width % 2 == 0 {
+            resize_options.width
+        } else {
+            resize_options.width + 1
+        };
+        let height = if resize_options.height % 2 == 0 {
+            resize_options.height
+        } else {
+            resize_options.height + 1
+        };
+
+        ffmpeg_args.extend_from_slice(&["-vf".to_string(), format!("scale={}:{}", width, height)]);
     }
 
     ffmpeg_args.extend_from_slice(&[
@@ -324,7 +334,7 @@ pub fn process_video(options: VideoEditOptions, process_audio: bool) {
         let new_file_name = format!(
             "{}_VideoCrop.{}",
             file_stem.to_string_lossy(),
-            input_path.extension().unwrap().to_str().unwrap()
+            "mp4".to_string()
         );
 
         let new_output_path = get_unique_filename(&output_path.join(new_file_name));
@@ -716,8 +726,8 @@ pub fn add_ffmpeg_to_app_env_if_it_exists() -> bool {
     false
 }
 
-pub fn get_bitrate_type_from_int(passedType: i32) -> String {
-    match passedType {
+pub fn get_bitrate_type_from_int(passed_type: i32) -> String {
+    match passed_type {
         1 => "k".to_string(),
         2 => "M".to_string(),
         _ => "k".to_string(),

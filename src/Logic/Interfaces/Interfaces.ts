@@ -43,6 +43,7 @@ export interface VideoEditOptions {
   compression_options: VideoCompressionOptions;
   resize_enabled: boolean;
   resize_options: ResizeOptions;
+  process_audio: boolean;
 }
 
 export interface VideoCropLineDisplacements {

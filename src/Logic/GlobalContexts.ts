@@ -1,7 +1,7 @@
 import React from "react";
-import { initiateVideoCropPoints } from "./Utils";
-import type { VideoCropPoints } from "./Interfaces";
-import type { HoveringOver } from "./Enums";
+import { initiateVideoCropPoints } from "./Utils/Utils";
+import type { VideoCropPoints } from "./Interfaces/Interfaces";
+import type { HoveringOver } from "./Enums/Enums";
 
 export const CropPointsContext = React.createContext({
   cropPointPositions: initiateVideoCropPoints(),

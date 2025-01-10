@@ -1,6 +1,6 @@
 import { Button } from "antd";
-import type { VideoEditOptions } from "../Logic/Interfaces";
-import { videoPathIsValid } from "../Logic/Utils";
+import type { VideoEditOptions } from "../Logic/Interfaces/Interfaces";
+import { videoPathIsValid } from "../Logic/Utils/Utils";
 
 const videoPathSelection = (props: { videoEditOptions: VideoEditOptions; videoPath: string; onClick: () => void }) => {
   return (

@@ -1,5 +1,5 @@
 import { Checkbox, InputNumber } from "antd";
-import type { VideoInfo } from "../Logic/Interfaces";
+import type { VideoInfo } from "../Logic/Interfaces/Interfaces";
 import { useEffect, useState } from "react";
 
 interface ResizeSegmentProps {

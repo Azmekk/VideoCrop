@@ -1,6 +1,6 @@
 import { Checkbox, Input, Slider, type SliderSingleProps } from "antd";
 import { useEffect, useState } from "react";
-import type { VideoCutOptions } from "../Logic/Interfaces";
+import type { VideoCutOptions } from "../Logic/Interfaces/Interfaces";
 
 interface CutSegmentProps {
   videoPath: string;

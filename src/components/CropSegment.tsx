@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { Button, Checkbox, InputNumber } from "antd";
 import { cropInputManuallyChangedInfo, CropPointsContext } from "../Logic/GlobalContexts";
 import { LockOutlined, UnlockOutlined } from "@ant-design/icons";
-import type { VideoCropPoints, VideoInfo } from "../Logic/Interfaces";
+import type { VideoCropPoints, VideoInfo } from "../Logic/Interfaces/Interfaces";
 
 interface CropSegmentProps {
   videoInfo: VideoInfo | undefined;

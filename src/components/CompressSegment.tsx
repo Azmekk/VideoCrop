@@ -1,8 +1,8 @@
 import { Button, Checkbox, Dropdown, InputNumber, Radio, Space, type MenuProps } from "antd";
 import { useEffect, useState } from "react";
 import { DownOutlined } from "@ant-design/icons";
-import type { VideoCompressionOptions } from "../Logic/Interfaces";
-import { BitrateType } from "../Logic/Enums";
+import type { VideoCompressionOptions } from "../Logic/Interfaces/Interfaces";
+import { BitrateType } from "../Logic/Enums/Enums";
 
 interface CompressSegmentProps {
   disabled?: boolean;
