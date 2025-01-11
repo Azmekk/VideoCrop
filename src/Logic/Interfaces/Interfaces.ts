@@ -64,4 +64,5 @@ export interface VideoEditProgress {
 export interface DependenciesSetUpInfo {
   status: string;
   completed: boolean;
+  percent_downloaded: number;
 }

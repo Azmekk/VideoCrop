@@ -25,7 +25,7 @@ function App() {
   const [interactingWithPaths, setInteractingWithPaths] = useState(false);
   const [videoInfo, setVideoInfo] = useState<VideoInfo | undefined>(undefined);
   const [resetCropPoints, setResetCropPoints] = useState(0);
-  const [depencenciesSetUpInfo, setDepencenciesSetUpInfo] = useState<DependenciesSetUpInfo>({ status: "", completed: false });
+  const [depencenciesSetUpInfo, setDepencenciesSetUpInfo] = useState<DependenciesSetUpInfo>({ status: "", completed: false, percent_downloaded: 0 });
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [updatingApp, setUpdatingApp] = useState(false);
   const [draggedVideoPath, setDraggedVideoPath] = useState("");
@@ -230,10 +230,13 @@ function App() {
         <div className="app-disabled">
           FFmpeg and FFprobe were not located on path.
           {currentOs === "windows" && (
-            <div>
+            <div style={{ color: "white" }}>
               <Button loading={downloadingDependencies} onClick={downloadDepsButtonOnClick} size="large" type="primary">
                 {downloadingDependencies ? <div>{depencenciesSetUpInfo.status}</div> : "Download for app only"}
               </Button>
+              {depencenciesSetUpInfo.percent_downloaded > 0.1 && depencenciesSetUpInfo.percent_downloaded < 100 && (
+                <Progress size={[200, 20]} percentPosition={{ align: "center", type: "inner" }} percent={Math.round(depencenciesSetUpInfo.percent_downloaded)} />
+              )}
             </div>
           )}
         </div>

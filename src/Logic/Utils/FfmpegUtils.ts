@@ -111,7 +111,7 @@ export async function downloadDependencies(
         break;
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 180));
     }
   } finally {
     setFfmpegExists(await invoke("check_ffmpeg_and_ffprobe"));

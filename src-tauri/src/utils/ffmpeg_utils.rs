@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::fs::File;
+use std::io::Read;
+use std::io::Write;
 use std::os::windows::process::CommandExt;
 use std::{io::BufRead, path::PathBuf, process::Command, sync::Mutex};
 use uuid::Uuid;
@@ -20,6 +22,7 @@ pub struct VideoInfo {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct DependenciesSetUpInfo {
+    percent_downloaded: f64,
     status: String,
     completed: bool,
 }
@@ -86,6 +89,7 @@ lazy_static::lazy_static! {
     });
 
     static ref FFMPEG_DOWNLOAD_PROGRESS: Mutex<DependenciesSetUpInfo> = Mutex::new(DependenciesSetUpInfo {
+        percent_downloaded: 0.0,
         status: "".to_string(),
         completed: false,
     });
@@ -614,8 +618,9 @@ pub fn get_video_progress_info() -> VideoEditProgress {
     progress.clone()
 }
 
-pub fn update_ffmpeg_download_status(status: &str, completed: bool) {
+pub fn update_ffmpeg_download_status(status: &str, completed: bool, percent_downloaded: f64) {
     let mut progress = FFMPEG_DOWNLOAD_PROGRESS.lock().unwrap();
+    progress.percent_downloaded = percent_downloaded;
     progress.status = status.to_string();
     progress.completed = completed;
     drop(progress);
@@ -643,7 +648,7 @@ pub fn download_and_add_ffmpeg_to_path_windows() {
         fs::create_dir_all(&video_crop_ffmpeg_path).unwrap();
     }
 
-    update_ffmpeg_download_status("Downloading...", false);
+    update_ffmpeg_download_status("Downloading...", false, 0.0);
 
     let download_url = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip";
     let ffmpeg_zip_download_path = &temp_path.join(format!(
@@ -665,8 +670,25 @@ pub fn download_and_add_ffmpeg_to_path_windows() {
     let download_result = reqwest::blocking::get(download_url);
     match download_result {
         Ok(mut response) => {
+            let total_size = response.content_length().unwrap_or(0);
             let mut file = fs::File::create(ffmpeg_zip_download_path).unwrap();
-            response.copy_to(&mut file).unwrap();
+            let mut downloaded: u64 = 0;
+            let mut buffer = [0; 8192];
+
+            while let Ok(bytes_read) = response.read(&mut buffer) {
+                if bytes_read == 0 {
+                    break;
+                }
+
+                file.write_all(&buffer[..bytes_read]).unwrap();
+
+                downloaded += bytes_read as u64;
+
+                if total_size > 0 {
+                    let progress = downloaded as f64 / total_size as f64 * 100.0;
+                    update_ffmpeg_download_status("Downloading...", false, progress);
+                }
+            }
         }
         Err(e) => {
             panic!("Failed to download ffmpeg: {}", e);
@@ -675,13 +697,13 @@ pub fn download_and_add_ffmpeg_to_path_windows() {
 
     println!("Extracting ffmpeg to: {:?}", extract_path);
 
-    update_ffmpeg_download_status("Extracting...", false);
+    update_ffmpeg_download_status("Extracting...", false, 100.0);
     let zip_cursor = File::open(&ffmpeg_zip_download_path).unwrap();
     zip_extract::extract(zip_cursor, &extract_path, true).unwrap();
 
     add_ffmpeg_to_app_env(ffmpeg_bin_path.to_str().unwrap());
 
-    update_ffmpeg_download_status("Finalizing...", true);
+    update_ffmpeg_download_status("Finalizing...", true, 100.0);
     fs::remove_file(ffmpeg_zip_download_path).unwrap();
 }
 
