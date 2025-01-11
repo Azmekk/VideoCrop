@@ -14,6 +14,8 @@ pub struct VideoInfo {
     width: u32,
     height: u32,
     duration: String,
+    aspect_ratio_width: u32,
+    aspect_ratio_height: u32,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -115,7 +117,7 @@ pub fn get_video_info(video_path: &str) -> Result<VideoInfo, String> {
         "-select_streams",
         "v:0",
         "-show_entries",
-        "stream=width,height",
+        "stream=width,height,display_aspect_ratio",
         "-of",
         "default=noprint_wrappers=1:nokey=1",
         &video_path,
@@ -163,6 +165,24 @@ pub fn get_video_info(video_path: &str) -> Result<VideoInfo, String> {
         .parse()
         .map_err(|e| format!("Failed to parse height: {}", e))?;
 
+    let aspect_ratio_string: String = lines
+        .next()
+        .ok_or("Missing aspect ratio")?
+        .parse()
+        .map_err(|e| format!("Failed to parse aspect ratio: {}", e))?;
+
+    let aspect_ratio_parts: Vec<&str> = aspect_ratio_string.split(':').collect();
+    if aspect_ratio_parts.len() != 2 {
+        return Err("Invalid aspect ratio format".to_string());
+    }
+
+    let aspect_ratio_width: u32 = aspect_ratio_parts[0]
+        .parse()
+        .map_err(|e| format!("Failed to parse aspect ratio width: {}", e))?;
+    let aspect_ratio_height: u32 = aspect_ratio_parts[1]
+        .parse()
+        .map_err(|e| format!("Failed to parse aspect ratio height: {}", e))?;
+
     let duration_output = Command::new("ffprobe")
         .creation_flags(CREATE_NO_WINDOW)
         .args([
@@ -194,6 +214,8 @@ pub fn get_video_info(video_path: &str) -> Result<VideoInfo, String> {
         width,
         height,
         duration,
+        aspect_ratio_width,
+        aspect_ratio_height,
     })
 }
 

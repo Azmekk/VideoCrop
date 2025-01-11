@@ -25,6 +25,8 @@ export interface VideoInfo {
   width: number;
   height: number;
   duration: string;
+  aspect_ratio_width: number;
+  aspect_ratio_height: number;
 }
 
 export interface ResizeOptions {
