@@ -1,7 +1,7 @@
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { useContext, useEffect, useRef, useState } from "react";
 import { getCanvasToVideoSizeDifference, videoPathIsValid } from "../Logic/Utils/Utils";
-import { canvasLineDisplacementRef, clickedLineInfo, cropInputManuallyChangedInfo, CropPointsContext } from "../Logic/GlobalContexts";
+import { canvasLineDisplacementRef, clickedLineInfo, cropInputManuallyChangedInfo, CropPointsContext, CutSegmentContext } from "../Logic/GlobalContexts";
 import type { VideoCropPoints, VideoInfo } from "../Logic/Interfaces/Interfaces";
 import { HoveringOver } from "../Logic/Enums/Enums";
 import { determineIfHoveringOverLine, updateCanvasLineDisplacement } from "../Logic/Utils/VideoCropUtils";
@@ -21,6 +21,7 @@ function VideoView(props: VideoViewProps) {
   const [currentlyHovering, setCurrentlyHovering] = useState<HoveringOver | undefined>(undefined);
 
   const cropLinesUnlockedRef = useRef(cropLinesUnlocked);
+  const { sharedCutSegmentOptions } = useContext(CutSegmentContext);
 
   useEffect(() => {
     canvasLineDisplacementRef.bottom = 1;
@@ -156,6 +157,20 @@ function VideoView(props: VideoViewProps) {
       window.removeEventListener("resize", updateCanvasSize);
     };
   }, []);
+
+  const setVideoTime = (time: number) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = time;
+    }
+  };
+
+  useEffect(() => {
+    setVideoTime(sharedCutSegmentOptions.startingSecond);
+  }, [sharedCutSegmentOptions.startingSecond]);
+
+  useEffect(() => {
+    setVideoTime(sharedCutSegmentOptions.endingSecond);
+  }, [sharedCutSegmentOptions.endingSecond]);
 
   useEffect(() => {
     canvasLineDisplacementRef.bottom = 1;

@@ -66,3 +66,13 @@ export interface DependenciesSetUpInfo {
   completed: boolean;
   percent_downloaded: number;
 }
+
+export interface SharedCutSegmentOptions {
+  startingSecond: number;
+  endingSecond: number;
+}
+
+export interface SharedCutSegmentOptionsContext {
+  sharedCutSegmentOptions: SharedCutSegmentOptions;
+  setSharedCutSegmentOptions: (_: SharedCutSegmentOptions) => void;
+}

@@ -4,12 +4,12 @@ import VideoView from "./components/VideoView";
 import { Button, Dropdown, type MenuProps, Modal, Progress, Space } from "antd";
 import CutSegment from "./components/CutSegment";
 import CropSegment from "./components/CropSegment";
-import type { DependenciesSetUpInfo, VideoCropPoints, VideoEditOptions, VideoInfo } from "./Logic/Interfaces/Interfaces";
+import type { DependenciesSetUpInfo, SharedCutSegmentOptions, VideoCropPoints, VideoEditOptions, VideoInfo } from "./Logic/Interfaces/Interfaces";
 import "./App.css";
 import CompressSegment from "./components/CompressSegment";
 import ResizeSegment from "./components/ResizeSegment";
 import { initiateVideoCropPoints, videoPathIsValid } from "./Logic/Utils/Utils";
-import { CropPointsContext } from "./Logic/GlobalContexts";
+import { CropPointsContext, CutSegmentContext } from "./Logic/GlobalContexts";
 import VideoPathSelection from "./components/VideoPathSelection";
 import { platform } from "@tauri-apps/plugin-os";
 import { event } from "@tauri-apps/api";
@@ -52,6 +52,8 @@ function App() {
     resize_options: { width: 0, height: 0 },
     process_audio: true,
   });
+
+  const [cutSegmentSharedOptions, setCutSegmentSharedOptions] = useState<SharedCutSegmentOptions>({ startingSecond: 0, endingSecond: 0 });
 
   function isValidVideoFile(filePath: string): boolean {
     const validExtensions = ["mp4", "avi", "mov", "mkv", "webm"];
@@ -244,69 +246,71 @@ function App() {
       {draggedVideoPath !== "" && <div className="dragged-file-blur">{draggedVideoPath === "invalid" ? <div className="dragged-file-invalid">Invalid file</div> : draggedVideoPath}</div>}
       {interactingWithPaths && <div className="app-disabled">Please select path or cancel selection before continuing.</div>}
       <main className={`app-container ${processingSubmission && "disabled"} `}>
-        <div className="general-video-options-container">
-          <div style={{ width: "20%", display: "flex", flexDirection: "column", gap: "20px" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "7px", marginBottom: "20px", maxWidth: "80%" }}>
-              <Button onClick={getVideoPath} type="primary">
-                {videoPathIsValid(videoEditOptions.input_video_path) ? "Change video" : "Select video"}
-              </Button>
+        <CutSegmentContext.Provider value={{ sharedCutSegmentOptions: cutSegmentSharedOptions, setSharedCutSegmentOptions: setCutSegmentSharedOptions }}>
+          <div className="general-video-options-container">
+            <div style={{ width: "20%", display: "flex", flexDirection: "column", gap: "20px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "7px", marginBottom: "20px", maxWidth: "80%" }}>
+                <Button onClick={getVideoPath} type="primary">
+                  {videoPathIsValid(videoEditOptions.input_video_path) ? "Change video" : "Select video"}
+                </Button>
+              </div>
+              <CompressSegment
+                onChange={(x, enabled) => setvideoEditOptions({ ...videoEditOptions, compression_enabled: enabled, compression_options: x })}
+                disabled={!videoPathIsValid(videoEditOptions.input_video_path)}
+              />
+              <ResizeSegment
+                onChange={(x, enabled) => setvideoEditOptions({ ...videoEditOptions, resize_enabled: enabled, resize_options: x })}
+                disabled={!videoPathIsValid(videoEditOptions.input_video_path)}
+                videoInfo={videoInfo}
+                videoNotCropped={videoEditOptions.crop_enabled === false}
+              />
             </div>
-            <CompressSegment
-              onChange={(x, enabled) => setvideoEditOptions({ ...videoEditOptions, compression_enabled: enabled, compression_options: x })}
-              disabled={!videoPathIsValid(videoEditOptions.input_video_path)}
-            />
-            <ResizeSegment
-              onChange={(x, enabled) => setvideoEditOptions({ ...videoEditOptions, resize_enabled: enabled, resize_options: x })}
-              disabled={!videoPathIsValid(videoEditOptions.input_video_path)}
-              videoInfo={videoInfo}
-              videoNotCropped={videoEditOptions.crop_enabled === false}
+            <CropPointsContext.Provider
+              value={{ cropPointPositions, setCropPointPositions, cropLinesUnlocked, setCropLinesUnlocked, cropEnabled: videoEditOptions.crop_enabled, resetCropPoints, setResetCropPoints }}
+            >
+              <VideoView
+                videoInfo={videoInfo}
+                videoPath={videoEditOptions.input_video_path}
+                onVideoPathClick={(): void => {
+                  getVideoPath();
+                }}
+              />
+              <div style={{ width: "20%", display: "flex", flexDirection: "column", alignItems: "end" }}>
+                <div>
+                  <VideoPathSelection videoEditOptions={videoEditOptions} videoPath={videoEditOptions.input_video_path} onClick={pickOutputPath} />
+                  <CropSegment
+                    videoInfo={videoInfo}
+                    onCropLinesLockStateChanged={(e) => setCropLinesUnlocked(e)}
+                    onSegmentEnabledChanged={(e) => setvideoEditOptions({ ...videoEditOptions, crop_enabled: e })}
+                    disabled={!videoPathIsValid(videoEditOptions.input_video_path)}
+                    onReset={() => {
+                      setResetCropPoints(resetCropPoints + 1);
+                    }}
+                    onChange={(x) => setvideoEditOptions({ ...videoEditOptions, crop_options: x })}
+                  />
+                </div>
+                <div style={{ placeSelf: "end", marginTop: "auto", width: "96%" }}>
+                  <Dropdown disabled={videoEditOptions.output_video_path === ""} menu={{ items, onClick: (e) => exportVideo(e.key) }}>
+                    <Button block color="cyan" size="large" type="primary">
+                      <Space>
+                        Export
+                        <DownOutlined />
+                      </Space>
+                    </Button>
+                  </Dropdown>
+                </div>
+              </div>
+            </CropPointsContext.Provider>
+          </div>
+
+          <div className={videoPathIsValid(videoEditOptions.input_video_path) ? "" : "disabled"}>
+            <CutSegment
+              onChange={(x, enabled) => setvideoEditOptions({ ...videoEditOptions, cut_options_enabled: enabled, cut_options: x })}
+              videoPath={videoEditOptions.input_video_path}
+              videoDuration={videoInfo?.duration ?? "0:00:00.000"}
             />
           </div>
-          <CropPointsContext.Provider
-            value={{ cropPointPositions, setCropPointPositions, cropLinesUnlocked, setCropLinesUnlocked, cropEnabled: videoEditOptions.crop_enabled, resetCropPoints, setResetCropPoints }}
-          >
-            <VideoView
-              videoInfo={videoInfo}
-              videoPath={videoEditOptions.input_video_path}
-              onVideoPathClick={(): void => {
-                getVideoPath();
-              }}
-            />
-            <div style={{ width: "20%", display: "flex", flexDirection: "column", alignItems: "end" }}>
-              <div>
-                <VideoPathSelection videoEditOptions={videoEditOptions} videoPath={videoEditOptions.input_video_path} onClick={pickOutputPath} />
-                <CropSegment
-                  videoInfo={videoInfo}
-                  onCropLinesLockStateChanged={(e) => setCropLinesUnlocked(e)}
-                  onSegmentEnabledChanged={(e) => setvideoEditOptions({ ...videoEditOptions, crop_enabled: e })}
-                  disabled={!videoPathIsValid(videoEditOptions.input_video_path)}
-                  onReset={() => {
-                    setResetCropPoints(resetCropPoints + 1);
-                  }}
-                  onChange={(x) => setvideoEditOptions({ ...videoEditOptions, crop_options: x })}
-                />
-              </div>
-              <div style={{ placeSelf: "end", marginTop: "auto", width: "96%" }}>
-                <Dropdown disabled={videoEditOptions.output_video_path === ""} menu={{ items, onClick: (e) => exportVideo(e.key) }}>
-                  <Button block color="cyan" size="large" type="primary">
-                    <Space>
-                      Export
-                      <DownOutlined />
-                    </Space>
-                  </Button>
-                </Dropdown>
-              </div>
-            </div>
-          </CropPointsContext.Provider>
-        </div>
-
-        <div className={videoPathIsValid(videoEditOptions.input_video_path) ? "" : "disabled"}>
-          <CutSegment
-            onChange={(x, enabled) => setvideoEditOptions({ ...videoEditOptions, cut_options_enabled: enabled, cut_options: x })}
-            videoPath={videoEditOptions.input_video_path}
-            videoDuration={videoInfo?.duration ?? "0:00:00.000"}
-          />
-        </div>
+        </CutSegmentContext.Provider>
       </main>
       <div style={{ padding: "5px" }}>{processingSubmission && <Progress percent={processingProgress} status="active" />}</div>
       <Modal

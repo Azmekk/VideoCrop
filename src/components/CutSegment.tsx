@@ -1,6 +1,7 @@
 import { Checkbox, Input, Slider, type SliderSingleProps } from "antd";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import type { VideoCutOptions } from "../Logic/Interfaces/Interfaces";
+import { CutSegmentContext } from "../Logic/GlobalContexts";
 
 interface CutSegmentProps {
   videoPath: string;
@@ -17,12 +18,6 @@ interface VideoDuration {
 
 function CutSegment(props: CutSegmentProps) {
   const [totalSeconds, setTotalSeconds] = useState(0);
-  const [_, setVideoDuration] = useState<VideoDuration>({
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-    microseconds: 0,
-  });
 
   const [startingSecond, setStartingSecond] = useState(0);
   const [endingSecond, setEndingSecond] = useState(0);
@@ -32,9 +27,10 @@ function CutSegment(props: CutSegmentProps) {
 
   const [segmentEnabled, setSegmentEnabled] = useState(false);
 
+  const { setSharedCutSegmentOptions } = useContext(CutSegmentContext);
+
   useEffect(() => {
     const vidDuration = parseVideoDuration(props.videoDuration);
-    setVideoDuration(vidDuration);
 
     const totalSecs = convertToSeconds(vidDuration);
     setTotalSeconds(totalSecs);
@@ -101,8 +97,13 @@ function CutSegment(props: CutSegmentProps) {
   };
 
   const handleSliderInput = (e: number[]) => {
-    setStartingSecond(e[0] < 0 ? 0 : e[0]);
-    setEndingSecond(e[1] > totalSeconds ? totalSeconds : e[1]);
+    const newStartingSecond = e[0] < 0 ? 0 : e[0];
+    const newEndingSecond = e[1] > totalSeconds ? totalSeconds : e[1];
+
+    setStartingSecond(newStartingSecond);
+    setEndingSecond(newEndingSecond);
+
+    setSharedCutSegmentOptions({ startingSecond: newStartingSecond, endingSecond: newEndingSecond });
   };
 
   const handleDurationInput = (durationString: string, starting: boolean) => {
@@ -117,17 +118,21 @@ function CutSegment(props: CutSegmentProps) {
       if (secs < 0) {
         setStartingInputError(true);
         setStartingSecond(0);
+        setSharedCutSegmentOptions({ startingSecond: 0, endingSecond });
       } else {
         setStartingInputError(false);
         setStartingSecond(secs);
+        setSharedCutSegmentOptions({ startingSecond: secs, endingSecond });
       }
     } else {
       if (secs > totalSeconds) {
         setEndingInputError(true);
         setEndingSecond(totalSeconds);
+        setSharedCutSegmentOptions({ startingSecond, endingSecond: totalSeconds });
       } else {
         setEndingInputError(false);
         setEndingSecond(secs);
+        setSharedCutSegmentOptions({ startingSecond, endingSecond: secs });
       }
     }
   };

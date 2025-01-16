@@ -1,6 +1,6 @@
 import React from "react";
 import { initiateVideoCropPoints } from "./Utils/Utils";
-import type { VideoCropPoints } from "./Interfaces/Interfaces";
+import type { SharedCutSegmentOptions, SharedCutSegmentOptionsContext, VideoCropPoints } from "./Interfaces/Interfaces";
 import type { HoveringOver } from "./Enums/Enums";
 
 export const CropPointsContext = React.createContext({
@@ -11,6 +11,14 @@ export const CropPointsContext = React.createContext({
   cropEnabled: false,
   resetCropPoints: 0,
   setResetCropPoints: (_: number) => {},
+});
+
+export const CutSegmentContext = React.createContext<SharedCutSegmentOptionsContext>({
+  setSharedCutSegmentOptions: (_: SharedCutSegmentOptions) => {},
+  sharedCutSegmentOptions: {
+    startingSecond: 0,
+    endingSecond: 0,
+  },
 });
 
 export const canvasLineDisplacementRef = {
