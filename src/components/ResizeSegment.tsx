@@ -1,7 +1,7 @@
 import { Checkbox, InputNumber } from "antd";
 import type { VideoInfo } from "../Logic/Interfaces/Interfaces";
 import { useEffect, useState } from "react";
-import { LockOutlined, UnlockFilled, UnlockOutlined } from "@ant-design/icons";
+import { LockOutlined, UnlockOutlined } from "@ant-design/icons";
 
 interface ResizeSegmentProps {
   videoInfo: VideoInfo | undefined;
