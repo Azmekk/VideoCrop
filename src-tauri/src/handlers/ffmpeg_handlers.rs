@@ -45,11 +45,11 @@ pub fn get_video_info(video_path: &str) -> Result<VideoInfo, String> {
 }
 
 #[tauri::command]
-pub fn submit_video_for_editing(options: VideoEditOptions, process_audio: bool) {
+pub fn submit_video_for_editing(options: VideoEditOptions) {
     ffmpeg_utils::clear_video_progress();
 
     thread::spawn(move || {
-        ffmpeg_utils::process_video(options.clone(), process_audio);
+        ffmpeg_utils::process_video(options.clone());
     });
 }
 

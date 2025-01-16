@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::fs::File;
+use std::io::Read;
+use std::io::Write;
 use std::os::windows::process::CommandExt;
 use std::{io::BufRead, path::PathBuf, process::Command, sync::Mutex};
 use uuid::Uuid;
@@ -14,10 +16,13 @@ pub struct VideoInfo {
     width: u32,
     height: u32,
     duration: String,
+    aspect_ratio_width: u32,
+    aspect_ratio_height: u32,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct DependenciesSetUpInfo {
+    percent_downloaded: f64,
     status: String,
     completed: bool,
 }
@@ -41,6 +46,7 @@ pub struct VideoEditOptions {
     pub compression_options: VideoCompressionOptions,
     pub resize_enabled: bool,
     pub resize_options: ResizeOptions,
+    pub process_audio: bool,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -83,6 +89,7 @@ lazy_static::lazy_static! {
     });
 
     static ref FFMPEG_DOWNLOAD_PROGRESS: Mutex<DependenciesSetUpInfo> = Mutex::new(DependenciesSetUpInfo {
+        percent_downloaded: 0.0,
         status: "".to_string(),
         completed: false,
     });
@@ -114,7 +121,7 @@ pub fn get_video_info(video_path: &str) -> Result<VideoInfo, String> {
         "-select_streams",
         "v:0",
         "-show_entries",
-        "stream=width,height",
+        "stream=width,height,display_aspect_ratio",
         "-of",
         "default=noprint_wrappers=1:nokey=1",
         &video_path,
@@ -162,6 +169,24 @@ pub fn get_video_info(video_path: &str) -> Result<VideoInfo, String> {
         .parse()
         .map_err(|e| format!("Failed to parse height: {}", e))?;
 
+    let aspect_ratio_string: String = lines
+        .next()
+        .ok_or("Missing aspect ratio")?
+        .parse()
+        .map_err(|e| format!("Failed to parse aspect ratio: {}", e))?;
+
+    let aspect_ratio_parts: Vec<&str> = aspect_ratio_string.split(':').collect();
+    if aspect_ratio_parts.len() != 2 {
+        return Err("Invalid aspect ratio format".to_string());
+    }
+
+    let aspect_ratio_width: u32 = aspect_ratio_parts[0]
+        .parse()
+        .map_err(|e| format!("Failed to parse aspect ratio width: {}", e))?;
+    let aspect_ratio_height: u32 = aspect_ratio_parts[1]
+        .parse()
+        .map_err(|e| format!("Failed to parse aspect ratio height: {}", e))?;
+
     let duration_output = Command::new("ffprobe")
         .creation_flags(CREATE_NO_WINDOW)
         .args([
@@ -193,6 +218,8 @@ pub fn get_video_info(video_path: &str) -> Result<VideoInfo, String> {
         width,
         height,
         duration,
+        aspect_ratio_width,
+        aspect_ratio_height,
     })
 }
 
@@ -226,7 +253,7 @@ pub fn get_video_length_in_seconds(video_path: &str) -> Result<f64, String> {
     Ok(duration)
 }
 
-pub fn process_video(options: VideoEditOptions, process_audio: bool) {
+pub fn process_video(options: VideoEditOptions) {
     let mut progress = VIDEO_EDIT_PROGRESS.lock().unwrap();
     progress.working = true;
     progress.progress = 0.0;
@@ -284,7 +311,7 @@ pub fn process_video(options: VideoEditOptions, process_audio: bool) {
         }
     }
 
-    if !process_audio {
+    if !options.process_audio {
         ffmpeg_args.extend_from_slice(&["-an".to_string()]);
     } else if options.compression_enabled {
         ffmpeg_args
@@ -304,10 +331,19 @@ pub fn process_video(options: VideoEditOptions, process_audio: bool) {
 
     if options.resize_enabled && !options.crop_enabled {
         let resize_options = &options.resize_options;
-        ffmpeg_args.extend_from_slice(&[
-            "-vf".to_string(),
-            format!("scale={}:{}", resize_options.width, resize_options.height),
-        ]);
+
+        let width = if resize_options.width % 2 == 0 {
+            resize_options.width
+        } else {
+            resize_options.width + 1
+        };
+        let height = if resize_options.height % 2 == 0 {
+            resize_options.height
+        } else {
+            resize_options.height + 1
+        };
+
+        ffmpeg_args.extend_from_slice(&["-vf".to_string(), format!("scale={}:{}", width, height)]);
     }
 
     ffmpeg_args.extend_from_slice(&[
@@ -324,7 +360,7 @@ pub fn process_video(options: VideoEditOptions, process_audio: bool) {
         let new_file_name = format!(
             "{}_VideoCrop.{}",
             file_stem.to_string_lossy(),
-            input_path.extension().unwrap().to_str().unwrap()
+            "mp4".to_string()
         );
 
         let new_output_path = get_unique_filename(&output_path.join(new_file_name));
@@ -582,8 +618,9 @@ pub fn get_video_progress_info() -> VideoEditProgress {
     progress.clone()
 }
 
-pub fn update_ffmpeg_download_status(status: &str, completed: bool) {
+pub fn update_ffmpeg_download_status(status: &str, completed: bool, percent_downloaded: f64) {
     let mut progress = FFMPEG_DOWNLOAD_PROGRESS.lock().unwrap();
+    progress.percent_downloaded = percent_downloaded;
     progress.status = status.to_string();
     progress.completed = completed;
     drop(progress);
@@ -611,7 +648,7 @@ pub fn download_and_add_ffmpeg_to_path_windows() {
         fs::create_dir_all(&video_crop_ffmpeg_path).unwrap();
     }
 
-    update_ffmpeg_download_status("Downloading...", false);
+    update_ffmpeg_download_status("Downloading...", false, 0.0);
 
     let download_url = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip";
     let ffmpeg_zip_download_path = &temp_path.join(format!(
@@ -633,8 +670,25 @@ pub fn download_and_add_ffmpeg_to_path_windows() {
     let download_result = reqwest::blocking::get(download_url);
     match download_result {
         Ok(mut response) => {
+            let total_size = response.content_length().unwrap_or(0);
             let mut file = fs::File::create(ffmpeg_zip_download_path).unwrap();
-            response.copy_to(&mut file).unwrap();
+            let mut downloaded: u64 = 0;
+            let mut buffer = [0; 8192];
+
+            while let Ok(bytes_read) = response.read(&mut buffer) {
+                if bytes_read == 0 {
+                    break;
+                }
+
+                file.write_all(&buffer[..bytes_read]).unwrap();
+
+                downloaded += bytes_read as u64;
+
+                if total_size > 0 {
+                    let progress = downloaded as f64 / total_size as f64 * 100.0;
+                    update_ffmpeg_download_status("Downloading...", false, progress);
+                }
+            }
         }
         Err(e) => {
             panic!("Failed to download ffmpeg: {}", e);
@@ -643,13 +697,13 @@ pub fn download_and_add_ffmpeg_to_path_windows() {
 
     println!("Extracting ffmpeg to: {:?}", extract_path);
 
-    update_ffmpeg_download_status("Extracting...", false);
+    update_ffmpeg_download_status("Extracting...", false, 100.0);
     let zip_cursor = File::open(&ffmpeg_zip_download_path).unwrap();
     zip_extract::extract(zip_cursor, &extract_path, true).unwrap();
 
     add_ffmpeg_to_app_env(ffmpeg_bin_path.to_str().unwrap());
 
-    update_ffmpeg_download_status("Finalizing...", true);
+    update_ffmpeg_download_status("Finalizing...", true, 100.0);
     fs::remove_file(ffmpeg_zip_download_path).unwrap();
 }
 
@@ -716,8 +770,8 @@ pub fn add_ffmpeg_to_app_env_if_it_exists() -> bool {
     false
 }
 
-pub fn get_bitrate_type_from_int(passedType: i32) -> String {
-    match passedType {
+pub fn get_bitrate_type_from_int(passed_type: i32) -> String {
+    match passed_type {
         1 => "k".to_string(),
         2 => "M".to_string(),
         _ => "k".to_string(),

@@ -1,5 +1,5 @@
-import { HoveringOver } from "./Enums";
-import type { VideoCropLineDisplacements } from "./Interfaces";
+import { HoveringOver } from "../Enums/Enums";
+import type { VideoCropLineDisplacements } from "../Interfaces/Interfaces";
 
 export const determineIfHoveringOverLine = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>, canvasLineDisplacementRef: VideoCropLineDisplacements): HoveringOver | undefined => {
   const canvasRect = e.currentTarget.getBoundingClientRect();

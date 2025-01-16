@@ -25,6 +25,8 @@ export interface VideoInfo {
   width: number;
   height: number;
   duration: string;
+  aspect_ratio_width: number;
+  aspect_ratio_height: number;
 }
 
 export interface ResizeOptions {
@@ -43,6 +45,7 @@ export interface VideoEditOptions {
   compression_options: VideoCompressionOptions;
   resize_enabled: boolean;
   resize_options: ResizeOptions;
+  process_audio: boolean;
 }
 
 export interface VideoCropLineDisplacements {
@@ -61,4 +64,15 @@ export interface VideoEditProgress {
 export interface DependenciesSetUpInfo {
   status: string;
   completed: boolean;
+  percent_downloaded: number;
+}
+
+export interface SharedCutSegmentOptions {
+  startingSecond: number;
+  endingSecond: number;
+}
+
+export interface SharedCutSegmentOptionsContext {
+  sharedCutSegmentOptions: SharedCutSegmentOptions;
+  setSharedCutSegmentOptions: (_: SharedCutSegmentOptions) => void;
 }

@@ -1,10 +1,10 @@
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { useContext, useEffect, useRef, useState } from "react";
-import { videoPathIsValid } from "../Logic/Utils";
-import { canvasLineDisplacementRef, clickedLineInfo, cropInputManuallyChangedInfo, CropPointsContext } from "../Logic/GlobalContexts";
-import type { VideoCropPoints, VideoInfo } from "../Logic/Interfaces";
-import { HoveringOver } from "../Logic/Enums";
-import { determineIfHoveringOverLine, updateCanvasLineDisplacement } from "../Logic/VideoCropLinesLogic";
+import { getCanvasToVideoSizeDifference, videoPathIsValid } from "../Logic/Utils/Utils";
+import { canvasLineDisplacementRef, clickedLineInfo, cropInputManuallyChangedInfo, CropPointsContext, CutSegmentContext } from "../Logic/GlobalContexts";
+import type { VideoCropPoints, VideoInfo } from "../Logic/Interfaces/Interfaces";
+import { HoveringOver } from "../Logic/Enums/Enums";
+import { determineIfHoveringOverLine, updateCanvasLineDisplacement } from "../Logic/Utils/VideoCropUtils";
 
 interface VideoViewProps {
   videoInfo: VideoInfo | undefined;
@@ -21,6 +21,7 @@ function VideoView(props: VideoViewProps) {
   const [currentlyHovering, setCurrentlyHovering] = useState<HoveringOver | undefined>(undefined);
 
   const cropLinesUnlockedRef = useRef(cropLinesUnlocked);
+  const { sharedCutSegmentOptions } = useContext(CutSegmentContext);
 
   useEffect(() => {
     canvasLineDisplacementRef.bottom = 1;
@@ -37,7 +38,7 @@ function VideoView(props: VideoViewProps) {
 
   useEffect(() => {
     if (!clickedLineInfo.clickedLine && videoRef.current) {
-      const { widthDiff, heightDiff } = getCanvasToVideoSizeDifference();
+      const { widthDiff, heightDiff } = getCanvasToVideoSizeDifference(videoRef);
 
       canvasLineDisplacementRef.left = Math.round(cropPointPositions.starting_x_offset * widthDiff);
       canvasLineDisplacementRef.top = Math.round(cropPointPositions.starting_y_offset * heightDiff);
@@ -49,7 +50,7 @@ function VideoView(props: VideoViewProps) {
 
   const updateCropPositions = () => {
     if (cropLinesUnlocked && canvasRef.current) {
-      const { widthDiff, heightDiff } = getCanvasToVideoSizeDifference();
+      const { widthDiff, heightDiff } = getCanvasToVideoSizeDifference(videoRef);
 
       const newCropPointPositions: VideoCropPoints = {
         starting_x_offset: Math.floor(canvasLineDisplacementRef.left / widthDiff / 2) * 2,
@@ -60,22 +61,6 @@ function VideoView(props: VideoViewProps) {
 
       setCropPointPositions(newCropPointPositions);
     }
-  };
-
-  const getCanvasToVideoSizeDifference = () => {
-    if (!videoRef.current) return { widthDiff: 0, heightDiff: 0 };
-
-    const videoWidth = videoRef.current.videoWidth;
-    const videoHeight = videoRef.current.videoHeight;
-
-    const rect = videoRef.current.getBoundingClientRect();
-    const elementWidth = rect.width;
-    const elementHeight = rect.height;
-
-    return {
-      widthDiff: elementWidth / videoWidth,
-      heightDiff: elementHeight / videoHeight,
-    };
   };
 
   const onCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
@@ -172,6 +157,20 @@ function VideoView(props: VideoViewProps) {
       window.removeEventListener("resize", updateCanvasSize);
     };
   }, []);
+
+  const setVideoTime = (time: number) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = time;
+    }
+  };
+
+  useEffect(() => {
+    setVideoTime(sharedCutSegmentOptions.startingSecond);
+  }, [sharedCutSegmentOptions.startingSecond]);
+
+  useEffect(() => {
+    setVideoTime(sharedCutSegmentOptions.endingSecond);
+  }, [sharedCutSegmentOptions.endingSecond]);
 
   useEffect(() => {
     canvasLineDisplacementRef.bottom = 1;
