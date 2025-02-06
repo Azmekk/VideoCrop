@@ -36,7 +36,7 @@ pub fn check_ffmpeg_and_ffprobe() -> bool {
     if is_command_available("ffmpeg") && is_command_available("ffprobe") {
         return true;
     }
-    return ffmpeg_utils::add_ffmpeg_to_app_env_if_it_exists();
+    ffmpeg_utils::add_ffmpeg_to_app_env_if_it_exists()
 }
 
 #[tauri::command]
@@ -68,7 +68,7 @@ pub fn submit_audio_extraction(options: VideoEditOptions) {
 
 #[tauri::command]
 pub fn get_video_progress_info() -> VideoEditProgress {
-    return ffmpeg_utils::get_video_progress_info();
+    ffmpeg_utils::get_video_progress_info()
 }
 
 #[tauri::command]

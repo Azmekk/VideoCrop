@@ -2,15 +2,18 @@ use core::panic;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
-use std::fs::File;
 use std::io::Read;
 use std::io::Write;
 use std::os::windows::process::CommandExt;
-use std::{io::BufRead, path::PathBuf, process::Command, sync::Mutex};
+use std::path::Path;
+use std::{io::BufRead, process::Command, sync::Mutex};
 use uuid::Uuid;
 
-pub const  FFMPEG_WIN_ARM64_ZIP_URL : &str = "https://github.com/tordona/ffmpeg-win-arm64/releases/download/7.1/ffmpeg-7.1-essentials-shared-win-arm64.7z";
-pub const FFMPEG_WIN_X86_ZIP_URL : &str = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip";
+pub const FFMPEG_WIN_ARM64_ZIP_URL: &str =
+    "https://github.com/Azmekk/VideoCrop/releases/download/FFmpeg-binaries/ffmpeg-win-arm64.zip";
+pub const FFMPEG_WIN_X86_ZIP_URL: &str =
+    "https://github.com/Azmekk/VideoCrop/releases/download/FFmpeg-binaries/ffmpeg-win-x86_64.zip";
+pub const FFMPEG_FOLDER_NAME: &str = "ffmpeg_Videocrop";
 pub const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -126,7 +129,7 @@ pub fn get_video_info(video_path: &str) -> Result<VideoInfo, String> {
         "stream=width,height,display_aspect_ratio",
         "-of",
         "default=noprint_wrappers=1:nokey=1",
-        &video_path,
+        video_path,
     ];
 
     let command_str = format!(
@@ -199,7 +202,7 @@ pub fn get_video_info(video_path: &str) -> Result<VideoInfo, String> {
             "-of",
             "default=noprint_wrappers=1:nokey=1",
             "-sexagesimal",
-            &video_path,
+            video_path,
         ])
         .output()
         .map_err(|e| format!("Failed to execute ffprobe for duration: {}", e))?;
@@ -235,7 +238,7 @@ pub fn get_video_length_in_seconds(video_path: &str) -> Result<f64, String> {
             "format=duration",
             "-of",
             "default=noprint_wrappers=1:nokey=1",
-            &video_path,
+            video_path,
         ])
         .output()
         .map_err(|e| format!("Failed to execute ffprobe for duration: {}", e))?;
@@ -306,7 +309,7 @@ pub fn process_video(options: VideoEditOptions) {
                 "-b:v".to_string(),
                 format!(
                     "{}{}",
-                    compression_options.bitrate.to_string(),
+                    compression_options.bitrate,
                     get_bitrate_type_from_int(compression_options.bitrate_type)
                 ),
             ]);
@@ -359,11 +362,7 @@ pub fn process_video(options: VideoEditOptions) {
     let output_path = std::path::Path::new(&options.output_video_path);
 
     if let Some(file_stem) = input_path.file_stem() {
-        let new_file_name = format!(
-            "{}_VideoCrop.{}",
-            file_stem.to_string_lossy(),
-            "mp4".to_string()
-        );
+        let new_file_name = format!("{}_VideoCrop.{}", file_stem.to_string_lossy(), "mp4");
 
         let new_output_path = get_unique_filename(&output_path.join(new_file_name));
         ffmpeg_args.push(new_output_path);
@@ -400,22 +399,28 @@ pub fn process_video(options: VideoEditOptions) {
 
     let stdout_thread = std::thread::spawn(move || {
         for line in stdout_reader.lines() {
-            if let Ok(line) = line {
-                if line.starts_with("out_time_us=") {
-                    if let Some(value) = line.split('=').nth(1) {
-                        if let Ok(out_time_us) = value.parse::<u64>() {
-                            let mut progress = VIDEO_EDIT_PROGRESS.lock().unwrap();
-                            progress.progress =
-                                ((out_time_us as f64 / video_length_in_us as f64) * 100.0).round();
-
-                            if progress.progress >= 100.0 {
-                                progress.progress = 99.0;
-                            }
-                            drop(progress);
-                        }
-                    }
-                }
+            let line = line.unwrap();
+            if !line.starts_with("out_time_us=") {
+                continue;
             }
+
+            let value = match line.split('=').nth(1) {
+                Some(v) => v,
+                None => continue,
+            };
+
+            let out_time_us = match value.parse::<u64>() {
+                Ok(v) => v,
+                Err(_) => continue,
+            };
+
+            let mut progress = VIDEO_EDIT_PROGRESS.lock().unwrap();
+            progress.progress = ((out_time_us as f64 / video_length_in_us as f64) * 100.0).round();
+
+            if progress.progress >= 100.0 {
+                progress.progress = 99.0;
+            }
+            drop(progress);
         }
     });
 
@@ -592,7 +597,7 @@ fn get_audio_extension_based_on_codec(codec: &str) -> &str {
     }
 }
 
-fn get_unique_filename(path: &PathBuf) -> String {
+fn get_unique_filename(path: &Path) -> String {
     let mut unique_path = path.to_path_buf();
     let mut counter = 1;
 
@@ -660,11 +665,10 @@ pub fn download_and_add_ffmpeg_to_path_windows() {
         panic!("Unsupported architecture");
     };
 
-    let ffmpeg_zip_download_path = &temp_path.join(format!(
-        "ffmpeg-master-latest-win64-gpl_VideoCrop_{}.zip",
-        Uuid::new_v4().to_string()
-    ));
-    let extract_path = &video_crop_ffmpeg_path.join("ffmpeg-master-latest-win64-gpl_VideoCrop");
+    let ffmpeg_zip_download_path =
+        &temp_path.join(format!("{}_{}.zip", FFMPEG_FOLDER_NAME, Uuid::new_v4()));
+
+    let extract_path = &video_crop_ffmpeg_path.clone();
 
     if extract_path.exists() {
         fs::remove_dir_all(extract_path).unwrap();
@@ -704,11 +708,13 @@ pub fn download_and_add_ffmpeg_to_path_windows() {
         }
     }
 
+    println!("Downloaded ffmpeg to: {:?}", ffmpeg_zip_download_path);
     println!("Extracting ffmpeg to: {:?}", extract_path);
 
     update_ffmpeg_download_status("Extracting...", false, 100.0);
-    let zip_cursor = File::open(&ffmpeg_zip_download_path).unwrap();
-    zip_extract::extract(zip_cursor, &extract_path, true).unwrap();
+
+    let zip_file = fs::File::open(ffmpeg_zip_download_path).unwrap();
+    zip_extract::extract(zip_file, extract_path, true).unwrap();
 
     add_ffmpeg_to_app_env(ffmpeg_bin_path.to_str().unwrap());
 
@@ -766,9 +772,7 @@ pub fn add_ffmpeg_to_app_env_if_it_exists() -> bool {
 
     let video_crop_ffmpeg_path = user_path.join("VideoCrop").join("FFmpeg");
 
-    let extract_path = &video_crop_ffmpeg_path.join("ffmpeg-master-latest-win64-gpl_VideoCrop");
-
-    let ffmpeg_bin_path = extract_path.join("bin");
+    let ffmpeg_bin_path = &video_crop_ffmpeg_path.join("bin");
     println!("Checking for dependencies at: {:?}", ffmpeg_bin_path);
     if ffmpeg_bin_path.exists() {
         println!("Found dependencies at: {:?}", ffmpeg_bin_path);
