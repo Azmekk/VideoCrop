@@ -9,6 +9,8 @@ use std::os::windows::process::CommandExt;
 use std::{io::BufRead, path::PathBuf, process::Command, sync::Mutex};
 use uuid::Uuid;
 
+pub const  FFMPEG_WIN_ARM64_ZIP_URL : &str = "https://github.com/tordona/ffmpeg-win-arm64/releases/download/7.1/ffmpeg-7.1-essentials-shared-win-arm64.7z";
+pub const FFMPEG_WIN_X86_ZIP_URL : &str = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip";
 pub const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -650,7 +652,14 @@ pub fn download_and_add_ffmpeg_to_path_windows() {
 
     update_ffmpeg_download_status("Downloading...", false, 0.0);
 
-    let download_url = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip";
+    let download_url = if cfg!(target_arch = "x86_64") {
+        FFMPEG_WIN_X86_ZIP_URL
+    } else if cfg!(target_arch = "aarch64") {
+        FFMPEG_WIN_ARM64_ZIP_URL
+    } else {
+        panic!("Unsupported architecture");
+    };
+
     let ffmpeg_zip_download_path = &temp_path.join(format!(
         "ffmpeg-master-latest-win64-gpl_VideoCrop_{}.zip",
         Uuid::new_v4().to_string()
