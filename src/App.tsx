@@ -19,6 +19,7 @@ import { DownOutlined } from "@ant-design/icons";
 import { ExportTypes } from "./Logic/Enums/Enums";
 import { downloadDependencies, submitAudioOnly, submitVideo } from "./Logic/Utils/FfmpegUtils";
 import { updateApp } from "./Logic/Utils/UpdaterUtils";
+import { calculateAspectRatio } from "./Logic/Utils/AspectRatioUtils";
 
 function App() {
   const [ffmpegExists, setFfmpegExists] = useState(true);
@@ -78,6 +79,10 @@ function App() {
     setvideoEditOptions({ ...videoEditOptions, input_video_path: path });
 
     const vidInfo: VideoInfo = await invoke("get_video_info", { videoPath: path });
+    const { aspectWidth, aspectHeight } = calculateAspectRatio(vidInfo.width, vidInfo.height);
+
+    vidInfo.aspect_ratio_width = aspectWidth;
+    vidInfo.aspect_ratio_height = aspectHeight;
     setVideoInfo(vidInfo);
 
     setCropPointPositions({
