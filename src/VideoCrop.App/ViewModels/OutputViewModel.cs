@@ -10,6 +10,7 @@ public sealed class OutputViewModel : ObservableObject
 {
     private string? _outputDirectory;
     private string _filenamePreview = "";
+    private OutputMode _mode = OutputMode.Everything;
 
     public string? OutputDirectory
     {
@@ -22,13 +23,22 @@ public sealed class OutputViewModel : ObservableObject
 
     public string FilenamePreview { get => _filenamePreview; private set => SetProperty(ref _filenamePreview, value); }
 
+    /// <summary>What the user wants in the output: both tracks, audio only, or video only.</summary>
+    public OutputMode Mode
+    {
+        get => _mode;
+        set { if (SetProperty(ref _mode, value)) RefreshFilenamePreview(); }
+    }
+
     private string? _sourcePath;
     private VideoCodec? _codec;
+    private AudioCodec _audioCodec = AudioCodec.Aac;
 
-    public void Bind(string? sourcePath, VideoCodec? codec)
+    public void Bind(string? sourcePath, VideoCodec? codec, AudioCodec audioCodec)
     {
         _sourcePath = sourcePath;
         _codec = codec;
+        _audioCodec = audioCodec;
         if (sourcePath is not null && OutputDirectory is null)
         {
             OutputDirectory = Path.GetDirectoryName(sourcePath);
@@ -63,11 +73,24 @@ public sealed class OutputViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Pick a container extension: when a codec is known, use its canonical
-    /// container; otherwise (stream-copy) preserve the source's extension.
+    /// Pick a container extension based on the active output mode:
+    /// <list type="bullet">
+    ///   <item>Audio only → audio-codec container (.m4a/.opus/.mp3, .mka for copy).</item>
+    ///   <item>Video / Everything → video-codec container, or source ext when stream-copy.</item>
+    /// </list>
     /// </summary>
     private string? ResolveExtension()
     {
+        if (_mode == OutputMode.AudioOnly)
+        {
+            return _audioCodec switch
+            {
+                AudioCodec.Mp3  => "mp3",
+                AudioCodec.Opus => "opus",
+                AudioCodec.Copy => "mka",
+                _               => "m4a",
+            };
+        }
         if (_codec is { } c) return c.DefaultContainerExtension();
         if (_sourcePath is null) return null;
         var srcExt = Path.GetExtension(_sourcePath);

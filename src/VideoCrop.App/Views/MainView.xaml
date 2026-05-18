@@ -384,6 +384,14 @@
                     <Expander Header="Output" IsExpanded="True" HorizontalAlignment="Stretch">
                         <StackPanel Margin="0,8,0,0" Spacing="6">
                             <TextBlock x:Name="PipelineSummaryText" TextWrapping="Wrap" Opacity="0.85" />
+                            <RadioButtons x:Name="OutputModeButtons"
+                                          MaxColumns="1"
+                                          SelectedIndex="0"
+                                          SelectionChanged="OnOutputModeChanged">
+                                <RadioButton Content="Everything" />
+                                <RadioButton Content="Audio only" />
+                                <RadioButton Content="Video only" />
+                            </RadioButtons>
                             <TextBlock Text="Destination" Opacity="0.7" />
                             <Grid ColumnSpacing="6">
                                 <Grid.ColumnDefinitions>

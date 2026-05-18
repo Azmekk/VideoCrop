@@ -28,28 +28,42 @@ public static class EncodeCommandBuilder
             args.Add("-to"); args.Add(FormatSeconds(job.Cut.End));
         }
 
+        var wantVideo = job.Mode != OutputMode.AudioOnly;
+        var wantAudio = job.Mode != OutputMode.VideoOnly;
+
         // When Compression is null, the user explicitly turned re-encoding off:
-        // stream-copy both tracks and skip any filter chain (crop/resize are
-        // incompatible with stream-copy).
+        // stream-copy whatever streams the mode wants. -vn/-an drop the
+        // disabled track entirely.
         if (job.Compression is null)
         {
-            args.Add("-c:v"); args.Add("copy");
-            args.Add("-c:a"); args.Add("copy");
+            if (wantVideo) { args.Add("-c:v"); args.Add("copy"); }
+            else           { args.Add("-vn"); }
+            if (wantAudio) { args.Add("-c:a"); args.Add("copy"); }
+            else           { args.Add("-an"); }
         }
         else
         {
-            var filter = BuildVideoFilter(job);
-            if (filter is not null)
+            if (wantVideo)
             {
-                args.Add("-vf"); args.Add(filter);
+                var filter = BuildVideoFilter(job);
+                if (filter is not null)
+                {
+                    args.Add("-vf"); args.Add(filter);
+                }
+                AddVideoEncoderArgs(args, job.Compression);
             }
-            AddVideoEncoderArgs(args, job.Compression);
-            AddAudioArgs(args, job.Compression);
+            else
+            {
+                args.Add("-vn");
+            }
+
+            if (wantAudio) AddAudioArgs(args, job.Compression);
+            else           args.Add("-an");
         }
 
-        // First video stream + first audio stream only (per v1 plan).
-        args.Add("-map"); args.Add("0:v:0");
-        args.Add("-map"); args.Add("0:a:0?");
+        // Map the streams the mode wants, in source order.
+        if (wantVideo) { args.Add("-map"); args.Add("0:v:0"); }
+        if (wantAudio) { args.Add("-map"); args.Add("0:a:0?"); }
         args.Add("-map_metadata"); args.Add("-1");
 
         args.Add("-progress"); args.Add("pipe:1");

@@ -708,6 +708,16 @@ public sealed partial class MainView : UserControl
         }
     }
 
+    private void OnOutputModeChanged(object sender, SelectionChangedEventArgs e)
+    {
+        ViewModel.Output.Mode = OutputModeButtons.SelectedIndex switch
+        {
+            1 => OutputMode.AudioOnly,
+            2 => OutputMode.VideoOnly,
+            _ => OutputMode.Everything,
+        };
+    }
+
     private async void OnBrowseOutputClicked(object sender, RoutedEventArgs e)
     {
         var picker = new FolderPicker { SuggestedStartLocation = PickerLocationId.VideosLibrary };

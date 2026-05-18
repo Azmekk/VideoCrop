@@ -73,6 +73,15 @@ public sealed class MainViewModel : ObservableObject
             if (e.PropertyName is nameof(CompressionViewModel.Spec))
             {
                 if (Source.VideoInfo is not null) RefreshOutputBinding(Source.VideoInfo);
+                OnPropertyChanged(nameof(PipelineSummary));
+            }
+        };
+
+        Output.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(OutputViewModel.Mode))
+            {
+                OnPropertyChanged(nameof(PipelineSummary));
             }
         };
     }
@@ -87,12 +96,24 @@ public sealed class MainViewModel : ObservableObject
             var info = Source.VideoInfo;
             var parts = new System.Text.StringBuilder();
 
+            if (Output.Mode == OutputMode.AudioOnly)
+            {
+                parts.Append("Output: audio only");
+                if (!Compression.Enabled) parts.Append(" (stream copy)");
+                else parts.Append($" — {Compression.Spec.AudioCodec} @ {Compression.Spec.AudioBitrateKbps} kbps");
+                if (Cut.AsSpecOrNull() is not null) parts.Append(", cut applied");
+                if (Crop.Crop is not null || Resize.AsSpecOrNull() is not null)
+                    parts.Append(" — crop/resize not applicable");
+                return parts.ToString();
+            }
+
             // When compression is disabled, the encoder stream-copies and any
             // crop/resize is ignored. Be explicit about that in the summary so
             // the user isn't surprised by leftover Crop/Resize panel state.
             if (!Compression.Enabled)
             {
                 parts.Append("Output: stream copy (no re-encode)");
+                if (Output.Mode == OutputMode.VideoOnly) parts.Append(", video only");
                 if (Cut.AsSpecOrNull() is not null) parts.Append(", cut applied");
                 if (Crop.Crop is not null || Resize.AsSpecOrNull() is not null)
                     parts.Append(" — crop/resize ignored");
@@ -124,6 +145,7 @@ public sealed class MainViewModel : ObservableObject
                 _ => Compression.Spec.Codec.ToString(),
             };
             parts.Append($"Output: {finalW}×{finalH} {codecName}");
+            if (Output.Mode == OutputMode.VideoOnly) parts.Append(" (video only)");
             if (crop is not null) parts.Append($" — crop {crop.Width}×{crop.Height} from {info.Width}×{info.Height}");
             if (resize is not null) parts.Append(crop is not null ? $", then scale to {finalW}×{finalH}" : $" — scale to {finalW}×{finalH}");
             return parts.ToString();
@@ -132,7 +154,10 @@ public sealed class MainViewModel : ObservableObject
 
     private void RefreshOutputBinding(VideoInfo info)
     {
-        Output.Bind(info.Path, Compression.Enabled ? Compression.Spec.Codec : null);
+        Output.Bind(
+            info.Path,
+            Compression.Enabled ? Compression.Spec.Codec : null,
+            Compression.Spec.AudioCodec);
     }
 
     public async Task InitializeAsync()
@@ -148,9 +173,12 @@ public sealed class MainViewModel : ObservableObject
         var outputPath = Output.BuildOutputPath();
         if (outputPath is null) return null;
         var compression = Compression.SpecOrNull;
-        // Filters require re-encoding — stream-copy can't carry a -vf chain.
-        var crop = compression is null ? null : Crop.Crop;
-        var resize = compression is null ? null : Resize.AsSpecOrNull();
+        var mode = Output.Mode;
+        // Filters require re-encoding *and* a video track — stream-copy can't
+        // carry a -vf chain, and audio-only mode has no video to filter.
+        var canFilter = compression is not null && mode != OutputMode.AudioOnly;
+        var crop = canFilter ? Crop.Crop : null;
+        var resize = canFilter ? Resize.AsSpecOrNull() : null;
         return new EncodeJob(
             InputPath: Source.VideoInfo.Path,
             OutputPath: outputPath,
@@ -158,6 +186,7 @@ public sealed class MainViewModel : ObservableObject
             Crop: crop,
             Resize: resize,
             Compression: compression,
-            SourceDuration: Source.VideoInfo.Duration);
+            SourceDuration: Source.VideoInfo.Duration,
+            Mode: mode);
     }
 }
