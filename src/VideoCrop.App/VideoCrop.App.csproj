@@ -78,9 +78,10 @@
     <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
     <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
     <!--
-      Trimming is intentionally OFF. It requires --self-contained, which would
-      balloon the zip with a copy of the .NET runtime, and the WinUI XAML
-      pipeline relies on reflection paths the trimmer can't always see.
+      Trimming is intentionally OFF. It requires a self-contained publish,
+      which would balloon the zip with a copy of the .NET runtime, and the
+      WinUI XAML pipeline relies on reflection paths the trimmer can't always
+      see.
     -->
     <PublishTrimmed>false</PublishTrimmed>
   </PropertyGroup>
