@@ -55,13 +55,17 @@ public static class UpdateApplier
         sb.AppendLine($"$StagedDir  = '{Escape(stagedDir)}'");
         sb.AppendLine($"$Relaunch   = '{Escape(relaunchExePath)}'");
         sb.AppendLine($"$LogPath    = '{Escape(logPath)}'");
-        sb.AppendLine($"$Pid        = {currentPid}");
+        // $PID is a PowerShell automatic variable holding the running shell's
+        // own PID — it's read-only and assigning to it doesn't take effect.
+        // Use $AppPid for the VideoCrop pid so Wait-Process gates on the
+        // right process.
+        sb.AppendLine($"$AppPid     = {currentPid}");
         sb.AppendLine();
         sb.AppendLine("function Log([string]$msg) { Add-Content -Path $LogPath -Value (\"[{0:HH:mm:ss}] {1}\" -f (Get-Date), $msg) }");
         sb.AppendLine();
-        sb.AppendLine("Log \"Waiting for pid $Pid to exit...\"");
+        sb.AppendLine("Log \"Waiting for pid $AppPid to exit...\"");
         sb.AppendLine("try {");
-        sb.AppendLine("    Wait-Process -Id $Pid -Timeout 30 -ErrorAction SilentlyContinue");
+        sb.AppendLine("    Wait-Process -Id $AppPid -Timeout 30 -ErrorAction SilentlyContinue");
         sb.AppendLine("} catch { Log \"Wait error: $_\" }");
         sb.AppendLine();
         sb.AppendLine("# Brief settle delay for file handles to release.");
