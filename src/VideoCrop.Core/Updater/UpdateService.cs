@@ -133,7 +133,7 @@ public sealed class UpdateService(
         try
         {
             Directory.CreateDirectory(stagedDir);
-            ZipFile.ExtractToDirectory(zipPath, stagedDir, overwriteFiles: true);
+            await ZipFile.ExtractToDirectoryAsync(zipPath, stagedDir, overwriteFiles: true, cancellationToken: ct);
         }
         catch (Exception ex)
         {

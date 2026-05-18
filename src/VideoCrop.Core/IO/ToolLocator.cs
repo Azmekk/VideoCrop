@@ -11,51 +11,37 @@ public enum ExternalTool
 
 public interface IToolLocator
 {
+    /// <summary>Directory the app manages for ffmpeg / ffprobe / mpv.</summary>
+    string ToolsDirectory { get; }
+
     bool TryResolve(ExternalTool tool, [NotNullWhen(true)] out string? path);
-    string? GetUserConfiguredPath(ExternalTool tool);
-    void SetUserConfiguredPath(ExternalTool tool, string? path);
+    string GetExpectedPath(ExternalTool tool);
 }
 
-public sealed class ToolLocator(string? bundledToolsDir = null) : IToolLocator
+/// <summary>
+/// Resolves external tools (ffmpeg, ffprobe, mpv) strictly from the app-managed
+/// <c>tools/</c> directory next to the executable. We do not fall back to
+/// <c>PATH</c> or any user-configured path: VideoCrop owns the tool versions
+/// it depends on and downloads them itself on first run.
+/// </summary>
+public sealed class ToolLocator(string? toolsDirectory = null) : IToolLocator
 {
-    private readonly string _bundledToolsDir = bundledToolsDir ?? GetDefaultBundledToolsDir();
-    private readonly Dictionary<ExternalTool, string?> _userPaths = new();
+    public string ToolsDirectory { get; } = toolsDirectory ?? Path.Combine(AppContext.BaseDirectory, "tools");
 
     public bool TryResolve(ExternalTool tool, [NotNullWhen(true)] out string? path)
     {
-        var fileName = ToFileName(tool);
-
-        var bundled = Path.Combine(_bundledToolsDir, fileName);
-        if (File.Exists(bundled))
+        var candidate = GetExpectedPath(tool);
+        if (File.Exists(candidate))
         {
-            path = bundled;
+            path = candidate;
             return true;
         }
-
-        if (_userPaths.TryGetValue(tool, out var configured)
-            && !string.IsNullOrWhiteSpace(configured)
-            && File.Exists(configured))
-        {
-            path = configured;
-            return true;
-        }
-
-        var onPath = FindOnPath(fileName);
-        if (onPath != null)
-        {
-            path = onPath;
-            return true;
-        }
-
         path = null;
         return false;
     }
 
-    public string? GetUserConfiguredPath(ExternalTool tool) =>
-        _userPaths.TryGetValue(tool, out var p) ? p : null;
-
-    public void SetUserConfiguredPath(ExternalTool tool, string? path) =>
-        _userPaths[tool] = path;
+    public string GetExpectedPath(ExternalTool tool) =>
+        Path.Combine(ToolsDirectory, ToFileName(tool));
 
     private static string ToFileName(ExternalTool tool) => tool switch
     {
@@ -64,31 +50,4 @@ public sealed class ToolLocator(string? bundledToolsDir = null) : IToolLocator
         ExternalTool.Mpv => OperatingSystem.IsWindows() ? "mpv.exe" : "mpv",
         _ => throw new ArgumentOutOfRangeException(nameof(tool)),
     };
-
-    private static string GetDefaultBundledToolsDir()
-    {
-        var exeDir = AppContext.BaseDirectory;
-        return Path.Combine(exeDir, "tools");
-    }
-
-    private static string? FindOnPath(string fileName)
-    {
-        var pathEnv = Environment.GetEnvironmentVariable("PATH");
-        if (string.IsNullOrEmpty(pathEnv)) return null;
-
-        var sep = OperatingSystem.IsWindows() ? ';' : ':';
-        foreach (var dir in pathEnv.Split(sep, StringSplitOptions.RemoveEmptyEntries))
-        {
-            try
-            {
-                var candidate = Path.Combine(dir.Trim(), fileName);
-                if (File.Exists(candidate)) return candidate;
-            }
-            catch
-            {
-                // Ignore malformed PATH entries.
-            }
-        }
-        return null;
-    }
 }

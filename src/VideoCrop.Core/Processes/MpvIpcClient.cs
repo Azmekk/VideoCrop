@@ -206,8 +206,8 @@ public sealed class MpvIpcClient(string pipeName, ILogger<MpvIpcClient>? logger 
         try { await _cts.CancelAsync().ConfigureAwait(false); } catch { }
         try { if (_readLoop is not null) await _readLoop.ConfigureAwait(false); } catch { }
         _reader?.Dispose();
-        _writer?.Dispose();
-        _pipe?.Dispose();
+        if(_writer is not null) await _writer.DisposeAsync();
+        if (_pipe is not null) await _pipe.DisposeAsync();
         _cts.Dispose();
     }
 }

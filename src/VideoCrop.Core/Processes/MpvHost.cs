@@ -71,12 +71,12 @@ public sealed class MpvHost(IToolLocator locator, ILogger<MpvHost>? logger = nul
 
     public async Task LoadFileAsync(string path, CancellationToken ct = default)
     {
-        await Ipc.SendCommandAsync(new object[] { "loadfile", path, "replace" }, ct).ConfigureAwait(false);
+        await Ipc.SendCommandAsync(["loadfile", path, "replace"], ct).ConfigureAwait(false);
     }
 
     public async Task ScreenshotToFileAsync(string outputPath, CancellationToken ct = default)
     {
-        await Ipc.SendCommandAsync(new object[] { "screenshot-to-file", outputPath, "video" }, ct).ConfigureAwait(false);
+        await Ipc.SendCommandAsync(["screenshot-to-file", outputPath, "video"], ct).ConfigureAwait(false);
     }
 
     public async ValueTask DisposeAsync()
@@ -86,7 +86,7 @@ public sealed class MpvHost(IToolLocator locator, ILogger<MpvHost>? logger = nul
 
         if (_ipc is not null)
         {
-            try { await _ipc.SendCommandAsync(new object[] { "quit" }, CancellationToken.None).ConfigureAwait(false); }
+            try { await _ipc.SendCommandAsync(["quit"], CancellationToken.None).ConfigureAwait(false); }
             catch { /* mpv may already be dying */ }
             await _ipc.DisposeAsync().ConfigureAwait(false);
         }

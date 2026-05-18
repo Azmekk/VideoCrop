@@ -6,19 +6,19 @@ public static class ToolVersionProbe
 {
     public static async Task<ToolVersion> GetFfmpegVersionAsync(string ffmpegPath, CancellationToken ct)
     {
-        var output = await ExternalProcess.RunCaptureStdOutAsync(ffmpegPath, new[] { "-version" }, ct).ConfigureAwait(false);
+        var output = await ExternalProcess.RunCaptureStdOutAsync(ffmpegPath, ["-version"], ct).ConfigureAwait(false);
         return new ToolVersion("ffmpeg", FirstLine(output));
     }
 
     public static async Task<ToolVersion> GetFfprobeVersionAsync(string ffprobePath, CancellationToken ct)
     {
-        var output = await ExternalProcess.RunCaptureStdOutAsync(ffprobePath, new[] { "-version" }, ct).ConfigureAwait(false);
+        var output = await ExternalProcess.RunCaptureStdOutAsync(ffprobePath, ["-version"], ct).ConfigureAwait(false);
         return new ToolVersion("ffprobe", FirstLine(output));
     }
 
     public static async Task<ToolVersion> GetMpvVersionAsync(string mpvPath, CancellationToken ct)
     {
-        var output = await ExternalProcess.RunCaptureStdOutAsync(mpvPath, new[] { "--version" }, ct).ConfigureAwait(false);
+        var output = await ExternalProcess.RunCaptureStdOutAsync(mpvPath, ["--version"], ct).ConfigureAwait(false);
         return new ToolVersion("mpv", FirstLine(output));
     }
 

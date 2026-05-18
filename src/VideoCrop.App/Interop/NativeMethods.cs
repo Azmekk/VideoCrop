@@ -9,8 +9,4 @@ internal static class NativeMethods
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool AttachConsole(int dwProcessId);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool AllocConsole();
 }

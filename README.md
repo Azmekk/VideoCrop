@@ -22,12 +22,7 @@ Grab the latest `VideoCrop-vX.Y.Z-win-x64.zip` (or `win-arm64.zip`) from the [Re
 
 ## First run
 
-VideoCrop calls out to three small command-line tools — ffmpeg, ffprobe, and mpv. After unzipping, open the `tools/` folder next to `VideoCrop.App.exe` and either:
-
-- Run `fetch-tools.ps1` from PowerShell to download them automatically, **or**
-- Drop your own `ffmpeg.exe`, `ffprobe.exe`, and `mpv.exe` into that `tools/` folder.
-
-If the app finds the tools on your system `PATH`, those work too.
+VideoCrop uses ffmpeg and mpv under the hood. The first time you launch the app, it'll offer to download them (~200 MB total) into a `tools/` folder next to the exe. Click **Download** and wait — that's it.
 
 ## Using it
 

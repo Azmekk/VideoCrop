@@ -27,15 +27,11 @@ ehthumbs.db
 Desktop.ini
 .DS_Store
 
-# Bundled external tools (downloaded by tools/fetch-tools.ps1)
-tools/ffmpeg.exe
-tools/ffprobe.exe
-tools/mpv.exe
-tools/*.7z
-tools/*.zip
-
 # Update staging directory (created at runtime next to the exe)
 update/
+
+# tools/ is created at runtime next to the exe by ToolDownloadService.
+tools/
 
 # NuGet
 *.nupkg

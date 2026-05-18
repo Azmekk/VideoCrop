@@ -20,13 +20,14 @@ public partial class App : Application
 
     public App()
     {
-        // Attach a console for diagnostics. If launched from a terminal (`dotnet run`),
-        // attach to that. Otherwise allocate a new console window.
-        if (!VideoCrop.App.Interop.NativeMethods.AttachConsole(VideoCrop.App.Interop.NativeMethods.ATTACH_PARENT_PROCESS))
+        // Attach to the parent terminal if one exists (e.g. `dotnet run` or a
+        // user launching from PowerShell) so logs are visible there. End users
+        // who double-click the exe get nothing — no stray console window —
+        // and Serilog's file sink still captures the full log either way.
+        if (VideoCrop.App.Interop.NativeMethods.AttachConsole(VideoCrop.App.Interop.NativeMethods.ATTACH_PARENT_PROCESS))
         {
-            VideoCrop.App.Interop.NativeMethods.AllocConsole();
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
         }
-        Console.OutputEncoding = System.Text.Encoding.UTF8;
 
         var logFile = System.IO.Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

@@ -40,49 +40,55 @@ public static class ExternalProcess
         };
         foreach (var a in options.Arguments) psi.ArgumentList.Add(a);
 
-        using var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
-
-        var stderr = new StringBuilder();
-
-        process.OutputDataReceived += (_, e) =>
-        {
-            if (e.Data is null) return;
-            options.OnStdOut?.Invoke(e.Data);
-        };
-        process.ErrorDataReceived += (_, e) =>
-        {
-            if (e.Data is null) return;
-            if (options.CaptureStdErr) stderr.AppendLine(e.Data);
-            options.OnStdErr?.Invoke(e.Data);
-        };
-
-        if (!process.Start())
-            throw new InvalidOperationException($"Failed to start: {options.FileName}");
-
-        process.BeginOutputReadLine();
-        process.BeginErrorReadLine();
-
-        using var registration = cancellationToken.Register(() =>
-        {
-            try { if (!process.HasExited) process.Kill(entireProcessTree: true); }
-            catch { /* race with natural exit */ }
-        });
-
+        var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
         try
         {
-            await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException)
-        {
-            try { if (!process.HasExited) process.Kill(entireProcessTree: true); } catch { }
-            throw;
-        }
+            var stderr = new StringBuilder();
 
-        return new ExternalProcessResult
+            process.OutputDataReceived += (_, e) =>
+            {
+                if (e.Data is null) return;
+                options.OnStdOut?.Invoke(e.Data);
+            };
+            process.ErrorDataReceived += (_, e) =>
+            {
+                if (e.Data is null) return;
+                if (options.CaptureStdErr) stderr.AppendLine(e.Data);
+                options.OnStdErr?.Invoke(e.Data);
+            };
+
+            if (!process.Start())
+                throw new InvalidOperationException($"Failed to start: {options.FileName}");
+
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+
+            // Register a cancellation callback that kills the process if the
+            // caller cancels. Using `using` (sync) — DisposeAsync on the
+            // registration would buy nothing here since the only thing it does
+            // synchronously is wait for an in-flight callback to finish, which
+            // a sync Dispose also does. Critically, the registration is
+            // disposed before `process` (try/finally below), so the captured
+            // `process` is always live whenever the callback runs.
+            using (cancellationToken.Register(() =>
+            {
+                try { if (!process.HasExited) process.Kill(entireProcessTree: true); }
+                catch { /* race with natural exit */ }
+            }))
+            {
+                await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
+            }
+
+            return new ExternalProcessResult
+            {
+                ExitCode = process.ExitCode,
+                StdErr = stderr.ToString(),
+            };
+        }
+        finally
         {
-            ExitCode = process.ExitCode,
-            StdErr = stderr.ToString(),
-        };
+            process.Dispose();
+        }
     }
 
     public static async Task<string> RunCaptureStdOutAsync(

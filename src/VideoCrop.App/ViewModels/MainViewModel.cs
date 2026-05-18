@@ -19,6 +19,7 @@ public sealed class MainViewModel : ObservableObject
     public CropViewModel Crop { get; } = new();
     public ResizeViewModel Resize { get; } = new();
     public UpdateViewModel Update { get; }
+    public ToolSetupViewModel ToolSetup { get; }
 
     public MainViewModel(AppServices services)
     {
@@ -46,6 +47,7 @@ public sealed class MainViewModel : ObservableObject
             services.LoggerFactory.CreateLogger<EncodeViewModel>());
 
         Update = new UpdateViewModel(services.LoggerFactory);
+        ToolSetup = new ToolSetupViewModel(services.ToolLocator, services.LoggerFactory);
 
         Source.VideoLoaded += (_, info) =>
         {

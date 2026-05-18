@@ -16,7 +16,7 @@ The solution file is `VideoCrop.slnx` (not `.sln`).
 - **Run a single test:** `dotnet test VideoCrop.slnx --filter "FullyQualifiedName~OutputNamerTests.Collision_with_base_uses_index_2"`
 - **Run the app:** `dotnet run --project src/VideoCrop.App` (the WinUI 3 unpackaged-launch path through `Microsoft.Windows.SDK.BuildTools.WinApp`)
 - **Release publish:** `dotnet publish src/VideoCrop.App -r win-x64 -c Release --no-self-contained`
-- **Fetch external tools** (ffmpeg/ffprobe/mpv into `tools/` next to the published exe): `pwsh tools/fetch-tools.ps1` — these binaries are gitignored.
+- **External tools**: ffmpeg/ffprobe (BtbN GPL Windows build) and mpv (shinchiro Windows build) are downloaded into `tools/` next to the exe by `ToolDownloadService` at runtime, the first time the app launches with the tools missing. There is no separate fetch script — the workflow ships only .NET binaries; the app pulls the tools.
 
 Targets: `net10.0-windows10.0.26100.0` (App) and `net10.0` (Core/Tests). `TargetPlatformMinVersion` is `10.0.17763.0` (Win10 1809+).
 

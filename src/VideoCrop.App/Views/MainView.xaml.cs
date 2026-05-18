@@ -64,7 +64,11 @@ public sealed partial class MainView : UserControl
         UpdateCropSummary();
         UpdateResize();
 
-        Loaded += async (_, _) => await ViewModel.InitializeAsync();
+        Loaded += async (_, _) =>
+        {
+            await ViewModel.InitializeAsync();
+            await EnsureToolsAvailableAsync();
+        };
     }
 
     private void BindPresets()
@@ -239,6 +243,24 @@ public sealed partial class MainView : UserControl
     private void OnUpdateRestartClicked(object sender, RoutedEventArgs e)
     {
         ViewModel.Update.TryApplyAndRestart();
+    }
+
+    private async System.Threading.Tasks.Task EnsureToolsAvailableAsync()
+    {
+        if (!ViewModel.ToolSetup.ToolsMissing) return;
+
+        var dialog = new ToolSetupDialog(ViewModel.ToolSetup) { XamlRoot = XamlRoot };
+        var result = await dialog.ShowAsync();
+
+        // Close = user picked "Quit" without downloading. Refresh status; the
+        // main UI will stay in a degraded state with the Tools section warning
+        // and Process disabled until they restart and complete setup.
+        await ViewModel.ToolStatus.RefreshAsync();
+
+        if (!dialog.DownloadSucceeded && result == ContentDialogResult.None)
+        {
+            // User cancelled — leave the app in degraded state.
+        }
     }
 
     private bool _suppressResizeBoxes;
