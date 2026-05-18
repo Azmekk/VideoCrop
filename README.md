@@ -8,11 +8,16 @@ A small Windows app for trimming, cropping, resizing, and compressing video file
 - **Crop** to any rectangle or snap to common aspects (16:9, 4:3, 1:1, 9:16, original).
 - **Resize** with aspect lock and one-click presets (2160p / 1440p / 1080p / 720p / 480p).
 - **Compress** with sensible quality presets (H.264 for compatibility, H.265 / AV1 for smaller files) plus an advanced panel for custom bitrate or target file size.
-- Live preview in a dedicated mpv window. Auto-updates from new releases.
+- **Output mode** — keep everything, or extract just audio (`.m4a` / `.opus` / `.mp3`) or just video.
+- Embedded preview with transport + volume controls. Auto-updates from new releases.
 
 ## Download
 
-Grab the latest `VideoCrop-vX.Y.Z-win-x64.zip` (or `win-arm64.zip`) from the [Releases page](https://github.com/Azmekk/VideoCrop/releases). Unzip anywhere — Documents, Desktop, a USB stick — and run `VideoCrop.App.exe`. No installer.
+Grab the latest `VideoCrop-vX.Y.Z-win-x64.zip` (or `win-arm64.zip`) from the [Releases page](https://github.com/Azmekk/VideoCrop/releases). Unzip and run `VideoCrop.App.exe` — no installer.
+
+## Where to put it
+
+Recommended: `%LOCALAPPDATA%\Programs\VideoCrop` (i.e. `C:\Users\<you>\AppData\Local\Programs\VideoCrop`). Avoid `Program Files` — auto-updates need to write to the install folder without UAC prompts.
 
 ## Requirements
 
@@ -26,7 +31,7 @@ VideoCrop uses ffmpeg and mpv under the hood. The first time you launch the app,
 
 ## Using it
 
-1. Drag a video onto the window (or click **Open File…**). mpv opens in its own window for preview.
+1. Drag a video onto the window (or click **Open File…**). It plays back in the preview pane.
 2. Adjust any combination of:
    - **Cut** — start/end times, or drag the handles on the timeline.
    - **Crop** — click **Edit crop…**, drag a rectangle, optionally pick an aspect, hit Apply.
