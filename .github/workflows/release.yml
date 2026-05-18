@@ -49,7 +49,6 @@ jobs:
             -r ${{ matrix.rid }} `
             --no-self-contained `
             /p:Version=${{ steps.ver.outputs.version }} `
-            /p:PublishReadyToRun=true `
             -o publish/${{ matrix.rid }}
 
       - name: Zip artifact

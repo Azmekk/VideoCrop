@@ -73,16 +73,38 @@
     <HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
   </PropertyGroup>
 
-  <!-- Publish Properties -->
+  <!--
+    Publish Properties: ReadyToRun and Trimming are intentionally OFF.
+    R2R rewrites methods AOT and the WinUI 3 XAML loader's reflection paths
+    can fail to resolve types after that rewrite, surfacing as a generic
+    "XAML parsing failed" at MainWindow.InitializeComponent. Trimming
+    requires a self-contained publish and likewise loses reflection targets.
+  -->
   <PropertyGroup>
-    <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
-    <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
-    <!--
-      Trimming is intentionally OFF. It requires a self-contained publish,
-      which would balloon the zip with a copy of the .NET runtime, and the
-      WinUI XAML pipeline relies on reflection paths the trimmer can't always
-      see.
-    -->
+    <PublishReadyToRun>false</PublishReadyToRun>
     <PublishTrimmed>false</PublishTrimmed>
   </PropertyGroup>
+
+  <!--
+    Workaround: dotnet publish for unpackaged WinUI 3 apps drops the generated
+    PRI file and XBF resources between ComputeFilesToPublish and the actual
+    file copy. Without them, LoadComponent("ms-appx:///MainWindow.xaml")
+    throws "XAML parsing failed" at runtime. Copy them in by hand after
+    publish so the output is self-sufficient.
+  -->
+  <Target Name="CopyWinUiResourcesAfterPublish" AfterTargets="Publish">
+    <ItemGroup>
+      <_WinUiPriFiles Include="$(OutputPath)*.pri" />
+      <_WinUiXbfFiles Include="$(OutputPath)**\*.xbf" />
+    </ItemGroup>
+    <Copy
+      SourceFiles="@(_WinUiPriFiles)"
+      DestinationFolder="$(PublishDir)"
+      SkipUnchangedFiles="true" />
+    <Copy
+      SourceFiles="@(_WinUiXbfFiles)"
+      DestinationFiles="@(_WinUiXbfFiles->'$(PublishDir)%(RecursiveDir)%(Filename)%(Extension)')"
+      SkipUnchangedFiles="true" />
+  </Target>
+
 </Project>
