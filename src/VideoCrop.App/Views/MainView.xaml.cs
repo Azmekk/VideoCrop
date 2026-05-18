@@ -94,23 +94,22 @@ public sealed partial class MainView : UserControl
 
     private async System.Threading.Tasks.Task OfferInstallSetupAsync()
     {
+        // Already installed via shortcut? Nothing to do.
+        if (StartMenuShortcut.Exists()) return;
+        // User said "Not now" previously; respect that until they delete the
+        // settings file or another install creates the shortcut.
         var settings = App.Current.Services.Settings;
-        if (settings.HasPromptedInstallSetup) return;
-        // If a prior install already wired up both, just record that and move on.
-        if (StartMenuShortcut.Exists() && AppsAndFeaturesRegistration.IsRegistered())
-        {
-            settings.HasPromptedInstallSetup = true;
-            return;
-        }
+        if (settings.UserDeclinedInstall) return;
 
         var dialog = new ContentDialog
         {
             XamlRoot = XamlRoot,
-            Title = "Set up VideoCrop on this PC?",
+            Title = "Add VideoCrop to the Start menu?",
             Content =
-                "Adds a Start menu shortcut (Windows search) and registers VideoCrop in Settings → Apps & Features " +
-                "for a clean Uninstall later. Decline if this is a temporary or test install.",
-            PrimaryButtonText = "Set up",
+                "Creates a Start menu shortcut so VideoCrop is searchable from Windows. " +
+                "To uninstall later, run uninstall.bat from the install folder. " +
+                "Decline if this is a temporary or test install.",
+            PrimaryButtonText = "Add shortcut",
             CloseButtonText = "Not now",
             DefaultButton = ContentDialogButton.Primary,
         };
@@ -118,14 +117,16 @@ public sealed partial class MainView : UserControl
         try { result = await dialog.ShowAsync(); }
         catch { return; }
 
-        settings.HasPromptedInstallSetup = true;
-        if (result != ContentDialogResult.Primary) return;
+        if (result != ContentDialogResult.Primary)
+        {
+            settings.UserDeclinedInstall = true;
+            return;
+        }
 
         var exe = Environment.ProcessPath;
         if (string.IsNullOrEmpty(exe)) return;
         var icon = Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico");
         StartMenuShortcut.Create(exe, File.Exists(icon) ? icon : null);
-        AppsAndFeaturesRegistration.Register(exe);
     }
 
     private void BindPresets()

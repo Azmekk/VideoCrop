@@ -6,8 +6,7 @@ namespace VideoCrop.App.Services;
 
 /// <summary>
 /// Tiny JSON-backed key/value bag in %LOCALAPPDATA%\VideoCrop\settings.json.
-/// Holds opt-in flags that the user has answered explicitly (e.g., "do not
-/// ask me about the Start menu shortcut again").
+/// Holds opt-in flags that the user has answered explicitly.
 /// </summary>
 public sealed class AppSettingsService
 {
@@ -24,10 +23,15 @@ public sealed class AppSettingsService
         Load();
     }
 
-    public bool HasPromptedInstallSetup
+    /// <summary>
+    /// True when the user clicked "Not now" on the install-setup prompt. The
+    /// prompt is suppressed until the shortcut is created some other way
+    /// (e.g., by another VideoCrop install) or the file is wiped.
+    /// </summary>
+    public bool UserDeclinedInstall
     {
-        get => _data.HasPromptedInstallSetup;
-        set { _data.HasPromptedInstallSetup = value; Save(); }
+        get => _data.UserDeclinedInstall;
+        set { _data.UserDeclinedInstall = value; Save(); }
     }
 
     private void Load()
@@ -49,6 +53,6 @@ public sealed class AppSettingsService
 
     private sealed class Data
     {
-        public bool HasPromptedInstallSetup { get; set; }
+        public bool UserDeclinedInstall { get; set; }
     }
 }

@@ -13,10 +13,13 @@ namespace VideoCrop.App.Services;
 /// </summary>
 internal static class StartMenuShortcut
 {
-    public static string LinkPath => Path.Combine(
+    private static string ProgramsDir => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.StartMenu),
-        "Programs",
-        "VideoCrop.lnk");
+        "Programs");
+
+    private static string GroupDir => Path.Combine(ProgramsDir, "VideoCrop");
+
+    public static string LinkPath => Path.Combine(GroupDir, "VideoCrop.lnk");
 
     public static bool Exists() => File.Exists(LinkPath);
 
@@ -25,6 +28,17 @@ internal static class StartMenuShortcut
         try
         {
             if (File.Exists(LinkPath)) File.Delete(LinkPath);
+            // Remove the VideoCrop\ folder we created if it's now empty so
+            // we don't leave a stub group in the user's Start menu.
+            try
+            {
+                if (Directory.Exists(GroupDir) &&
+                    Directory.GetFileSystemEntries(GroupDir).Length == 0)
+                {
+                    Directory.Delete(GroupDir);
+                }
+            }
+            catch { /* best-effort */ }
             return true;
         }
         catch (Exception ex)
@@ -38,6 +52,7 @@ internal static class StartMenuShortcut
     {
         try
         {
+            Directory.CreateDirectory(GroupDir);
             var shellType = Type.GetTypeFromProgID("WScript.Shell");
             if (shellType is null)
             {
