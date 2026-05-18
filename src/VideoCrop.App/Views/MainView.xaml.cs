@@ -323,6 +323,7 @@ public sealed partial class MainView : UserControl
     {
         ViewModel.Compression.AdvancedEnabled = AdvancedToggle.IsOn;
         AdvancedPanel.Visibility = AdvancedToggle.IsOn ? Visibility.Visible : Visibility.Collapsed;
+        EasyPanel.Visibility = AdvancedToggle.IsOn ? Visibility.Collapsed : Visibility.Visible;
         if (AdvancedToggle.IsOn) SyncAdvancedUiFromVm();
     }
 
@@ -427,16 +428,6 @@ public sealed partial class MainView : UserControl
         }
     }
 
-    private bool _suppressAudioBitrateSync;
-
-    private void OnAudioBitrateChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (_suppressAudioBitrateSync) return;
-        if (AudioBitrateCombo.SelectedItem is ComboBoxItem cbi && cbi.Tag is string tag && int.TryParse(tag, out var bps))
-        {
-            ViewModel.Compression.AudioBitrateKbps = bps;
-        }
-    }
 
     private void OnAdvPixelFormatChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -524,9 +515,6 @@ public sealed partial class MainView : UserControl
         PresetDescription.Text = comp.Description;
         PresetWarningBar.IsOpen = comp.HasWarning;
         PresetWarningBar.Message = comp.Warning ?? "";
-        _suppressAudioBitrateSync = true;
-        SelectAudioBitrate(AudioBitrateCombo, comp.AudioBitrateKbps);
-        _suppressAudioBitrateSync = false;
     }
 
     private void UpdateOutput()

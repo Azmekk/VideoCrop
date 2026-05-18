@@ -283,34 +283,24 @@
 
                     <Expander Header="Compression" IsExpanded="True" HorizontalAlignment="Stretch">
                         <StackPanel Margin="0,8,0,0" Spacing="6">
-                            <TextBlock Text="Preset" Opacity="0.7" />
-                            <ComboBox x:Name="PresetCombo"
-                                      HorizontalAlignment="Stretch"
-                                      SelectionChanged="OnPresetSelectionChanged" />
-                            <TextBlock x:Name="PresetDescription"
-                                       TextWrapping="Wrap"
-                                       Opacity="0.8"
-                                       FontSize="12" />
-                            <InfoBar x:Name="PresetWarningBar"
-                                     Severity="Warning"
-                                     IsOpen="False"
-                                     IsClosable="False" />
-                            <ComboBox x:Name="AudioBitrateCombo"
-                                      Header="Audio bitrate"
-                                      HorizontalAlignment="Stretch"
-                                      SelectionChanged="OnAudioBitrateChanged">
-                                <ComboBoxItem Content="64 kbps" Tag="64" />
-                                <ComboBoxItem Content="96 kbps" Tag="96" />
-                                <ComboBoxItem Content="128 kbps" Tag="128" />
-                                <ComboBoxItem Content="160 kbps" Tag="160" />
-                                <ComboBoxItem Content="192 kbps" Tag="192" />
-                                <ComboBoxItem Content="256 kbps" Tag="256" />
-                                <ComboBoxItem Content="320 kbps" Tag="320" />
-                            </ComboBox>
                             <ToggleSwitch x:Name="AdvancedToggle"
                                           OnContent="Custom (advanced)"
                                           OffContent="Use preset"
                                           Toggled="OnAdvancedToggled" />
+                            <StackPanel x:Name="EasyPanel" Spacing="6">
+                                <TextBlock Text="Preset" Opacity="0.7" />
+                                <ComboBox x:Name="PresetCombo"
+                                          HorizontalAlignment="Stretch"
+                                          SelectionChanged="OnPresetSelectionChanged" />
+                                <TextBlock x:Name="PresetDescription"
+                                           TextWrapping="Wrap"
+                                           Opacity="0.8"
+                                           FontSize="12" />
+                                <InfoBar x:Name="PresetWarningBar"
+                                         Severity="Warning"
+                                         IsOpen="False"
+                                         IsClosable="False" />
+                            </StackPanel>
                             <StackPanel x:Name="AdvancedPanel" Visibility="Collapsed" Spacing="6">
                                 <ComboBox x:Name="AdvCodecCombo" Header="Codec" SelectionChanged="OnAdvCodecChanged">
                                     <ComboBoxItem Content="H.264" Tag="H264" />

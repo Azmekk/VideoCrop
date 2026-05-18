@@ -75,7 +75,7 @@ public sealed class CompressionViewModel : ObservableObject
     {
         get
         {
-            if (!_advancedEnabled) return _selectedPreset.Spec with { AudioBitrateKbps = _audioBitrateKbps };
+            if (!_advancedEnabled) return _selectedPreset.Spec;
             var (rateControl, targetBps, targetBytes) = _rateMode switch
             {
                 CompressionRateMode.Crf => (RateControl.Crf, (long?)null, (long?)null),

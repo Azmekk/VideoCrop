@@ -39,7 +39,7 @@ public sealed partial class VideoPane : UserControl
 
         if (!_player.HasMpv)
         {
-            EmptyOverlay.Text = "mpv not found. Place mpv.exe in tools/ next to the app, then reopen.";
+            EmptyOverlay.Text = "mpv not found. Restart the app to download the required tools.";
         }
     }
 

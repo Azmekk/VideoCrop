@@ -16,7 +16,7 @@ public static class PresetLibrary
 {
     public static readonly PresetDefinition WebHigh = new(
         Id: "web-high",
-        DisplayName: "Web: High",
+        DisplayName: "High h264 (Compatibility)",
         Category: PresetCategory.Compatibility,
         Description: "Near-lossless. Best for archiving or re-editing.",
         CompatibilityWarning: null,
@@ -24,7 +24,7 @@ public static class PresetLibrary
 
     public static readonly PresetDefinition WebMedium = new(
         Id: "web-medium",
-        DisplayName: "Web: Medium",
+        DisplayName: "Medium h264 (Compatibility)",
         Category: PresetCategory.Compatibility,
         Description: "Default. Standard web quality; small files, plays everywhere.",
         CompatibilityWarning: null,
@@ -32,7 +32,7 @@ public static class PresetLibrary
 
     public static readonly PresetDefinition WebLow = new(
         Id: "web-low",
-        DisplayName: "Web: Low",
+        DisplayName: "Low h264 (Compatibility)",
         Category: PresetCategory.Compatibility,
         Description: "Aggressive compression. Use for chat clips where size matters most.",
         CompatibilityWarning: null,
@@ -40,7 +40,7 @@ public static class PresetLibrary
 
     public static readonly PresetDefinition HighFast = new(
         Id: "high-fast",
-        DisplayName: "High (Fast)",
+        DisplayName: "High h265",
         Category: PresetCategory.Optimization,
         Description: "~40% smaller than H.264 High at similar quality.",
         CompatibilityWarning: "May not play in Discord embeds, older browsers, or older devices.",
@@ -48,7 +48,7 @@ public static class PresetLibrary
 
     public static readonly PresetDefinition HighSlow = new(
         Id: "high-slow",
-        DisplayName: "High (Slow)",
+        DisplayName: "High av1",
         Category: PresetCategory.Optimization,
         Description: "Best compression at this quality tier. Slower to encode.",
         CompatibilityWarning: "Limited compatibility (Safari, many chat apps, older hardware).",
@@ -56,7 +56,7 @@ public static class PresetLibrary
 
     public static readonly PresetDefinition MediumFast = new(
         Id: "medium-fast",
-        DisplayName: "Medium (Fast)",
+        DisplayName: "Medium h265",
         Category: PresetCategory.Optimization,
         Description: "Smaller than Web: Medium with similar visual quality.",
         CompatibilityWarning: "Same H.265 caveats as above.",
@@ -64,7 +64,7 @@ public static class PresetLibrary
 
     public static readonly PresetDefinition MediumSlow = new(
         Id: "medium-slow",
-        DisplayName: "Medium (Slow)",
+        DisplayName: "Medium av1",
         Category: PresetCategory.Optimization,
         Description: "Smallest file at default quality.",
         CompatibilityWarning: "Same AV1 caveats as above.",
@@ -72,7 +72,7 @@ public static class PresetLibrary
 
     public static readonly PresetDefinition LowFast = new(
         Id: "low-fast",
-        DisplayName: "Low (Fast)",
+        DisplayName: "Low h265",
         Category: PresetCategory.Optimization,
         Description: "Tiny chat-clip files.",
         CompatibilityWarning: "Same H.265 caveats as above.",
@@ -80,7 +80,7 @@ public static class PresetLibrary
 
     public static readonly PresetDefinition LowSlow = new(
         Id: "low-slow",
-        DisplayName: "Low (Slow)",
+        DisplayName: "Low av1",
         Category: PresetCategory.Optimization,
         Description: "Smallest possible at watchable quality.",
         CompatibilityWarning: "Same AV1 caveats as above.",
