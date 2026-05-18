@@ -6,5 +6,5 @@ public sealed record EncodeJob(
     CutSpec? Cut,
     CropSpec? Crop,
     ResizeSpec? Resize,
-    CompressionSpec Compression,
+    CompressionSpec? Compression,
     TimeSpan SourceDuration);

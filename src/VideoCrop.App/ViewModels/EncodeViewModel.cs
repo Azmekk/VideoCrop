@@ -63,7 +63,7 @@ public sealed class EncodeViewModel(IFfmpegRunner ffmpeg, ILogger<EncodeViewMode
         var stderr = new StringBuilder();
         try
         {
-            if (job.Compression.RateControl == RateControl.TwoPassTargetSize)
+            if (job.Compression is { RateControl: RateControl.TwoPassTargetSize })
             {
                 return await RunTwoPassAsync(job, stderr).ConfigureAwait(true);
             }
@@ -125,14 +125,14 @@ public sealed class EncodeViewModel(IFfmpegRunner ffmpeg, ILogger<EncodeViewMode
 
     private async Task<bool> RunTwoPassAsync(EncodeJob job, StringBuilder stderr)
     {
-        if (job.Compression.TargetSizeBytes is not { } sizeBytes)
+        if (job.Compression is not { } comp || comp.TargetSizeBytes is not { } sizeBytes)
         {
             StatusMessage = "Target size not set.";
             return false;
         }
         var duration = job.Cut?.Duration ?? job.SourceDuration;
-        var bps = EncodeCommandBuilder.ComputeTargetBitrate(sizeBytes, duration, job.Compression.AudioBitrateKbps);
-        var revisedComp = job.Compression with { TargetBitrateBps = bps };
+        var bps = EncodeCommandBuilder.ComputeTargetBitrate(sizeBytes, duration, comp.AudioBitrateKbps);
+        var revisedComp = comp with { TargetBitrateBps = bps };
         var revisedJob = job with { Compression = revisedComp };
 
         using var temp = new TempFileManager();

@@ -9,6 +9,13 @@ public sealed class MpvHostOptions
 {
     public string WindowTitle { get; init; } = "VideoCrop - Preview";
     public string? InitialFile { get; init; }
+
+    /// <summary>
+    /// If non-zero, mpv is launched with <c>--wid=&lt;hwnd&gt;</c> and renders
+    /// into that window. Standalone-window options (force-window, title) are
+    /// suppressed in that case.
+    /// </summary>
+    public nint ParentHwnd { get; init; }
 }
 
 public sealed class MpvHost(IToolLocator locator, ILogger<MpvHost>? logger = null) : IAsyncDisposable
@@ -42,13 +49,28 @@ public sealed class MpvHost(IToolLocator locator, ILogger<MpvHost>? logger = nul
         };
         psi.ArgumentList.Add($"--input-ipc-server={_pipeName}");
         psi.ArgumentList.Add("--idle=yes");
-        psi.ArgumentList.Add("--force-window=yes");
         psi.ArgumentList.Add("--keep-open=yes");
         psi.ArgumentList.Add("--pause");
         psi.ArgumentList.Add("--no-terminal");
-        psi.ArgumentList.Add($"--title={options.WindowTitle}");
-        // Standalone window: let mpv keep its on-screen controller and default
-        // key bindings so it is usable on its own.
+
+        if (options.ParentHwnd != 0)
+        {
+            // Embedded mode: mpv renders into our child HWND. Don't force a
+            // standalone window or set a title — neither applies.
+            psi.ArgumentList.Add($"--wid={options.ParentHwnd}");
+            // mpv's on-screen controller is mouse-driven; without input
+            // routing it just shows up as a redundant overlay. Disable.
+            psi.ArgumentList.Add("--osc=no");
+            psi.ArgumentList.Add("--input-default-bindings=no");
+            psi.ArgumentList.Add("--input-vo-keyboard=no");
+            psi.ArgumentList.Add("--cursor-autohide=no");
+        }
+        else
+        {
+            psi.ArgumentList.Add("--force-window=yes");
+            psi.ArgumentList.Add($"--title={options.WindowTitle}");
+        }
+
         if (!string.IsNullOrEmpty(options.InitialFile))
             psi.ArgumentList.Add(options.InitialFile);
 

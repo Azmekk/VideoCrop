@@ -28,23 +28,24 @@ public static class EncodeCommandBuilder
             args.Add("-to"); args.Add(FormatSeconds(job.Cut.End));
         }
 
-        var filter = BuildVideoFilter(job);
-        if (filter is not null)
-        {
-            args.Add("-vf"); args.Add(filter);
-        }
-
-        var canStreamCopyVideo = filter is null && !RequiresReencode(job);
-        if (canStreamCopyVideo)
+        // When Compression is null, the user explicitly turned re-encoding off:
+        // stream-copy both tracks and skip any filter chain (crop/resize are
+        // incompatible with stream-copy).
+        if (job.Compression is null)
         {
             args.Add("-c:v"); args.Add("copy");
+            args.Add("-c:a"); args.Add("copy");
         }
         else
         {
+            var filter = BuildVideoFilter(job);
+            if (filter is not null)
+            {
+                args.Add("-vf"); args.Add(filter);
+            }
             AddVideoEncoderArgs(args, job.Compression);
+            AddAudioArgs(args, job.Compression);
         }
-
-        AddAudioArgs(args, job.Compression);
 
         // First video stream + first audio stream only (per v1 plan).
         args.Add("-map"); args.Add("0:v:0");
@@ -61,9 +62,11 @@ public static class EncodeCommandBuilder
 
     public static TwoPassInvocations BuildTwoPass(EncodeJob job, string statsFilePrefix)
     {
-        if (job.Compression.Codec is not (VideoCodec.H264 or VideoCodec.H265 or VideoCodec.Vp9))
+        var comp = job.Compression
+            ?? throw new InvalidOperationException("Two-pass requires a CompressionSpec.");
+        if (comp.Codec is not (VideoCodec.H264 or VideoCodec.H265 or VideoCodec.Vp9))
             throw new InvalidOperationException("Two-pass currently supports H.264, H.265, and VP9 only.");
-        if (job.Compression.TargetBitrateBps is not { } targetBps)
+        if (comp.TargetBitrateBps is not { } targetBps)
             throw new InvalidOperationException("Two-pass requires a target bitrate.");
 
         var nullSink = OperatingSystem.IsWindows() ? "NUL" : "/dev/null";
@@ -76,7 +79,7 @@ public static class EncodeCommandBuilder
         var filter = BuildVideoFilter(job);
         if (filter is not null) { pass1.Add("-vf"); pass1.Add(filter); }
 
-        AddVideoEncoderArgs(pass1, job.Compression, twoPassBitrate: targetBps);
+        AddVideoEncoderArgs(pass1, comp, twoPassBitrate: targetBps);
         pass1.Add("-pass"); pass1.Add("1");
         pass1.Add("-passlogfile"); pass1.Add(statsFilePrefix);
         pass1.Add("-an");
@@ -89,10 +92,10 @@ public static class EncodeCommandBuilder
         pass2.Add("-i"); pass2.Add(job.InputPath);
         AddCutAfterInput(pass2, job);
         if (filter is not null) { pass2.Add("-vf"); pass2.Add(filter); }
-        AddVideoEncoderArgs(pass2, job.Compression, twoPassBitrate: targetBps);
+        AddVideoEncoderArgs(pass2, comp, twoPassBitrate: targetBps);
         pass2.Add("-pass"); pass2.Add("2");
         pass2.Add("-passlogfile"); pass2.Add(statsFilePrefix);
-        AddAudioArgs(pass2, job.Compression);
+        AddAudioArgs(pass2, comp);
         pass2.Add("-map"); pass2.Add("0:v:0");
         pass2.Add("-map"); pass2.Add("0:a:0?");
         pass2.Add("-map_metadata"); pass2.Add("-1");
@@ -142,9 +145,6 @@ public static class EncodeCommandBuilder
         var videoBps = (long)(videoBits / duration.TotalSeconds);
         return Math.Max(50_000, videoBps);
     }
-
-    private static bool RequiresReencode(EncodeJob job) =>
-        true; // For Phase 5, default to re-encode. Phase 6 introduces fast-cut stream-copy path.
 
     private static void AddCutBeforeInput(List<string> args, EncodeJob job)
     {

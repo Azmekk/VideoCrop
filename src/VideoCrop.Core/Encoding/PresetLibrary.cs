@@ -59,7 +59,7 @@ public static class PresetLibrary
         DisplayName: "Medium h265",
         Category: PresetCategory.Optimization,
         Description: "Smaller than Web: Medium with similar visual quality.",
-        CompatibilityWarning: "Same H.265 caveats as above.",
+        CompatibilityWarning: "May not play in Discord embeds, older browsers, or older devices.",
         Spec: new CompressionSpec(VideoCodec.H265, RateControl.Crf, 27, null, null, SpeedPreset.Medium, AudioCodec.Opus, 128, PixelFormat.Yuv420p));
 
     public static readonly PresetDefinition MediumSlow = new(
@@ -67,7 +67,7 @@ public static class PresetLibrary
         DisplayName: "Medium av1",
         Category: PresetCategory.Optimization,
         Description: "Smallest file at default quality.",
-        CompatibilityWarning: "Same AV1 caveats as above.",
+        CompatibilityWarning: "Limited compatibility (Safari, many chat apps, older hardware).",
         Spec: new CompressionSpec(VideoCodec.Av1, RateControl.Crf, 32, null, null, SpeedPreset.Medium, AudioCodec.Opus, 128, PixelFormat.Yuv420p));
 
     public static readonly PresetDefinition LowFast = new(
@@ -75,7 +75,7 @@ public static class PresetLibrary
         DisplayName: "Low h265",
         Category: PresetCategory.Optimization,
         Description: "Tiny chat-clip files.",
-        CompatibilityWarning: "Same H.265 caveats as above.",
+        CompatibilityWarning: "May not play in Discord embeds, older browsers, or older devices.",
         Spec: new CompressionSpec(VideoCodec.H265, RateControl.Crf, 30, null, null, SpeedPreset.Medium, AudioCodec.Opus, 96, PixelFormat.Yuv420p));
 
     public static readonly PresetDefinition LowSlow = new(
@@ -83,7 +83,7 @@ public static class PresetLibrary
         DisplayName: "Low av1",
         Category: PresetCategory.Optimization,
         Description: "Smallest possible at watchable quality.",
-        CompatibilityWarning: "Same AV1 caveats as above.",
+        CompatibilityWarning: "Limited compatibility (Safari, many chat apps, older hardware).",
         Spec: new CompressionSpec(VideoCodec.Av1, RateControl.Crf, 36, null, null, SpeedPreset.Faster, AudioCodec.Opus, 96, PixelFormat.Yuv420p));
 
     public static readonly IReadOnlyList<PresetDefinition> All = new[]

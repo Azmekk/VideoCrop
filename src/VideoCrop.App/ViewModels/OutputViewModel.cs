@@ -38,14 +38,15 @@ public sealed class OutputViewModel : ObservableObject
 
     private void RefreshFilenamePreview()
     {
-        if (_sourcePath is null || OutputDirectory is null || _codec is null)
+        var ext = ResolveExtension();
+        if (_sourcePath is null || OutputDirectory is null || ext is null)
         {
             FilenamePreview = "";
             return;
         }
         try
         {
-            var path = OutputNamer.GetNextAvailable(_sourcePath, OutputDirectory, _codec.Value.DefaultContainerExtension());
+            var path = OutputNamer.GetNextAvailable(_sourcePath, OutputDirectory, ext);
             FilenamePreview = Path.GetFileName(path);
         }
         catch
@@ -56,7 +57,20 @@ public sealed class OutputViewModel : ObservableObject
 
     public string? BuildOutputPath()
     {
-        if (_sourcePath is null || OutputDirectory is null || _codec is null) return null;
-        return OutputNamer.GetNextAvailable(_sourcePath, OutputDirectory, _codec.Value.DefaultContainerExtension());
+        var ext = ResolveExtension();
+        if (_sourcePath is null || OutputDirectory is null || ext is null) return null;
+        return OutputNamer.GetNextAvailable(_sourcePath, OutputDirectory, ext);
+    }
+
+    /// <summary>
+    /// Pick a container extension: when a codec is known, use its canonical
+    /// container; otherwise (stream-copy) preserve the source's extension.
+    /// </summary>
+    private string? ResolveExtension()
+    {
+        if (_codec is { } c) return c.DefaultContainerExtension();
+        if (_sourcePath is null) return null;
+        var srcExt = Path.GetExtension(_sourcePath);
+        return string.IsNullOrEmpty(srcExt) ? null : srcExt.TrimStart('.');
     }
 }

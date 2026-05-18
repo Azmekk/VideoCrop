@@ -70,7 +70,7 @@
                 AllowDrop="True"
                 DragOver="OnDragOver"
                 Drop="OnDrop">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ScrollViewer VerticalScrollBarVisibility="Visible">
                 <StackPanel Spacing="12">
                     <TextBlock Text="VideoCrop" FontSize="20" FontWeight="SemiBold" />
 
@@ -233,10 +233,19 @@
 
                     <Expander Header="Resize" IsExpanded="False" HorizontalAlignment="Stretch">
                         <StackPanel Margin="0,8,0,0" Spacing="6">
-                            <ToggleSwitch x:Name="ResizeEnabledSwitch"
-                                          OnContent="Enabled"
-                                          OffContent="Disabled"
-                                          Toggled="OnResizeEnabledToggled" />
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Enable resize" VerticalAlignment="Center" />
+                                <ToggleSwitch Grid.Column="1"
+                                              x:Name="ResizeEnabledSwitch"
+                                              OnContent=""
+                                              OffContent=""
+                                              MinWidth="0"
+                                              Toggled="OnResizeEnabledToggled" />
+                            </Grid>
                             <TextBlock x:Name="ResizeInputDisplay" Opacity="0.7" FontSize="12" />
                             <Grid ColumnSpacing="6">
                                 <Grid.ColumnDefinitions>
@@ -283,14 +292,45 @@
 
                     <Expander Header="Compression" IsExpanded="True" HorizontalAlignment="Stretch">
                         <StackPanel Margin="0,8,0,0" Spacing="6">
-                            <ToggleSwitch x:Name="AdvancedToggle"
-                                          OnContent="Custom (advanced)"
-                                          OffContent="Use preset"
-                                          Toggled="OnAdvancedToggled" />
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Enable encoding" VerticalAlignment="Center" />
+                                <ToggleSwitch Grid.Column="1"
+                                              x:Name="CompressionEnabledToggle"
+                                              OnContent=""
+                                              OffContent=""
+                                              MinWidth="0"
+                                              IsOn="True"
+                                              Toggled="OnCompressionEnabledToggled" />
+                            </Grid>
+                            <TextBlock x:Name="StreamCopyNote"
+                                       Visibility="Collapsed"
+                                       TextWrapping="Wrap"
+                                       Opacity="0.7"
+                                       FontSize="12"
+                                       Text="Video and audio will be copied without re-encoding. Cut still works (keyframe-snapped). Crop and resize are skipped in this mode." />
+                            <StackPanel x:Name="CompressionDetailsPanel" Spacing="6">
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Advanced options" VerticalAlignment="Center" />
+                                <ToggleSwitch Grid.Column="1"
+                                              x:Name="AdvancedToggle"
+                                              OnContent=""
+                                              OffContent=""
+                                              MinWidth="0"
+                                              Toggled="OnAdvancedToggled" />
+                            </Grid>
                             <StackPanel x:Name="EasyPanel" Spacing="6">
                                 <TextBlock Text="Preset" Opacity="0.7" />
                                 <ComboBox x:Name="PresetCombo"
                                           HorizontalAlignment="Stretch"
+                                          MinWidth="280"
                                           SelectionChanged="OnPresetSelectionChanged" />
                                 <TextBlock x:Name="PresetDescription"
                                            TextWrapping="Wrap"
@@ -302,38 +342,28 @@
                                          IsClosable="False" />
                             </StackPanel>
                             <StackPanel x:Name="AdvancedPanel" Visibility="Collapsed" Spacing="6">
-                                <ComboBox x:Name="AdvCodecCombo" Header="Codec" SelectionChanged="OnAdvCodecChanged">
+                                <ComboBox x:Name="AdvCodecCombo" Header="Codec" HorizontalAlignment="Stretch" MinWidth="280" SelectionChanged="OnAdvCodecChanged">
                                     <ComboBoxItem Content="H.264" Tag="H264" />
                                     <ComboBoxItem Content="H.265" Tag="H265" />
                                     <ComboBoxItem Content="AV1" Tag="Av1" />
                                     <ComboBoxItem Content="VP9" Tag="Vp9" />
                                 </ComboBox>
-                                <ComboBox x:Name="AdvSpeedCombo" Header="Speed" SelectionChanged="OnAdvSpeedChanged">
-                                    <ComboBoxItem Content="ultrafast" Tag="UltraFast" />
-                                    <ComboBoxItem Content="superfast" Tag="SuperFast" />
-                                    <ComboBoxItem Content="veryfast" Tag="VeryFast" />
-                                    <ComboBoxItem Content="faster" Tag="Faster" />
-                                    <ComboBoxItem Content="fast" Tag="Fast" />
-                                    <ComboBoxItem Content="medium" Tag="Medium" />
-                                    <ComboBoxItem Content="slow" Tag="Slow" />
-                                    <ComboBoxItem Content="slower" Tag="Slower" />
-                                    <ComboBoxItem Content="veryslow" Tag="VerySlow" />
-                                </ComboBox>
-                                <ComboBox x:Name="AdvRateModeCombo" Header="Rate control" SelectionChanged="OnAdvRateModeChanged">
+                                <ComboBox x:Name="AdvSpeedCombo" Header="Speed" HorizontalAlignment="Stretch" MinWidth="280" SelectionChanged="OnAdvSpeedChanged" />
+                                <ComboBox x:Name="AdvRateModeCombo" Header="Rate control" HorizontalAlignment="Stretch" MinWidth="280" SelectionChanged="OnAdvRateModeChanged">
                                     <ComboBoxItem Content="CRF (quality)" Tag="Crf" />
                                     <ComboBoxItem Content="Target bitrate" Tag="TargetBitrate" />
                                     <ComboBoxItem Content="Target file size" Tag="TargetSize" />
                                 </ComboBox>
-                                <NumberBox x:Name="AdvCrfBox" Header="CRF" Minimum="0" Maximum="63" SpinButtonPlacementMode="Compact" ValueChanged="OnAdvCrfChanged" />
-                                <NumberBox x:Name="AdvBitrateBox" Header="Target bitrate (kbps)" Visibility="Collapsed" Minimum="50" SpinButtonPlacementMode="Compact" ValueChanged="OnAdvBitrateChanged" />
-                                <NumberBox x:Name="AdvTargetSizeBox" Header="Target size (MB)" Visibility="Collapsed" Minimum="1" SpinButtonPlacementMode="Compact" ValueChanged="OnAdvTargetSizeChanged" />
-                                <ComboBox x:Name="AdvAudioCodecCombo" Header="Audio codec" SelectionChanged="OnAdvAudioCodecChanged">
+                                <NumberBox x:Name="AdvCrfBox" Header="CRF" HorizontalAlignment="Stretch" MinWidth="280" Minimum="0" Maximum="63" SpinButtonPlacementMode="Compact" ValueChanged="OnAdvCrfChanged" />
+                                <NumberBox x:Name="AdvBitrateBox" Header="Target bitrate (kbps)" HorizontalAlignment="Stretch" MinWidth="280" Visibility="Collapsed" Minimum="50" SpinButtonPlacementMode="Compact" ValueChanged="OnAdvBitrateChanged" />
+                                <NumberBox x:Name="AdvTargetSizeBox" Header="Target size (MB)" HorizontalAlignment="Stretch" MinWidth="280" Visibility="Collapsed" Minimum="1" SpinButtonPlacementMode="Compact" ValueChanged="OnAdvTargetSizeChanged" />
+                                <ComboBox x:Name="AdvAudioCodecCombo" Header="Audio codec" HorizontalAlignment="Stretch" MinWidth="280" SelectionChanged="OnAdvAudioCodecChanged">
                                     <ComboBoxItem Content="AAC" Tag="Aac" />
                                     <ComboBoxItem Content="Opus" Tag="Opus" />
                                     <ComboBoxItem Content="MP3" Tag="Mp3" />
                                     <ComboBoxItem Content="Copy" Tag="Copy" />
                                 </ComboBox>
-                                <ComboBox x:Name="AdvAudioBitrateCombo" Header="Audio bitrate" SelectionChanged="OnAdvAudioBitrateChanged">
+                                <ComboBox x:Name="AdvAudioBitrateCombo" Header="Audio bitrate" HorizontalAlignment="Stretch" MinWidth="280" SelectionChanged="OnAdvAudioBitrateChanged">
                                     <ComboBoxItem Content="64 kbps" Tag="64" />
                                     <ComboBoxItem Content="96 kbps" Tag="96" />
                                     <ComboBoxItem Content="128 kbps" Tag="128" />
@@ -342,10 +372,11 @@
                                     <ComboBoxItem Content="256 kbps" Tag="256" />
                                     <ComboBoxItem Content="320 kbps" Tag="320" />
                                 </ComboBox>
-                                <ComboBox x:Name="AdvPixelFormatCombo" Header="Pixel format" SelectionChanged="OnAdvPixelFormatChanged">
+                                <ComboBox x:Name="AdvPixelFormatCombo" Header="Pixel format" HorizontalAlignment="Stretch" MinWidth="280" SelectionChanged="OnAdvPixelFormatChanged">
                                     <ComboBoxItem Content="yuv420p (8-bit)" Tag="Yuv420p" />
                                     <ComboBoxItem Content="yuv420p10le (10-bit)" Tag="Yuv420p10le" />
                                 </ComboBox>
+                            </StackPanel>
                             </StackPanel>
                         </StackPanel>
                     </Expander>

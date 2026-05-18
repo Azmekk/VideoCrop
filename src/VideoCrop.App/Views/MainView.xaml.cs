@@ -331,6 +331,20 @@ public sealed partial class MainView : UserControl
 
     private bool _suppressAdvancedSync;
 
+    private void OnCompressionEnabledToggled(object sender, RoutedEventArgs e)
+    {
+        // Fires during InitializeComponent (when IsOn="True" in XAML changes
+        // from the default false), before ViewModel is constructed. Skip until
+        // construction is complete; the constructor's UpdatePresetDescription
+        // call will sync state explicitly.
+        if (ViewModel is null) return;
+        var on = CompressionEnabledToggle.IsOn;
+        ViewModel.Compression.Enabled = on;
+        CompressionDetailsPanel.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+        StreamCopyNote.Visibility = on ? Visibility.Collapsed : Visibility.Visible;
+        UpdatePresetDescription();
+    }
+
     private void OnAdvancedToggled(object sender, RoutedEventArgs e)
     {
         ViewModel.Compression.AdvancedEnabled = AdvancedToggle.IsOn;
@@ -344,6 +358,7 @@ public sealed partial class MainView : UserControl
         _suppressAdvancedSync = true;
         var c = ViewModel.Compression;
         SelectByTag(AdvCodecCombo, c.Codec.ToString());
+        RebuildSpeedCombo(c.Codec);
         SelectByTag(AdvSpeedCombo, c.Speed.ToString());
         SelectByTag(AdvRateModeCombo, c.RateMode.ToString());
         SelectByTag(AdvAudioCodecCombo, c.AudioCodec.ToString());
@@ -386,7 +401,56 @@ public sealed partial class MainView : UserControl
     private void OnAdvCodecChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_suppressAdvancedSync) return;
-        if (GetTagEnum<VideoCodec>(AdvCodecCombo) is { } c) ViewModel.Compression.Codec = c;
+        if (GetTagEnum<VideoCodec>(AdvCodecCombo) is { } c)
+        {
+            ViewModel.Compression.Codec = c;
+            // libsvtav1 uses numeric presets, libx264/x265 use named ones —
+            // swap the dropdown items so the labels match what ffmpeg will
+            // actually emit.
+            _suppressAdvancedSync = true;
+            RebuildSpeedCombo(c);
+            SelectByTag(AdvSpeedCombo, ViewModel.Compression.Speed.ToString());
+            _suppressAdvancedSync = false;
+        }
+    }
+
+    private static readonly (string Label, SpeedPreset Value)[] X264SpeedItems =
+    {
+        ("ultrafast", SpeedPreset.UltraFast),
+        ("superfast", SpeedPreset.SuperFast),
+        ("veryfast",  SpeedPreset.VeryFast),
+        ("faster",    SpeedPreset.Faster),
+        ("fast",      SpeedPreset.Fast),
+        ("medium",    SpeedPreset.Medium),
+        ("slow",      SpeedPreset.Slow),
+        ("slower",    SpeedPreset.Slower),
+        ("veryslow",  SpeedPreset.VerySlow),
+    };
+
+    // libsvtav1 presets: 0 = slowest/best, 13 = fastest/lowest quality. The
+    // numbers shown here are what ffmpeg actually receives via -preset.
+    private static readonly (string Label, SpeedPreset Value)[] Av1SpeedItems =
+    {
+        ("3 — slowest",  SpeedPreset.VerySlow),
+        ("4",            SpeedPreset.Slower),
+        ("5",            SpeedPreset.Slow),
+        ("6 — default",  SpeedPreset.Medium),
+        ("8",            SpeedPreset.Fast),
+        ("9",            SpeedPreset.Faster),
+        ("10",           SpeedPreset.VeryFast),
+        ("11",           SpeedPreset.SuperFast),
+        ("12 — fastest", SpeedPreset.UltraFast),
+    };
+
+    private void RebuildSpeedCombo(VideoCodec codec)
+    {
+        var items = codec == VideoCodec.Av1 ? Av1SpeedItems : X264SpeedItems;
+        AdvSpeedCombo.Header = codec == VideoCodec.Av1 ? "Preset (libsvtav1)" : "Speed";
+        AdvSpeedCombo.Items.Clear();
+        foreach (var (label, value) in items)
+        {
+            AdvSpeedCombo.Items.Add(new ComboBoxItem { Content = label, Tag = value.ToString() });
+        }
     }
 
     private void OnAdvSpeedChanged(object sender, SelectionChangedEventArgs e)

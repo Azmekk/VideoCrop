@@ -13,11 +13,17 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0"
-                Background="{ThemeResource ControlFillColorSecondaryBrush}"
-                CornerRadius="6"
-                Padding="16">
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
+        <!-- Placeholder for the embedded mpv child HWND. The HWND is positioned
+             on top of this Border at the OS compositor level; XAML cannot draw
+             over the video region, so we keep transport controls in row 1. -->
+        <Border x:Name="VideoPlaceholder"
+                Grid.Row="0"
+                Background="Black"
+                CornerRadius="6">
+            <StackPanel x:Name="EmptyOverlayPanel"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="8">
                 <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE714;" FontSize="32" Opacity="0.5" />
                 <TextBlock x:Name="EmptyOverlay"
                            HorizontalAlignment="Center"
@@ -25,7 +31,16 @@
                            TextAlignment="Center"
                            Opacity="0.7"
                            TextWrapping="Wrap"
-                           Text="Drop a video here, or click Open File.&#x0a;Playback opens in a separate mpv window." />
+                           Text="Drop a video here, or click Open File." />
+                <Button x:Name="ReopenPlayerButton"
+                        HorizontalAlignment="Center"
+                        Visibility="Collapsed"
+                        Click="OnReopenPlayerClick">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE768;" FontSize="14" />
+                        <TextBlock Text="Reopen player" />
+                    </StackPanel>
+                </Button>
             </StackPanel>
         </Border>
 
@@ -37,6 +52,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
@@ -59,6 +75,25 @@
                        x:Name="PositionLabel"
                        VerticalAlignment="Center"
                        Text="00:00 / 00:00" />
+
+            <StackPanel Grid.Column="3"
+                        Orientation="Horizontal"
+                        Spacing="4"
+                        VerticalAlignment="Center">
+                <FontIcon x:Name="VolumeIcon"
+                          FontFamily="Segoe Fluent Icons"
+                          Glyph="&#xE767;"
+                          FontSize="14"
+                          VerticalAlignment="Center" />
+                <Slider x:Name="VolumeSlider"
+                        Width="90"
+                        Minimum="0"
+                        Maximum="100"
+                        Value="100"
+                        StepFrequency="1"
+                        VerticalAlignment="Center"
+                        ValueChanged="OnVolumeSliderChanged" />
+            </StackPanel>
         </Grid>
     </Grid>
 </UserControl>

@@ -25,13 +25,30 @@ public sealed class PlayerViewModel(IToolLocator locator, ILoggerFactory loggerF
     private bool _hasMpv = locator.TryResolve(ExternalTool.Mpv, out _);
     private TimeSpan? _cutStart;
     private TimeSpan? _cutEnd;
+    private nint _videoHwnd;
+    private double _volume = 100;
+    private bool _suppressVolumeFeedback;
 
     public bool HasMpv { get => _hasMpv; private set => SetProperty(ref _hasMpv, value); }
+
+    /// <summary>
+    /// Native HWND of the child window mpv should render into. Must be set
+    /// before <see cref="EnsureStartedAsync"/> is called; otherwise mpv runs
+    /// in standalone-window mode.
+    /// </summary>
+    public nint VideoHwnd
+    {
+        get => _videoHwnd;
+        set => _videoHwnd = value;
+    }
+
     public bool IsReady { get => _isReady; private set => SetProperty(ref _isReady, value); }
     public bool IsPaused { get => _isPaused; private set => SetProperty(ref _isPaused, value); }
     public double PositionSeconds { get => _positionSeconds; private set => SetProperty(ref _positionSeconds, value); }
     public double DurationSeconds { get => _durationSeconds; private set => SetProperty(ref _durationSeconds, value); }
     public string? CurrentFile { get => _currentFile; private set => SetProperty(ref _currentFile, value); }
+    /// <summary>0–100. Reflects mpv's <c>volume</c> property.</summary>
+    public double Volume { get => _volume; private set => SetProperty(ref _volume, value); }
 
     public async Task<bool> EnsureStartedAsync(CancellationToken ct = default)
     {
@@ -56,11 +73,14 @@ public sealed class PlayerViewModel(IToolLocator locator, ILoggerFactory loggerF
         _host.Exited += OnHostExited;
         try
         {
-            await _host.StartAsync(new MpvHostOptions(), ct);
+            await _host.StartAsync(new MpvHostOptions { ParentHwnd = _videoHwnd }, ct);
             _host.Ipc.PropertyChanged += OnPropertyChange;
             await _host.Ipc.ObservePropertyAsync("time-pos", ct);
             await _host.Ipc.ObservePropertyAsync("duration", ct);
             await _host.Ipc.ObservePropertyAsync("pause", ct);
+            await _host.Ipc.ObservePropertyAsync("volume", ct);
+            // Restore the last user-set volume on the fresh mpv instance.
+            try { await _host.Ipc.SetPropertyAsync("volume", _volume); } catch { }
             IsReady = true;
             _logger.LogInformation("mpv ready (IPC connected)");
             return true;
@@ -95,6 +115,26 @@ public sealed class PlayerViewModel(IToolLocator locator, ILoggerFactory loggerF
         }
     }
 
+    /// <summary>
+    /// Re-spawn mpv and re-load the current file. Called when the user closes
+    /// the standalone mpv window and wants to bring it back without re-picking
+    /// the source.
+    /// </summary>
+    public async Task ReopenAsync()
+    {
+        if (_currentFile is null) return;
+        if (!await EnsureStartedAsync()) return;
+        try
+        {
+            await _host!.LoadFileAsync(_currentFile);
+            IsPaused = true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Reopen failed");
+        }
+    }
+
     public async Task TogglePauseAsync()
     {
         if (!await EnsureReadyForCommandsAsync()) return;
@@ -105,6 +145,26 @@ public sealed class PlayerViewModel(IToolLocator locator, ILoggerFactory loggerF
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Toggle pause failed");
+        }
+    }
+
+    public async Task SetVolumeAsync(double volume)
+    {
+        var v = Math.Clamp(volume, 0, 100);
+        Volume = v;
+        if (!await EnsureReadyForCommandsAsync()) return;
+        try
+        {
+            _suppressVolumeFeedback = true;
+            await _host!.Ipc.SetPropertyAsync("volume", v);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "SetVolume failed");
+        }
+        finally
+        {
+            _suppressVolumeFeedback = false;
         }
     }
 
@@ -231,6 +291,9 @@ public sealed class PlayerViewModel(IToolLocator locator, ILoggerFactory loggerF
                     break;
                 case "pause" when e.Data is JsonElement p:
                     IsPaused = p.ValueKind == JsonValueKind.True;
+                    break;
+                case "volume" when e.Data is JsonElement v && v.ValueKind == JsonValueKind.Number:
+                    if (!_suppressVolumeFeedback) Volume = v.GetDouble();
                     break;
             }
         };

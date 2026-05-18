@@ -13,6 +13,7 @@ public sealed class CompressionViewModel : ObservableObject
     public ObservableCollection<PresetDefinition> Presets { get; } = new();
 
     private PresetDefinition _selectedPreset;
+    private bool _enabled = true;
     private bool _advancedEnabled;
     private VideoCodec _codec = VideoCodec.H264;
     private SpeedPreset _speed = SpeedPreset.Medium;
@@ -50,6 +51,17 @@ public sealed class CompressionViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Master toggle. When false, the user has opted out of re-encoding and
+    /// the encoder will stream-copy both tracks. <see cref="SpecOrNull"/>
+    /// reflects this by returning null.
+    /// </summary>
+    public bool Enabled
+    {
+        get => _enabled;
+        set { if (SetProperty(ref _enabled, value)) OnAllChanged(); }
+    }
+
     public bool AdvancedEnabled
     {
         get => _advancedEnabled;
@@ -69,7 +81,10 @@ public sealed class CompressionViewModel : ObservableObject
     public int AudioBitrateKbps { get => _audioBitrateKbps; set { if (SetProperty(ref _audioBitrateKbps, value)) OnAllChanged(); } }
     public PixelFormat PixelFormat { get => _pixelFormat; set { if (SetProperty(ref _pixelFormat, value)) OnAllChanged(); } }
 
-    public bool IsTwoPass => _advancedEnabled && _rateMode == CompressionRateMode.TargetSize;
+    public bool IsTwoPass => _enabled && _advancedEnabled && _rateMode == CompressionRateMode.TargetSize;
+
+    /// <summary>Spec to feed into the encoder, or null when re-encoding is disabled.</summary>
+    public CompressionSpec? SpecOrNull => _enabled ? Spec : null;
 
     public CompressionSpec Spec
     {
@@ -96,13 +111,17 @@ public sealed class CompressionViewModel : ObservableObject
         }
     }
 
-    public string Description => _advancedEnabled ? "Custom (advanced)" : _selectedPreset.Description;
-    public string? Warning => _advancedEnabled ? null : _selectedPreset.CompatibilityWarning;
-    public bool HasWarning => !_advancedEnabled && !string.IsNullOrEmpty(_selectedPreset.CompatibilityWarning);
+    public string Description =>
+        !_enabled ? "Re-encoding off — video and audio will be stream-copied."
+        : _advancedEnabled ? "Custom (advanced)"
+        : _selectedPreset.Description;
+    public string? Warning => !_enabled || _advancedEnabled ? null : _selectedPreset.CompatibilityWarning;
+    public bool HasWarning => _enabled && !_advancedEnabled && !string.IsNullOrEmpty(_selectedPreset.CompatibilityWarning);
 
     private void OnAllChanged()
     {
         OnPropertyChanged(nameof(Spec));
+        OnPropertyChanged(nameof(SpecOrNull));
         OnPropertyChanged(nameof(Description));
         OnPropertyChanged(nameof(Warning));
         OnPropertyChanged(nameof(HasWarning));
