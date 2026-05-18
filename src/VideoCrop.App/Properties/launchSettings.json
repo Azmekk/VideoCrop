@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "VideoCrop.App (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "VideoCrop.App (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

@@ -1,0 +1,437 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="VideoCrop.App.Views.MainView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:VideoCrop.App.ViewModels"
+    xmlns:views="using:VideoCrop.App.Views"
+    xmlns:ctrl="using:VideoCrop.App.Controls"
+    AllowDrop="True"
+    mc:Ignorable="d">
+
+    <UserControl.KeyboardAccelerators>
+        <KeyboardAccelerator Key="O" Modifiers="Control" Invoked="OnAcceleratorOpen" />
+        <KeyboardAccelerator Key="Enter" Modifiers="Control" Invoked="OnAcceleratorProcess" />
+        <KeyboardAccelerator Key="Space" Invoked="OnAcceleratorPlayPause" />
+        <KeyboardAccelerator Key="I" Invoked="OnAcceleratorSetStart" />
+        <KeyboardAccelerator Key="O" Invoked="OnAcceleratorSetEnd" />
+    </UserControl.KeyboardAccelerators>
+
+    <Grid Background="Transparent">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="360" />
+        </Grid.ColumnDefinitions>
+
+        <InfoBar x:Name="UpdateBar"
+                 Grid.Row="0"
+                 Grid.ColumnSpan="2"
+                 Margin="12,12,12,0"
+                 IsClosable="True"
+                 IsOpen="False">
+            <InfoBar.ActionButton>
+                <Button x:Name="UpdateRestartButton"
+                        Content="Restart and update"
+                        Visibility="Collapsed"
+                        Click="OnUpdateRestartClicked" />
+            </InfoBar.ActionButton>
+        </InfoBar>
+
+        <!-- Video pane with embedded mpv -->
+        <Grid Grid.Row="1" Grid.Column="0" Margin="12" AllowDrop="True" DragOver="OnDragOver" Drop="OnDrop">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <views:VideoPane x:Name="VideoPaneView" Grid.Row="0" />
+
+            <Button x:Name="OpenFileButton"
+                    Grid.Row="1"
+                    Margin="0,8,0,0"
+                    HorizontalAlignment="Center"
+                    Content="Open File…"
+                    Click="OnOpenFileClicked" />
+        </Grid>
+
+        <!-- Side panel -->
+        <Border Grid.Row="1"
+                Grid.Column="1"
+                Margin="0,12,12,12"
+                Padding="12"
+                Background="{ThemeResource LayerFillColorDefaultBrush}"
+                CornerRadius="8"
+                AllowDrop="True"
+                DragOver="OnDragOver"
+                Drop="OnDrop">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="VideoCrop" FontSize="20" FontWeight="SemiBold" />
+
+                    <Expander Header="Tools" IsExpanded="False" HorizontalAlignment="Stretch">
+                        <StackPanel Spacing="6" Margin="0,8,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="80" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="ffmpeg" />
+                                <TextBlock Grid.Column="1" x:Name="FfmpegStatusText" TextTrimming="CharacterEllipsis" />
+                            </Grid>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="80" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="ffprobe" />
+                                <TextBlock Grid.Column="1" x:Name="FfprobeStatusText" TextTrimming="CharacterEllipsis" />
+                            </Grid>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="80" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="mpv" />
+                                <TextBlock Grid.Column="1" x:Name="MpvStatusText" TextTrimming="CharacterEllipsis" />
+                            </Grid>
+                            <InfoBar x:Name="ToolsMissingBar"
+                                     Severity="Warning"
+                                     IsOpen="False"
+                                     IsClosable="False"
+                                     Title="Tools missing"
+                                     Message="Run tools/fetch-tools.ps1 next to the app, or set custom paths in Settings." />
+                        </StackPanel>
+                    </Expander>
+
+                    <Expander Header="Source" IsExpanded="True" HorizontalAlignment="Stretch">
+                        <StackPanel Margin="0,8,0,0" Spacing="4">
+                            <TextBlock x:Name="SourceEmpty" Text="No video loaded." Opacity="0.6" />
+                            <StackPanel x:Name="SourceDetails" Visibility="Collapsed" Spacing="4">
+                                <TextBlock x:Name="SourceFileName" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Opacity="0.7" Text="Duration" />
+                                    <TextBlock Grid.Column="1" x:Name="SourceDuration" />
+                                </Grid>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Opacity="0.7" Text="Resolution" />
+                                    <TextBlock Grid.Column="1" x:Name="SourceResolution" />
+                                </Grid>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Opacity="0.7" Text="Codec" />
+                                    <TextBlock Grid.Column="1" x:Name="SourceCodec" />
+                                </Grid>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Opacity="0.7" Text="Framerate" />
+                                    <TextBlock Grid.Column="1" x:Name="SourceFps" />
+                                </Grid>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Opacity="0.7" Text="Bitrate" />
+                                    <TextBlock Grid.Column="1" x:Name="SourceBitrate" />
+                                </Grid>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Opacity="0.7" Text="Audio" />
+                                    <TextBlock Grid.Column="1" x:Name="SourceAudio" />
+                                </Grid>
+                            </StackPanel>
+                            <ProgressRing x:Name="SourceLoading" IsActive="False" Width="20" Height="20" HorizontalAlignment="Left" />
+                            <InfoBar x:Name="SourceErrorBar" Severity="Error" IsOpen="False" IsClosable="False" />
+                        </StackPanel>
+                    </Expander>
+
+                    <Expander Header="Cut" IsExpanded="False" HorizontalAlignment="Stretch">
+                        <StackPanel Margin="0,8,0,0" Spacing="6">
+                            <Grid ColumnSpacing="6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0"
+                                         x:Name="CutStartBox"
+                                         Header="Start"
+                                         PlaceholderText="0:00.000"
+                                         LostFocus="OnCutStartLostFocus" />
+                                <Button Grid.Column="1"
+                                        VerticalAlignment="Bottom"
+                                        Content="Set"
+                                        Click="OnCutSetStart" />
+                            </Grid>
+                            <Grid ColumnSpacing="6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0"
+                                         x:Name="CutEndBox"
+                                         Header="End"
+                                         PlaceholderText="0:00.000"
+                                         LostFocus="OnCutEndLostFocus" />
+                                <Button Grid.Column="1"
+                                        VerticalAlignment="Bottom"
+                                        Content="Set"
+                                        Click="OnCutSetEnd" />
+                            </Grid>
+                            <ctrl:CutTimeline x:Name="CutTimelineCtrl" Height="40" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" x:Name="CutDurationText" Opacity="0.7" />
+                                <ToggleSwitch Grid.Column="1"
+                                              x:Name="CutAccurateSwitch"
+                                              OnContent="Accurate"
+                                              OffContent="Fast"
+                                              Toggled="OnCutAccurateToggled" />
+                            </Grid>
+                            <Button Content="Reset cut" HorizontalAlignment="Stretch" Click="OnCutReset" />
+                        </StackPanel>
+                    </Expander>
+
+                    <Expander Header="Crop" IsExpanded="False" HorizontalAlignment="Stretch">
+                        <StackPanel Margin="0,8,0,0" Spacing="6">
+                            <TextBlock x:Name="CropSummary" TextWrapping="Wrap" Opacity="0.8" />
+                            <Grid ColumnSpacing="6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Content="Edit crop…" HorizontalAlignment="Stretch" Click="OnEditCropClicked" />
+                                <Button Grid.Column="1" Content="Reset" HorizontalAlignment="Stretch" Click="OnResetCropClicked" />
+                            </Grid>
+                        </StackPanel>
+                    </Expander>
+
+                    <Expander Header="Resize" IsExpanded="False" HorizontalAlignment="Stretch">
+                        <StackPanel Margin="0,8,0,0" Spacing="6">
+                            <ToggleSwitch x:Name="ResizeEnabledSwitch"
+                                          OnContent="Enabled"
+                                          OffContent="Disabled"
+                                          Toggled="OnResizeEnabledToggled" />
+                            <TextBlock x:Name="ResizeInputDisplay" Opacity="0.7" FontSize="12" />
+                            <Grid ColumnSpacing="6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <NumberBox Grid.Column="0"
+                                           x:Name="ResizeWidthBox"
+                                           Header="Width"
+                                           SpinButtonPlacementMode="Compact"
+                                           Minimum="2"
+                                           SmallChange="2"
+                                           LargeChange="20"
+                                           ValueChanged="OnResizeWidthChanged" />
+                                <ToggleButton Grid.Column="1"
+                                              x:Name="AspectLockToggle"
+                                              Content="🔒"
+                                              VerticalAlignment="Bottom"
+                                              Click="OnAspectLockToggled"
+                                              IsChecked="True" />
+                                <NumberBox Grid.Column="2"
+                                           x:Name="ResizeHeightBox"
+                                           Header="Height"
+                                           SpinButtonPlacementMode="Compact"
+                                           Minimum="2"
+                                           SmallChange="2"
+                                           LargeChange="20"
+                                           ValueChanged="OnResizeHeightChanged" />
+                            </Grid>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <Button Content="2160p" Click="OnResizePreset2160" />
+                                <Button Content="1440p" Click="OnResizePreset1440" />
+                                <Button Content="1080p" Click="OnResizePreset1080" />
+                                <Button Content="720p" Click="OnResizePreset720" />
+                                <Button Content="480p" Click="OnResizePreset480" />
+                            </StackPanel>
+                            <InfoBar x:Name="ResizeMismatchBar"
+                                     Severity="Warning"
+                                     IsOpen="False"
+                                     IsClosable="False" />
+                        </StackPanel>
+                    </Expander>
+
+                    <Expander Header="Compression" IsExpanded="True" HorizontalAlignment="Stretch">
+                        <StackPanel Margin="0,8,0,0" Spacing="6">
+                            <TextBlock Text="Preset" Opacity="0.7" />
+                            <ComboBox x:Name="PresetCombo"
+                                      HorizontalAlignment="Stretch"
+                                      SelectionChanged="OnPresetSelectionChanged" />
+                            <TextBlock x:Name="PresetDescription"
+                                       TextWrapping="Wrap"
+                                       Opacity="0.8"
+                                       FontSize="12" />
+                            <InfoBar x:Name="PresetWarningBar"
+                                     Severity="Warning"
+                                     IsOpen="False"
+                                     IsClosable="False" />
+                            <ComboBox x:Name="AudioBitrateCombo"
+                                      Header="Audio bitrate"
+                                      HorizontalAlignment="Stretch"
+                                      SelectionChanged="OnAudioBitrateChanged">
+                                <ComboBoxItem Content="64 kbps" Tag="64" />
+                                <ComboBoxItem Content="96 kbps" Tag="96" />
+                                <ComboBoxItem Content="128 kbps" Tag="128" />
+                                <ComboBoxItem Content="160 kbps" Tag="160" />
+                                <ComboBoxItem Content="192 kbps" Tag="192" />
+                                <ComboBoxItem Content="256 kbps" Tag="256" />
+                                <ComboBoxItem Content="320 kbps" Tag="320" />
+                            </ComboBox>
+                            <ToggleSwitch x:Name="AdvancedToggle"
+                                          OnContent="Custom (advanced)"
+                                          OffContent="Use preset"
+                                          Toggled="OnAdvancedToggled" />
+                            <StackPanel x:Name="AdvancedPanel" Visibility="Collapsed" Spacing="6">
+                                <ComboBox x:Name="AdvCodecCombo" Header="Codec" SelectionChanged="OnAdvCodecChanged">
+                                    <ComboBoxItem Content="H.264" Tag="H264" />
+                                    <ComboBoxItem Content="H.265" Tag="H265" />
+                                    <ComboBoxItem Content="AV1" Tag="Av1" />
+                                    <ComboBoxItem Content="VP9" Tag="Vp9" />
+                                </ComboBox>
+                                <ComboBox x:Name="AdvSpeedCombo" Header="Speed" SelectionChanged="OnAdvSpeedChanged">
+                                    <ComboBoxItem Content="ultrafast" Tag="UltraFast" />
+                                    <ComboBoxItem Content="superfast" Tag="SuperFast" />
+                                    <ComboBoxItem Content="veryfast" Tag="VeryFast" />
+                                    <ComboBoxItem Content="faster" Tag="Faster" />
+                                    <ComboBoxItem Content="fast" Tag="Fast" />
+                                    <ComboBoxItem Content="medium" Tag="Medium" />
+                                    <ComboBoxItem Content="slow" Tag="Slow" />
+                                    <ComboBoxItem Content="slower" Tag="Slower" />
+                                    <ComboBoxItem Content="veryslow" Tag="VerySlow" />
+                                </ComboBox>
+                                <ComboBox x:Name="AdvRateModeCombo" Header="Rate control" SelectionChanged="OnAdvRateModeChanged">
+                                    <ComboBoxItem Content="CRF (quality)" Tag="Crf" />
+                                    <ComboBoxItem Content="Target bitrate" Tag="TargetBitrate" />
+                                    <ComboBoxItem Content="Target file size" Tag="TargetSize" />
+                                </ComboBox>
+                                <NumberBox x:Name="AdvCrfBox" Header="CRF" Minimum="0" Maximum="63" SpinButtonPlacementMode="Compact" ValueChanged="OnAdvCrfChanged" />
+                                <NumberBox x:Name="AdvBitrateBox" Header="Target bitrate (kbps)" Visibility="Collapsed" Minimum="50" SpinButtonPlacementMode="Compact" ValueChanged="OnAdvBitrateChanged" />
+                                <NumberBox x:Name="AdvTargetSizeBox" Header="Target size (MB)" Visibility="Collapsed" Minimum="1" SpinButtonPlacementMode="Compact" ValueChanged="OnAdvTargetSizeChanged" />
+                                <ComboBox x:Name="AdvAudioCodecCombo" Header="Audio codec" SelectionChanged="OnAdvAudioCodecChanged">
+                                    <ComboBoxItem Content="AAC" Tag="Aac" />
+                                    <ComboBoxItem Content="Opus" Tag="Opus" />
+                                    <ComboBoxItem Content="MP3" Tag="Mp3" />
+                                    <ComboBoxItem Content="Copy" Tag="Copy" />
+                                </ComboBox>
+                                <ComboBox x:Name="AdvAudioBitrateCombo" Header="Audio bitrate" SelectionChanged="OnAdvAudioBitrateChanged">
+                                    <ComboBoxItem Content="64 kbps" Tag="64" />
+                                    <ComboBoxItem Content="96 kbps" Tag="96" />
+                                    <ComboBoxItem Content="128 kbps" Tag="128" />
+                                    <ComboBoxItem Content="160 kbps" Tag="160" />
+                                    <ComboBoxItem Content="192 kbps" Tag="192" />
+                                    <ComboBoxItem Content="256 kbps" Tag="256" />
+                                    <ComboBoxItem Content="320 kbps" Tag="320" />
+                                </ComboBox>
+                                <ComboBox x:Name="AdvPixelFormatCombo" Header="Pixel format" SelectionChanged="OnAdvPixelFormatChanged">
+                                    <ComboBoxItem Content="yuv420p (8-bit)" Tag="Yuv420p" />
+                                    <ComboBoxItem Content="yuv420p10le (10-bit)" Tag="Yuv420p10le" />
+                                </ComboBox>
+                            </StackPanel>
+                        </StackPanel>
+                    </Expander>
+
+                    <Expander Header="Output" IsExpanded="True" HorizontalAlignment="Stretch">
+                        <StackPanel Margin="0,8,0,0" Spacing="6">
+                            <TextBlock x:Name="PipelineSummaryText" TextWrapping="Wrap" Opacity="0.85" />
+                            <TextBlock Text="Destination" Opacity="0.7" />
+                            <Grid ColumnSpacing="6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0"
+                                         x:Name="OutputDirectoryBox"
+                                         IsReadOnly="True"
+                                         Text=""
+                                         PlaceholderText="(same as input)" />
+                                <Button Grid.Column="1"
+                                        Content="Browse…"
+                                        Click="OnBrowseOutputClicked" />
+                            </Grid>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Opacity="0.7" Text="Filename" />
+                                <TextBlock Grid.Column="1"
+                                           x:Name="FilenamePreview"
+                                           TextTrimming="CharacterEllipsis" />
+                            </Grid>
+                        </StackPanel>
+                    </Expander>
+
+                    <Border Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                            CornerRadius="6"
+                            Padding="10"
+                            Margin="0,4,0,0">
+                        <StackPanel Spacing="6">
+                            <Grid ColumnSpacing="6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0"
+                                        x:Name="ProcessButton"
+                                        Content="Process"
+                                        HorizontalAlignment="Stretch"
+                                        Style="{ThemeResource AccentButtonStyle}"
+                                        Click="OnProcessClicked" />
+                                <Button Grid.Column="1"
+                                        x:Name="CancelButton"
+                                        Content="Cancel"
+                                        IsEnabled="False"
+                                        Click="OnCancelClicked" />
+                            </Grid>
+                            <ProgressBar x:Name="EncodeProgressBar" Minimum="0" Maximum="1" Value="0" />
+                            <TextBlock x:Name="EncodeStatusText" Opacity="0.7" FontSize="12" />
+                            <Expander x:Name="EncodeErrorExpander"
+                                      Header="Show ffmpeg log"
+                                      IsExpanded="False"
+                                      HorizontalAlignment="Stretch"
+                                      Visibility="Collapsed">
+                                <ScrollViewer Height="120" VerticalScrollBarVisibility="Auto">
+                                    <TextBlock x:Name="EncodeErrorText"
+                                               TextWrapping="Wrap"
+                                               FontFamily="Consolas"
+                                               FontSize="11" />
+                                </ScrollViewer>
+                            </Expander>
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</UserControl>

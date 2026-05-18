@@ -1,24 +1,42 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# Build output
+**/bin/
+**/obj/
+**/publish/
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
+# IDE
+.vs/
+.idea/
+*.user
 *.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+*.userosscache
+*.sln.docstates
+.vscode/
+
+# .NET test/coverage
+*.coverage
+*.coveragexml
+coverage*.xml
+TestResults/
+
+# Logs
+*.log
+
+# OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# Bundled external tools (downloaded by tools/fetch-tools.ps1)
+tools/ffmpeg.exe
+tools/ffprobe.exe
+tools/mpv.exe
+tools/*.7z
+tools/*.zip
+
+# Update staging directory (created at runtime next to the exe)
+update/
+
+# NuGet
+*.nupkg
+.nuget/

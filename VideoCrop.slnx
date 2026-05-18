@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/VideoCrop.App/VideoCrop.App.csproj" />
+    <Project Path="src/VideoCrop.Core/VideoCrop.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/VideoCrop.Tests/VideoCrop.Tests.csproj" />
+  </Folder>
+</Solution>
