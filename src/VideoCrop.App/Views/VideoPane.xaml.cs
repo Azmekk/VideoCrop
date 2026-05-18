@@ -14,6 +14,8 @@ public sealed partial class VideoPane : UserControl
     private PlayerViewModel? _player;
     private bool _seekingByUser;
     private bool _suppressSliderEvent;
+    private double _minBoundSec;
+    private double _maxBoundSec;
 
     public VideoPane()
     {
@@ -23,6 +25,22 @@ public sealed partial class VideoPane : UserControl
     }
 
     public PlayerViewModel? Player => _player;
+
+    /// <summary>
+    /// Constrains the position slider to a sub-range so the user can't scrub
+    /// outside the cut bounds. Pass [0, duration] to clear any restriction.
+    /// </summary>
+    public void SetSeekBounds(double minSec, double maxSec)
+    {
+        if (maxSec <= minSec) maxSec = minSec + 0.01;
+        _minBoundSec = minSec;
+        _maxBoundSec = maxSec;
+        _suppressSliderEvent = true;
+        PositionSlider.Minimum = minSec;
+        PositionSlider.Maximum = maxSec;
+        _suppressSliderEvent = false;
+        UpdatePositionLabel();
+    }
 
     public async Task LoadVideoAsync(string path)
     {
@@ -59,14 +77,19 @@ public sealed partial class VideoPane : UserControl
                 PlayPauseLabel.Text = _player.IsPaused ? "Play" : "Pause";
                 break;
             case nameof(PlayerViewModel.DurationSeconds):
-                PositionSlider.Maximum = Math.Max(0.01, _player.DurationSeconds);
+                // If MainView hasn't set bounds yet, default to the full duration.
+                if (_maxBoundSec <= 0)
+                {
+                    SetSeekBounds(0, Math.Max(0.01, _player.DurationSeconds));
+                }
                 UpdatePositionLabel();
                 break;
             case nameof(PlayerViewModel.PositionSeconds):
                 if (!_seekingByUser)
                 {
                     _suppressSliderEvent = true;
-                    PositionSlider.Value = Math.Min(_player.PositionSeconds, PositionSlider.Maximum);
+                    var clamped = Math.Clamp(_player.PositionSeconds, PositionSlider.Minimum, PositionSlider.Maximum);
+                    PositionSlider.Value = clamped;
                     _suppressSliderEvent = false;
                     UpdatePositionLabel();
                 }

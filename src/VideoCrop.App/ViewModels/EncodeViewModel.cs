@@ -76,7 +76,11 @@ public sealed class EncodeViewModel(IFfmpegRunner ffmpeg, ILogger<EncodeViewMode
                 onStdErrLine: line =>
                 {
                     if (stderr.Length < 32_000) stderr.AppendLine(line);
-                    Post(() => ErrorTail = TruncateTail(stderr.ToString()));
+                    // ToString on the producer thread — same thread that
+                    // appends — so the StringBuilder isn't read concurrently
+                    // by the UI dispatcher Post (which would race the append).
+                    var snapshot = TruncateTail(stderr.ToString());
+                    Post(() => ErrorTail = snapshot);
                 },
                 cancellationToken: _cts.Token).ConfigureAwait(true);
 
@@ -147,7 +151,8 @@ public sealed class EncodeViewModel(IFfmpegRunner ffmpeg, ILogger<EncodeViewMode
             onStdErrLine: line =>
             {
                 if (stderr.Length < 32_000) stderr.AppendLine(line);
-                Post(() => ErrorTail = TruncateTail(stderr.ToString()));
+                var snapshot = TruncateTail(stderr.ToString());
+                Post(() => ErrorTail = snapshot);
             },
             cancellationToken: _cts!.Token).ConfigureAwait(true);
 
@@ -167,7 +172,8 @@ public sealed class EncodeViewModel(IFfmpegRunner ffmpeg, ILogger<EncodeViewMode
             onStdErrLine: line =>
             {
                 if (stderr.Length < 32_000) stderr.AppendLine(line);
-                Post(() => ErrorTail = TruncateTail(stderr.ToString()));
+                var snapshot = TruncateTail(stderr.ToString());
+                Post(() => ErrorTail = snapshot);
             },
             cancellationToken: _cts.Token).ConfigureAwait(true);
 

@@ -7,7 +7,7 @@ namespace VideoCrop.Core.Processes;
 
 public sealed class MpvHostOptions
 {
-    public string WindowTitle { get; init; } = "VideoCrop — Preview";
+    public string WindowTitle { get; init; } = "VideoCrop - Preview";
     public string? InitialFile { get; init; }
 }
 
@@ -21,6 +21,9 @@ public sealed class MpvHost(IToolLocator locator, ILogger<MpvHost>? logger = nul
 
     public MpvIpcClient Ipc => _ipc ?? throw new InvalidOperationException("MpvHost not started.");
     public bool IsRunning => _process is { HasExited: false };
+
+    /// <summary>Raised when the mpv process exits for any reason.</summary>
+    public event EventHandler? Exited;
 
     public async Task StartAsync(MpvHostOptions options, CancellationToken cancellationToken)
     {
@@ -59,6 +62,7 @@ public sealed class MpvHost(IToolLocator locator, ILogger<MpvHost>? logger = nul
         _process.Exited += (_, _) =>
         {
             _logger.LogInformation("mpv process exited (code {Code})", _process?.ExitCode);
+            Exited?.Invoke(this, EventArgs.Empty);
         };
         if (!_process.Start()) throw new InvalidOperationException("Failed to start mpv.");
         _logger.LogInformation("mpv spawned, pid={Pid}, pipe={Pipe}", _process.Id, _pipeName);

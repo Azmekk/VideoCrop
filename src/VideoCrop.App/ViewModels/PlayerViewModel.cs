@@ -23,6 +23,8 @@ public sealed class PlayerViewModel(IToolLocator locator, ILoggerFactory loggerF
     private string? _currentFile;
     private bool _suppressSeekFeedback;
     private bool _hasMpv = locator.TryResolve(ExternalTool.Mpv, out _);
+    private TimeSpan? _cutStart;
+    private TimeSpan? _cutEnd;
 
     public bool HasMpv { get => _hasMpv; private set => SetProperty(ref _hasMpv, value); }
     public bool IsReady { get => _isReady; private set => SetProperty(ref _isReady, value); }
@@ -51,6 +53,7 @@ public sealed class PlayerViewModel(IToolLocator locator, ILoggerFactory loggerF
         }
 
         _host = new MpvHost(locator, loggerFactory.CreateLogger<MpvHost>());
+        _host.Exited += OnHostExited;
         try
         {
             await _host.StartAsync(new MpvHostOptions(), ct);
@@ -94,10 +97,10 @@ public sealed class PlayerViewModel(IToolLocator locator, ILoggerFactory loggerF
 
     public async Task TogglePauseAsync()
     {
-        if (_host is null) return;
+        if (!await EnsureReadyForCommandsAsync()) return;
         try
         {
-            await _host.Ipc.SetPropertyAsync("pause", !IsPaused);
+            await _host!.Ipc.SetPropertyAsync("pause", !IsPaused);
         }
         catch (Exception ex)
         {
@@ -107,11 +110,11 @@ public sealed class PlayerViewModel(IToolLocator locator, ILoggerFactory loggerF
 
     public async Task SeekAsync(double seconds)
     {
-        if (_host is null) return;
+        if (!await EnsureReadyForCommandsAsync()) return;
         try
         {
             _suppressSeekFeedback = true;
-            await _host.Ipc.SeekClampedAsync(seconds);
+            await _host!.Ipc.SeekClampedAsync(seconds);
         }
         catch (Exception ex)
         {
@@ -121,6 +124,23 @@ public sealed class PlayerViewModel(IToolLocator locator, ILoggerFactory loggerF
         {
             _suppressSeekFeedback = false;
         }
+    }
+
+    /// <summary>
+    /// Ensures mpv is running and the current file (if any) is loaded.
+    /// Called from interactive commands so the app silently recovers from a
+    /// dead mpv process.
+    /// </summary>
+    private async Task<bool> EnsureReadyForCommandsAsync()
+    {
+        if (_host is { IsRunning: true } && IsReady) return true;
+        if (!await EnsureStartedAsync()) return false;
+        if (_currentFile is not null)
+        {
+            try { await _host!.LoadFileAsync(_currentFile); }
+            catch (Exception ex) { _logger.LogWarning(ex, "Reload after respawn failed"); return false; }
+        }
+        return true;
     }
 
     public async Task<bool> ScreenshotToFileAsync(string outputPath)
@@ -154,19 +174,41 @@ public sealed class PlayerViewModel(IToolLocator locator, ILoggerFactory loggerF
 
     public async Task ApplyCutBoundsAsync(TimeSpan? start, TimeSpan? end)
     {
+        _cutStart = start;
+        _cutEnd = end;
         if (_host is null) return;
         try
         {
+            // Track bounds inside the IPC client for clamped seeks, and make
+            // sure any previously-set A-B loop is cleared. We pause at the
+            // end-bound via the time-pos observer below rather than loop.
             _host.Ipc.SetCutBounds(start, end);
-            if (start is { } s) await _host.Ipc.SetPropertyAsync("ab-loop-a", s.TotalSeconds);
-            else await _host.Ipc.SetPropertyAsync("ab-loop-a", "no");
-            if (end is { } eEnd) await _host.Ipc.SetPropertyAsync("ab-loop-b", eEnd.TotalSeconds);
-            else await _host.Ipc.SetPropertyAsync("ab-loop-b", "no");
+            await _host.Ipc.SetPropertyAsync("ab-loop-a", "no");
+            await _host.Ipc.SetPropertyAsync("ab-loop-b", "no");
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "ApplyCutBounds failed");
         }
+    }
+
+    private void OnHostExited(object? sender, EventArgs e)
+    {
+        // mpv died (closed by user, crashed, decoder error, whatever). Clear
+        // our state so the next interaction re-spawns it via EnsureStartedAsync
+        // and re-loads the current file.
+        if (_uiContext is null) ApplyHostExited();
+        else _uiContext.Post(_ => ApplyHostExited(), null);
+    }
+
+    private void ApplyHostExited()
+    {
+        _logger.LogInformation("mpv exited; will respawn on next interaction");
+        IsReady = false;
+        IsPaused = true;
+        // Don't dispose _host here — DisposeAsync inside EnsureStartedAsync
+        // will handle that on the next start. Clearing the reference lets
+        // EnsureStartedAsync's `IsRunning` check fail and trigger respawn.
     }
 
     private void OnPropertyChange(object? sender, MpvPropertyChange e)
@@ -176,7 +218,13 @@ public sealed class PlayerViewModel(IToolLocator locator, ILoggerFactory loggerF
             switch (e.Name)
             {
                 case "time-pos" when e.Data is JsonElement t && t.ValueKind == JsonValueKind.Number:
-                    if (!_suppressSeekFeedback) PositionSeconds = t.GetDouble();
+                    var pos = t.GetDouble();
+                    if (!_suppressSeekFeedback) PositionSeconds = pos;
+                    // Pause when we reach (or pass) the cut end during playback.
+                    if (!IsPaused && _cutEnd is { } endBound && pos >= endBound.TotalSeconds - 0.05)
+                    {
+                        _ = PauseAtEndAsync(endBound);
+                    }
                     break;
                 case "duration" when e.Data is JsonElement d && d.ValueKind == JsonValueKind.Number:
                     DurationSeconds = d.GetDouble();
@@ -189,6 +237,22 @@ public sealed class PlayerViewModel(IToolLocator locator, ILoggerFactory loggerF
 
         if (_uiContext is null) apply();
         else _uiContext.Post(_ => apply(), null);
+    }
+
+    private async Task PauseAtEndAsync(TimeSpan endBound)
+    {
+        if (_host is null) return;
+        try
+        {
+            // Pause and snap the position exactly to the cut end so the user
+            // doesn't see an overshot frame.
+            await _host.Ipc.SetPropertyAsync("pause", true);
+            await _host.Ipc.SeekClampedAsync(endBound.TotalSeconds);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "PauseAtEnd failed");
+        }
     }
 
     public async ValueTask DisposeAsync()

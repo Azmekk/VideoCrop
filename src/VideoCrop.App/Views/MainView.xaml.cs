@@ -47,8 +47,16 @@ public sealed partial class MainView : UserControl
                 PipelineSummaryText.Text = ViewModel.PipelineSummary;
         };
         ViewModel.ResizeToast += (_, msg) => UpdateResize();
-        CutTimelineCtrl.StartChanged += (_, t) => ViewModel.Cut.Start = t;
-        CutTimelineCtrl.EndChanged += (_, t) => ViewModel.Cut.End = t;
+        CutTimelineCtrl.StartChanged += async (_, t) =>
+        {
+            ViewModel.Cut.Start = t;
+            if (VideoPaneView.Player is { } player) await player.SeekAsync(t.TotalSeconds);
+        };
+        CutTimelineCtrl.EndChanged += async (_, t) =>
+        {
+            ViewModel.Cut.End = t;
+            if (VideoPaneView.Player is { } player) await player.SeekAsync(t.TotalSeconds);
+        };
         CutTimelineCtrl.PositionRequested += async (_, t) =>
         {
             if (VideoPaneView.Player is { } player) await player.SeekAsync(t.TotalSeconds);
@@ -100,6 +108,10 @@ public sealed partial class MainView : UserControl
             CutStartBox.Text = FormatTimeSpan(cut.Start);
             CutEndBox.Text = FormatTimeSpan(cut.End);
         }
+
+        // Constrain the playback slider so the user cannot scrub outside
+        // the active cut range. When cut is full-range, this is just [0..duration].
+        VideoPaneView.SetSeekBounds(cut.Start.TotalSeconds, cut.End.TotalSeconds);
     }
 
     private static string FormatTimeSpan(TimeSpan ts)
