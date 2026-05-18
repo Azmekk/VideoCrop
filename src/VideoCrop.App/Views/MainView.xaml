@@ -169,8 +169,8 @@
                     </Expander>
 
                     <Expander Header="Cut" IsExpanded="False" HorizontalAlignment="Stretch">
-                        <StackPanel Margin="0,8,0,0" Spacing="6">
-                            <Grid ColumnSpacing="6">
+                        <StackPanel Margin="0,8,0,0" Spacing="6" MinWidth="280">
+                            <Grid ColumnSpacing="6" MinWidth="280">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
@@ -178,6 +178,7 @@
                                 <TextBox Grid.Column="0"
                                          x:Name="CutStartBox"
                                          Header="Start"
+                                         HorizontalAlignment="Stretch"
                                          PlaceholderText="0:00.000"
                                          LostFocus="OnCutStartLostFocus" />
                                 <Button Grid.Column="1"
@@ -185,7 +186,7 @@
                                         Content="Set"
                                         Click="OnCutSetStart" />
                             </Grid>
-                            <Grid ColumnSpacing="6">
+                            <Grid ColumnSpacing="6" MinWidth="280">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
@@ -193,6 +194,7 @@
                                 <TextBox Grid.Column="0"
                                          x:Name="CutEndBox"
                                          Header="End"
+                                         HorizontalAlignment="Stretch"
                                          PlaceholderText="0:00.000"
                                          LostFocus="OnCutEndLostFocus" />
                                 <Button Grid.Column="1"
@@ -200,20 +202,17 @@
                                         Content="Set"
                                         Click="OnCutSetEnd" />
                             </Grid>
-                            <ctrl:CutTimeline x:Name="CutTimelineCtrl" Height="40" />
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" x:Name="CutDurationText" Opacity="0.7" />
-                                <ToggleSwitch Grid.Column="1"
-                                              x:Name="CutAccurateSwitch"
-                                              OnContent="Accurate"
-                                              OffContent="Fast"
-                                              Toggled="OnCutAccurateToggled" />
-                            </Grid>
-                            <Button Content="Reset cut" HorizontalAlignment="Stretch" Click="OnCutReset" />
+                            <ctrl:CutTimeline x:Name="CutTimelineCtrl" Height="40" MinWidth="280" />
+                            <TextBlock x:Name="CutDurationText" Opacity="0.7" />
+                            <RadioButtons x:Name="CutAccurateButtons"
+                                          MinWidth="280"
+                                          MaxColumns="2"
+                                          SelectedIndex="0"
+                                          SelectionChanged="OnCutAccurateModeChanged">
+                                <RadioButton Content="Fast" />
+                                <RadioButton Content="Accurate" />
+                            </RadioButtons>
+                            <Button Content="Reset cut" HorizontalAlignment="Stretch" MinWidth="280" Click="OnCutReset" />
                         </StackPanel>
                     </Expander>
 

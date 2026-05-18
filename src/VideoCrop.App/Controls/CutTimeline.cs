@@ -35,6 +35,10 @@ public sealed class CutTimeline : UserControl
 
     public event EventHandler<TimeSpan>? StartChanged;
     public event EventHandler<TimeSpan>? EndChanged;
+    /// <summary>Fires when the user releases the start handle, with its final value.</summary>
+    public event EventHandler<TimeSpan>? StartCommitted;
+    /// <summary>Fires when the user releases the end handle, with its final value.</summary>
+    public event EventHandler<TimeSpan>? EndCommitted;
     public event EventHandler<TimeSpan>? PositionRequested;
 
     private readonly Canvas _canvas;
@@ -149,8 +153,13 @@ public sealed class CutTimeline : UserControl
     {
         if (_drag != DragTarget.None)
         {
+            var released = _drag;
             _canvas.ReleasePointerCapture(e.Pointer);
             _drag = DragTarget.None;
+            // Emit the final value once. Callers throttle live seeks during
+            // drag for responsiveness; this commits the precise frame.
+            if (released == DragTarget.Start) StartCommitted?.Invoke(this, Start);
+            else if (released == DragTarget.End) EndCommitted?.Invoke(this, End);
         }
     }
 

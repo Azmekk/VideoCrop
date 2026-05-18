@@ -8,4 +8,5 @@ public sealed class AppServices(IToolLocator toolLocator, ILoggerFactory loggerF
     public IToolLocator ToolLocator { get; } = toolLocator;
     public ILoggerFactory LoggerFactory { get; } = loggerFactory;
     public RecentFilesService RecentFiles { get; } = new();
+    public AppSettingsService Settings { get; } = new();
 }

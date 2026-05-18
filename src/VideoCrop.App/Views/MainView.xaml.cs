@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml.Controls;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
 using Windows.Storage.Pickers;
+using VideoCrop.App.Services;
 using VideoCrop.App.ViewModels;
 using VideoCrop.Core.Encoding;
 using VideoCrop.Core.Models;
@@ -47,14 +48,25 @@ public sealed partial class MainView : UserControl
                 PipelineSummaryText.Text = ViewModel.PipelineSummary;
         };
         ViewModel.ResizeToast += (_, msg) => UpdateResize();
-        CutTimelineCtrl.StartChanged += async (_, t) =>
+        CutTimelineCtrl.StartChanged += (_, t) =>
         {
             ViewModel.Cut.Start = t;
-            if (VideoPaneView.Player is { } player) await player.SeekAsync(t.TotalSeconds);
+            ThrottledSeek(t);
         };
-        CutTimelineCtrl.EndChanged += async (_, t) =>
+        CutTimelineCtrl.EndChanged += (_, t) =>
         {
             ViewModel.Cut.End = t;
+            ThrottledSeek(t);
+        };
+        // On drag release, force one definitive exact seek so the frame
+        // matches the final handle position even if the trailing live seek
+        // was throttled out.
+        CutTimelineCtrl.StartCommitted += async (_, t) =>
+        {
+            if (VideoPaneView.Player is { } player) await player.SeekAsync(t.TotalSeconds);
+        };
+        CutTimelineCtrl.EndCommitted += async (_, t) =>
+        {
             if (VideoPaneView.Player is { } player) await player.SeekAsync(t.TotalSeconds);
         };
         CutTimelineCtrl.PositionRequested += async (_, t) =>
@@ -76,7 +88,44 @@ public sealed partial class MainView : UserControl
         {
             await ViewModel.InitializeAsync();
             await EnsureToolsAvailableAsync();
+            await OfferInstallSetupAsync();
         };
+    }
+
+    private async System.Threading.Tasks.Task OfferInstallSetupAsync()
+    {
+        var settings = App.Current.Services.Settings;
+        if (settings.HasPromptedInstallSetup) return;
+        // If a prior install already wired up both, just record that and move on.
+        if (StartMenuShortcut.Exists() && AppsAndFeaturesRegistration.IsRegistered())
+        {
+            settings.HasPromptedInstallSetup = true;
+            return;
+        }
+
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = "Set up VideoCrop on this PC?",
+            Content =
+                "Adds a Start menu shortcut (Windows search) and registers VideoCrop in Settings → Apps & Features " +
+                "for a clean Uninstall later. Decline if this is a temporary or test install.",
+            PrimaryButtonText = "Set up",
+            CloseButtonText = "Not now",
+            DefaultButton = ContentDialogButton.Primary,
+        };
+        ContentDialogResult result;
+        try { result = await dialog.ShowAsync(); }
+        catch { return; }
+
+        settings.HasPromptedInstallSetup = true;
+        if (result != ContentDialogResult.Primary) return;
+
+        var exe = Environment.ProcessPath;
+        if (string.IsNullOrEmpty(exe)) return;
+        var icon = Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico");
+        StartMenuShortcut.Create(exe, File.Exists(icon) ? icon : null);
+        AppsAndFeaturesRegistration.Register(exe);
     }
 
     private void BindPresets()
@@ -94,6 +143,22 @@ public sealed partial class MainView : UserControl
     private void Cut_PropertyChanged(object? sender, PropertyChangedEventArgs e) => UpdateCutFromVm();
 
     private bool _suppressCutBoxUpdate;
+
+    // Throttle live seeks while dragging cut handles — exact seeks decode
+    // from the previous keyframe (~50-150 ms each), so firing one per pointer
+    // move (60+/sec) backs mpv up and the preview visibly lags. ~10/sec lets
+    // mpv keep up while still showing the actual frame at the handle.
+    private DateTime _lastCutSeek = DateTime.MinValue;
+    private static readonly TimeSpan CutSeekInterval = TimeSpan.FromMilliseconds(100);
+
+    private void ThrottledSeek(TimeSpan t)
+    {
+        if (VideoPaneView.Player is not { } player) return;
+        var now = DateTime.UtcNow;
+        if (now - _lastCutSeek < CutSeekInterval) return;
+        _lastCutSeek = now;
+        _ = player.SeekAsync(t.TotalSeconds);
+    }
 
     private void UpdateCutFromVm()
     {
@@ -168,9 +233,10 @@ public sealed partial class MainView : UserControl
         await ViewModel.Cut.SetEndFromPlayheadAsync();
     }
 
-    private void OnCutAccurateToggled(object sender, RoutedEventArgs e)
+    private void OnCutAccurateModeChanged(object sender, SelectionChangedEventArgs e)
     {
-        ViewModel.Cut.Accurate = CutAccurateSwitch.IsOn;
+        // Index 0 = Fast (keyframe-snapped), 1 = Accurate (frame-exact).
+        ViewModel.Cut.Accurate = CutAccurateButtons.SelectedIndex == 1;
     }
 
     private void OnCutReset(object sender, RoutedEventArgs e)

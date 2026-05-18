@@ -54,8 +54,29 @@ public partial class App : Application
         };
     }
 
+    private static bool IsUninstallInvocation()
+    {
+        foreach (var a in Environment.GetCommandLineArgs())
+        {
+            if (string.Equals(a, "--uninstall", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(a, "/uninstall",  StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
+    }
+
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        // Apps & Features fires us with "--uninstall". Don't bring up the
+        // UI — just tear down side effects and exit; a detached PowerShell
+        // helper removes the install dir and user data once we're gone.
+        if (IsUninstallInvocation())
+        {
+            VideoCrop.App.Services.UninstallRunner.Run();
+            Exit();
+            return;
+        }
+
         _window = new MainWindow();
 
         // WinUI 3 doesn't install a SynchronizationContext on the UI thread by default,

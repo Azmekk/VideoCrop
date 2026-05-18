@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  VideoCrop app-icon proposal: "crop corners over a film frame"
+  256x256 design canvas, Windows 11 Fluent tile style:
+    - rounded gradient background (blue → violet)
+    - white film strip with sprocket holes
+    - four white L-shaped crop brackets at the corners
+
+  Reads at small sizes: the bracketed rectangle stays legible at 32x32
+  because the corner L's are heavy and high-contrast.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"  stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="filmFade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#FFFFFF" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.20"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded tile background -->
+  <rect x="8" y="8" width="240" height="240" rx="40" ry="40" fill="url(#tile)"/>
+
+  <!-- Subtle highlight on top half -->
+  <rect x="8" y="8" width="240" height="120" rx="40" ry="40" fill="#FFFFFF" opacity="0.08"/>
+
+  <!-- Film strip body -->
+  <rect x="48" y="80" width="160" height="96" rx="8" ry="8" fill="url(#filmFade)" stroke="#FFFFFF" stroke-width="3"/>
+
+  <!-- Sprocket holes (top row) -->
+  <g fill="#FFFFFF">
+    <rect x="58"  y="86" width="14" height="8" rx="2"/>
+    <rect x="82"  y="86" width="14" height="8" rx="2"/>
+    <rect x="106" y="86" width="14" height="8" rx="2"/>
+    <rect x="130" y="86" width="14" height="8" rx="2"/>
+    <rect x="154" y="86" width="14" height="8" rx="2"/>
+    <rect x="178" y="86" width="14" height="8" rx="2"/>
+  </g>
+
+  <!-- Sprocket holes (bottom row) -->
+  <g fill="#FFFFFF">
+    <rect x="58"  y="162" width="14" height="8" rx="2"/>
+    <rect x="82"  y="162" width="14" height="8" rx="2"/>
+    <rect x="106" y="162" width="14" height="8" rx="2"/>
+    <rect x="130" y="162" width="14" height="8" rx="2"/>
+    <rect x="154" y="162" width="14" height="8" rx="2"/>
+    <rect x="178" y="162" width="14" height="8" rx="2"/>
+  </g>
+
+  <!-- Crop brackets (four L's). Corner points inset 12px from the film edge
+       on every side so the 12px stroke stays inside the picture area. -->
+  <g fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="square">
+    <!-- top-left -->
+    <polyline points="60,116  60,104  72,104"/>
+    <!-- top-right -->
+    <polyline points="184,104 196,104 196,116"/>
+    <!-- bottom-left -->
+    <polyline points="60,140  60,152  72,152"/>
+    <!-- bottom-right -->
+    <polyline points="184,152 196,152 196,140"/>
+  </g>
+</svg>
