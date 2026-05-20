@@ -39,6 +39,25 @@ public sealed partial class VideoPane : UserControl
 
     public PlayerViewModel? Player => _player;
 
+    /// <summary>
+    /// Hide the native mpv child HWND. WinUI overlays (ContentDialog, popups)
+    /// live in the XAML compositor and can't draw over a native child window —
+    /// without this, mpv punches through the crop dialog.
+    /// </summary>
+    public void HideVideoSurface()
+    {
+        _videoVisible = false;
+        _hostWindow?.Hide();
+    }
+
+    public void ShowVideoSurface()
+    {
+        if (_hostWindow is null || _player is null) return;
+        if (!_player.IsReady || string.IsNullOrEmpty(_player.CurrentFile)) return;
+        _videoVisible = true;
+        UpdateHostBounds(force: true);
+    }
+
     public void SetSeekBounds(double minSec, double maxSec)
     {
         if (maxSec <= minSec) maxSec = minSec + 0.01;

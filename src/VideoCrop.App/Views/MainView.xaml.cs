@@ -278,7 +278,17 @@ public sealed partial class MainView : UserControl
         {
             XamlRoot = this.XamlRoot,
         };
-        var result = await dialog.ShowAsync();
+
+        VideoPaneView.HideVideoSurface();
+        ContentDialogResult result;
+        try
+        {
+            result = await dialog.ShowAsync();
+        }
+        finally
+        {
+            VideoPaneView.ShowVideoSurface();
+        }
 
         if (screenshotPath is not null)
         {
