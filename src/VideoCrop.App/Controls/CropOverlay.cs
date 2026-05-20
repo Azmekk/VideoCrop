@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.UI;
+using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -45,6 +46,19 @@ public sealed class CropOverlay : UserControl
     private readonly Rectangle _rect;
     private readonly Border[] _handles = new Border[8];
 
+    // Inset on each side (in source-pixel units, since the overlay coord
+    // space matches source dimensions) reserved so handles drawn at the
+    // crop rect's edge can fully extend past the image without getting
+    // clipped by the Viewbox / dialog bounds.
+    private const double HandleMargin = 16;
+
+    private readonly InputCursor _arrowCursor;
+    private readonly InputCursor _nwSeCursor;
+    private readonly InputCursor _neSwCursor;
+    private readonly InputCursor _nsCursor;
+    private readonly InputCursor _weCursor;
+    private readonly InputCursor _moveCursor;
+
     private int _x, _y, _w, _h;
     private enum Drag { None, Move, NW, N, NE, E, SE, S, SW, W }
     private Drag _drag = Drag.None;
@@ -53,7 +67,11 @@ public sealed class CropOverlay : UserControl
 
     public CropOverlay()
     {
-        _bgImage = new Image { Stretch = Stretch.Uniform };
+        _bgImage = new Image
+        {
+            Stretch = Stretch.Uniform,
+            Margin = new Thickness(HandleMargin),
+        };
         _canvas = new Canvas { HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Stretch };
         _dim = new Rectangle { Fill = new SolidColorBrush(Color.FromArgb(120, 0, 0, 0)) };
         _rect = new Rectangle
@@ -90,6 +108,14 @@ public sealed class CropOverlay : UserControl
         _canvas.PointerReleased += OnPointerReleased;
         _canvas.PointerCaptureLost += OnPointerReleased;
 
+        _arrowCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
+        _nwSeCursor = InputSystemCursor.Create(InputSystemCursorShape.SizeNorthwestSoutheast);
+        _neSwCursor = InputSystemCursor.Create(InputSystemCursorShape.SizeNortheastSouthwest);
+        _nsCursor = InputSystemCursor.Create(InputSystemCursorShape.SizeNorthSouth);
+        _weCursor = InputSystemCursor.Create(InputSystemCursorShape.SizeWestEast);
+        _moveCursor = InputSystemCursor.Create(InputSystemCursorShape.SizeAll);
+        ProtectedCursor = _arrowCursor;
+
         SizeChanged += (_, _) => Layout();
     }
 
@@ -103,15 +129,15 @@ public sealed class CropOverlay : UserControl
 
     private (double scale, double offsetX, double offsetY) GetTransform()
     {
-        var canvasW = ActualWidth;
-        var canvasH = ActualHeight;
+        var canvasW = ActualWidth - 2 * HandleMargin;
+        var canvasH = ActualHeight - 2 * HandleMargin;
         if (canvasW <= 0 || canvasH <= 0 || SourceWidth <= 0 || SourceHeight <= 0)
             return (1, 0, 0);
         var sx = canvasW / SourceWidth;
         var sy = canvasH / SourceHeight;
         var s = Math.Min(sx, sy);
-        var ox = (canvasW - SourceWidth * s) / 2;
-        var oy = (canvasH - SourceHeight * s) / 2;
+        var ox = HandleMargin + (canvasW - SourceWidth * s) / 2;
+        var oy = HandleMargin + (canvasH - SourceHeight * s) / 2;
         return (s, ox, oy);
     }
 
@@ -120,8 +146,10 @@ public sealed class CropOverlay : UserControl
         var (s, ox, oy) = GetTransform();
         if (s <= 0) return;
 
-        _dim.Width = ActualWidth;
-        _dim.Height = ActualHeight;
+        Canvas.SetLeft(_dim, ox);
+        Canvas.SetTop(_dim, oy);
+        _dim.Width = SourceWidth * s;
+        _dim.Height = SourceHeight * s;
 
         var rx = ox + _x * s;
         var ry = oy + _y * s;
@@ -159,15 +187,30 @@ public sealed class CropOverlay : UserControl
 
     private void OnPointerMoved(object sender, PointerRoutedEventArgs e)
     {
+        var p = e.GetCurrentPoint(_canvas).Position;
+        UpdateCursor(_drag != Drag.None ? _drag : HitTest(p));
+
         if (_drag == Drag.None) return;
         var (s, _, _) = GetTransform();
         if (s <= 0) return;
-        var p = e.GetCurrentPoint(_canvas).Position;
         var dxPx = (p.X - _dragStart.X) / s;
         var dyPx = (p.Y - _dragStart.Y) / s;
         ApplyDrag((int)Math.Round(dxPx), (int)Math.Round(dyPx));
         Layout();
         RaiseChange();
+    }
+
+    private void UpdateCursor(Drag mode)
+    {
+        ProtectedCursor = mode switch
+        {
+            Drag.NW or Drag.SE => _nwSeCursor,
+            Drag.NE or Drag.SW => _neSwCursor,
+            Drag.N or Drag.S => _nsCursor,
+            Drag.E or Drag.W => _weCursor,
+            Drag.Move => _moveCursor,
+            _ => _arrowCursor,
+        };
     }
 
     private void OnPointerReleased(object sender, PointerRoutedEventArgs e)
