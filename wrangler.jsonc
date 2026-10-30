@@ -1,0 +1,10 @@
+// Cloudflare Workers config for the download page: serves site/ as static files.
+// Deploy with `npx wrangler deploy`, or let Cloudflare's Git integration run it on every push.
+{
+  "name": "videocrop",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./site",
+    "not_found_handling": "404-page"
+  }
+}

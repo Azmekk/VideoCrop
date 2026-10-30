@@ -19,6 +19,7 @@ Run from `tauri/` unless noted.
 - **Rust tests:** `cargo test` in `tauri/src-tauri`. Single test: `cargo test planner::tests::discord`. Real-ffmpeg smoke test: `VIDEOCROP_TOOLS_DIR=… VIDEOCROP_SMOKE_FILE=… cargo test smoke -- --ignored --nocapture`.
 - **Lint:** `cargo clippy --all-targets -- -D warnings` in `tauri/src-tauri`.
 - **Installer:** `pnpm tauri build` produces an NSIS installer in `src-tauri/target/release/bundle/nsis`.
+- **Website:** `site/` is the static download page, served by Cloudflare Workers via the root `wrangler.jsonc` (Cloudflare's Git integration deploys it on push). `npx wrangler dev` previews it locally. `site/assets/downloads.js` fills download links from the latest GitHub release, matching `VideoCrop-vX.Y.Z-{x64,arm64}-{setup,portable}.exe`; keep those asset names in sync with `release.yml`.
 - **Release:** push a `vX.Y.Z` tag. `.github/workflows/release.yml` builds x64 (`windows-latest`) and arm64 (`windows-11-arm`, native) and publishes the installer + portable exe. `workflow_dispatch` builds artifacts without publishing.
 
 ## Architecture

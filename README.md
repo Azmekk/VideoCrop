@@ -135,6 +135,8 @@ pnpm tauri build    # NSIS installer in src-tauri/target/release/bundle/nsis
 - Checks: `pnpm check`, plus `cargo test` and `cargo clippy --all-targets -- -D warnings` in `tauri/src-tauri`.
 - [`tauri/ARCHITECTURE.md`](tauri/ARCHITECTURE.md) explains how it fits together.
 
+[`site/`](site/) is the download page: plain HTML with no build step. Cloudflare Workers serves it using [`wrangler.jsonc`](wrangler.jsonc). Run `npx wrangler deploy` to publish it, or connect the repo in Cloudflare so every push to `master` deploys it. Its download buttons read the latest published release from the GitHub API.
+
 Contributions are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Credits
