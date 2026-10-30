@@ -38,7 +38,8 @@
     stillVisible = false;
     stillSrc = null;
     editor.buffering = true;
-    if (canPlayDirect(v.info, v.directLikelyPlayable, el)) {
+    // VITE_FORCE_STREAM=1 (dev) always uses the stream, to test that path with any file.
+    if (import.meta.env.VITE_FORCE_STREAM !== "1" && canPlayDirect(v.info, v.directLikelyPlayable, el)) {
       editor.source = "direct";
       el.src = v.directUrl;
       el.load();

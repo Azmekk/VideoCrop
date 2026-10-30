@@ -6,8 +6,10 @@ import type { VideoInfo } from "../types";
 function containerMime(fmt: string, path: string): string {
   const f = fmt.toLowerCase();
   const ext = path.toLowerCase().split(".").pop() ?? "";
-  if (f.includes("webm") || ext === "webm") return "video/webm";
+  // ffprobe names both "matroska,webm", so the extension decides first.
+  if (ext === "webm") return "video/webm";
   if (f.includes("matroska") || ext === "mkv") return "video/x-matroska";
+  if (f.includes("webm")) return "video/webm";
   if (ext === "mov") return "video/quicktime";
   return "video/mp4";
 }
@@ -55,17 +57,18 @@ export function codecString(info: VideoInfo): string | null {
   const a = info.audioStreams[0] ? audioCodec(info.audioStreams[0].codec) : null;
   if (info.audioStreams[0] && !a) return null;
   let mime = containerMime(info.containerFormat, info.path);
-  // WebView2 reports "" for matroska/quicktime MIME even when the codecs decode; ask as mp4.
-  if (mime !== "video/webm") mime = "video/mp4";
+  // WebView2 reports "" for quicktime even when the codecs decode; ask as mp4. Matroska is
+  // asked as itself: newer runtimes play it, older ones say "" and fall back to the stream.
+  if (mime === "video/quicktime") mime = "video/mp4";
   return `${mime}; codecs="${a ? `${v}, ${a}` : v}"`;
 }
 
 /** True when the hint and the browser agree the file can be played directly. */
 export function canPlayDirect(info: VideoInfo, hint: boolean, probe: HTMLVideoElement): boolean {
   // The backend says "no" to HEVC because support is per-machine (hardware + HEVC extension);
-  // in an mp4/mov container let canPlayType decide instead.
-  const hevcInMp4 = /^(hevc|h265)$/i.test(info.videoCodec) && /mp4|mov/i.test(info.containerFormat);
-  if (!hint && !hevcInMp4) return false;
+  // in an mp4/mov/mkv container let canPlayType decide instead.
+  const hevc = /^(hevc|h265)$/i.test(info.videoCodec) && /mp4|mov|matroska/i.test(info.containerFormat);
+  if (!hint && !hevc) return false;
   const s = codecString(info);
   if (!s) return false;
   return probe.canPlayType(s) !== "";

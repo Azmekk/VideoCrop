@@ -13,7 +13,7 @@ Versions up to 2.x were a WinUI 3 / .NET app with mpv playback. That code was re
 Run from `tauri/` unless noted.
 
 - **Install:** `pnpm install`
-- **Run the app:** `pnpm tauri dev`. Set `VIDEOCROP_TOOLS_DIR` to a folder with ffmpeg.exe/ffprobe.exe to override tool lookup.
+- **Run the app:** `pnpm tauri dev`. Set `VIDEOCROP_TOOLS_DIR` to a folder with ffmpeg.exe/ffprobe.exe to override tool lookup. Set `VITE_FORCE_STREAM=1` to always use the HLS stream path, whatever the file.
 - **UI only, in a browser:** `pnpm dev`, which uses the mock backend in `src/lib/mock/backend.ts`. URL flags: `?stream` (HLS path), `?tools=0` (setup screen), `?fail` (failed encode), `?update` (update popup). The sample clip lives in gitignored `dev-media/`.
 - **Frontend check:** `pnpm check` (svelte-check, must be 0 errors / 0 warnings).
 - **Rust tests:** `cargo test` in `tauri/src-tauri`. Single test: `cargo test planner::tests::discord`. Real-ffmpeg smoke test: `VIDEOCROP_TOOLS_DIR=… VIDEOCROP_SMOKE_FILE=… cargo test smoke -- --ignored --nocapture`.

@@ -26,6 +26,14 @@
     return { w: Math.floor(bw), h: Math.floor(bh) };
   });
 
+  const streamTip = $derived.by(() => {
+    const ext = info.path.split(".").pop()?.toUpperCase() ?? "";
+    const fmt = [info.videoCodec.toUpperCase(), ext].filter(Boolean).join(" in ");
+    return `The built-in player can't play this file (${fmt}) directly, so VideoCrop converts it with ffmpeg on the fly ` +
+      `into a lightweight 720p preview, a few seconds ahead of playback. Jumping to a part that hasn't been converted yet ` +
+      `takes a moment. This only affects the preview: exports always use the original file at full quality.`;
+  });
+
   // Applied-crop window in % of the full frame (edit mode, not previewing).
   const win = $derived.by(() => {
     const c = crop.spec;
@@ -48,14 +56,25 @@
         <CropEditor boxW={box.w} boxH={box.h} />
       {/if}
       {#if editor.buffering && editor.mode === "edit"}
-        <div class="spinner" aria-label="Loading"></div>
+        {#if editor.source === "stream"}
+          <div class="processing" role="status">
+            <div class="spinner inline"></div>
+            <div>
+              <b>Processing video…</b>
+              <span>Converting this part so it can play in VideoCrop</span>
+            </div>
+          </div>
+        {:else}
+          <div class="spinner" aria-label="Loading"></div>
+        {/if}
       {/if}
     </div>
   {/if}
 
   {#if editor.source === "stream"}
-    <div class="badge" data-tip="This file's format can't be played directly, so VideoCrop streams a lightweight preview converted on the fly. Your export always uses the original at full quality.">
+    <div class="badge">
       <Icon name="stream" size={13} /> Streaming preview
+      <button type="button" class="help" aria-label="What is a streaming preview?" data-tip={streamTip}><Icon name="help" size={14} /></button>
     </div>
   {/if}
 </div>
@@ -78,10 +97,25 @@
     color: #e7e9ee; background: rgb(20 22 26 / .72); border: 1px solid rgb(255 255 255 / .1);
     backdrop-filter: blur(8px);
   }
+  .help {
+    display: grid; place-items: center; margin-right: -4px; padding: 0; border: 0; background: none;
+    color: rgb(231 233 238 / .7); cursor: help; border-radius: 50%;
+  }
+  .help:hover, .help:focus-visible { color: #fff; }
+  .help:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
   .spinner {
     position: absolute; left: 50%; top: 50%; width: 28px; height: 28px; margin: -14px 0 0 -14px;
     border-radius: 50%; border: 2px solid rgb(255 255 255 / .18); border-top-color: #fff;
     animation: spin .8s linear infinite; pointer-events: none;
   }
+  .spinner.inline { position: static; flex: none; width: 22px; height: 22px; margin: 0; }
+  .processing {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); max-width: calc(100% - 32px);
+    display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 10px; pointer-events: none;
+    color: #e7e9ee; background: rgb(20 22 26 / .82); border: 1px solid rgb(255 255 255 / .1);
+    backdrop-filter: blur(8px); box-shadow: 0 8px 24px rgb(0 0 0 / .35);
+  }
+  .processing b { display: block; font-size: 13px; font-weight: 600; }
+  .processing span { display: block; margin-top: 2px; font-size: 11.5px; color: rgb(231 233 238 / .7); }
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>

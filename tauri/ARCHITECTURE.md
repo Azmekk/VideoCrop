@@ -75,7 +75,8 @@ may use `max-age`).
 ## Playback strategy
 
 1. **Direct** (zero cost, full quality). `open_video` returns `directLikelyPlayable`
-   (core heuristic: container is mp4/mov/webm family, video h264 8-bit 4:2:0 / vp8 / vp9 / av1,
+   (core heuristic: container is mp4/mov or matroska/webm (current WebView2 plays MKV; older
+   runtimes answer `canPlayType` with "" and stream instead), video h264 8-bit 4:2:0 / vp8 / vp9 / av1,
    audio aac/mp3/opus/vorbis/flac or none). The frontend then confirms with
    `video.canPlayType(...)` (HEVC is per-machine) and plays `directUrl`.
 2. **Stream** (anything ffmpeg decodes, any length, no wait). If direct is unlikely, or the
@@ -98,7 +99,7 @@ may use `max-age`).
   - Throttle: kill the job when it is more than 12 segments ahead of the newest request;
     the next request restarts it where needed. Cached segments are reused.
 - Encoder: `hwdetect` tries h264_nvenc -> h264_qsv -> h264_amf -> libx264 once with a tiny
-  lavfi encode and caches the winner in settings. Height cap 1080 for hardware, 720 for x264.
+  lavfi encode and caches the winner in settings. Height cap 720 for every encoder (bilinear downscale).
   `-hwaccel auto` first; if the job dies before producing its first segment, retry once
   without hwaccel, then once with libx264.
 - Session temp dir `%TEMP%/videocrop/<sid>/` is deleted on close and on app exit; stale dirs

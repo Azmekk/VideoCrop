@@ -25,8 +25,8 @@ pub const MAX_AHEAD: u32 = 12;
 pub const POLL: Duration = Duration::from_millis(40);
 pub const WAIT_TIMEOUT: Duration = Duration::from_secs(30);
 const SUPERVISOR_TICK: Duration = Duration::from_millis(250);
-pub const MAX_HEIGHT_HW: u32 = 1080;
-pub const MAX_HEIGHT_X264: u32 = 720;
+/// Preview output height cap for every encoder; 1440p OBS clips encode far faster at 720p.
+pub const MAX_HEIGHT: u32 = 720;
 
 // ------------------------------------------------------------------ pure decision logic
 
@@ -76,14 +76,6 @@ pub fn fallback(hwaccel: bool, encoder: PreviewEncoder) -> Option<(bool, Preview
         Some((false, PreviewEncoder::X264))
     } else {
         None
-    }
-}
-
-pub fn max_height_for(encoder: PreviewEncoder) -> u32 {
-    if encoder == PreviewEncoder::X264 {
-        MAX_HEIGHT_X264
-    } else {
-        MAX_HEIGHT_HW
     }
 }
 
@@ -164,7 +156,7 @@ impl HlsState {
             input_path: s.input().to_owned(),
             start_segment: start,
             encoder,
-            max_height: max_height_for(encoder),
+            max_height: MAX_HEIGHT,
             has_audio: !s.info.audio_streams.is_empty(),
             hwaccel: !self.no_hwaccel,
             out_dir: s.dir.to_string_lossy().into_owned(),
@@ -310,11 +302,5 @@ mod tests {
         assert_eq!(fallback(false, Nvenc), Some((false, X264)));
         assert_eq!(fallback(true, X264), Some((false, X264)));
         assert_eq!(fallback(false, X264), None);
-    }
-
-    #[test]
-    fn height_caps() {
-        assert_eq!(max_height_for(X264), 720);
-        assert_eq!(max_height_for(Qsv), 1080);
     }
 }

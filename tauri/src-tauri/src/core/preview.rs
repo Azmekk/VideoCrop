@@ -144,11 +144,12 @@ fn join(dir: &str, file: &str) -> String {
     Path::new(dir).join(file).to_string_lossy().into_owned()
 }
 
-/// `scale=-2:trunc(min(ih\,H)/2)*2,format=yuv420p` — even dimensions, never upscales.
+/// `scale=-2:trunc(min(ih\,H)/2)*2:flags=bilinear,format=yuv420p` — even dimensions, never
+/// upscales. Bilinear is plenty for a preview and cheaper than the default bicubic on 1440p+.
 /// The `\,` is filtergraph-level escaping (not shell quoting), valid in an argument list.
 pub fn preview_filter(max_height: u32) -> String {
     let h = max_height.max(2);
-    format!("scale=-2:trunc(min(ih\\,{h})/2)*2,format=yuv420p")
+    format!("scale=-2:trunc(min(ih\\,{h})/2)*2:flags=bilinear,format=yuv420p")
 }
 
 pub fn hls_job_args(p: &HlsJobParams) -> Vec<String> {
@@ -215,10 +216,11 @@ pub fn frame_args(input_path: &str, time_sec: f64, width: Option<u32>, fast: boo
 
 /// Heuristic for whether WebView2 can play the original file directly.
 /// HEVC is always false here: support is per-machine, the frontend checks `canPlayType`.
+/// Matroska is allowed: current WebView2 plays it, and the frontend's `canPlayType` check
+/// sends older runtimes to the stream instead.
 pub fn direct_likely_playable(info: &VideoInfo) -> bool {
     let fmt = info.container_format.to_ascii_lowercase();
-    let path = info.path.to_ascii_lowercase();
-    let container_ok = fmt.contains("mp4") || fmt.contains("mov") || (fmt.contains("webm") && path.ends_with(".webm"));
+    let container_ok = fmt.contains("mp4") || fmt.contains("mov") || fmt.contains("matroska") || fmt.contains("webm");
     if !container_ok {
         return false;
     }
@@ -369,7 +371,7 @@ mod tests {
             "-hwaccel", "auto",
             "-ss", "20", "-i", "C:/v/in.mkv",
             "-map", "0:v:0", "-map", "0:a:0",
-            "-vf", "scale=-2:trunc(min(ih\\,720)/2)*2,format=yuv420p",
+            "-vf", "scale=-2:trunc(min(ih\\,720)/2)*2:flags=bilinear,format=yuv420p",
             "-c:v", "libx264", "-preset", "ultrafast", "-tune", "zerolatency", "-crf", "26", "-sc_threshold", "0",
             "-g", "600", "-force_key_frames", "expr:gte(t,n_forced*4)",
             "-c:a", "aac", "-ac", "2", "-b:a", "160k",
@@ -424,7 +426,7 @@ mod tests {
         assert_eq!(value_after(&a, "-ss").as_deref(), Some("0"));
         assert_eq!(value_after(&a, "-start_number").as_deref(), Some("0"));
         assert_eq!(value_after(&a, "-output_ts_offset").as_deref(), Some("0"));
-        assert_eq!(value_after(&a, "-vf").as_deref(), Some("scale=-2:trunc(min(ih\\,1080)/2)*2,format=yuv420p"));
+        assert_eq!(value_after(&a, "-vf").as_deref(), Some("scale=-2:trunc(min(ih\\,1080)/2)*2:flags=bilinear,format=yuv420p"));
         // -hide_banner first, the playlist last
         assert_eq!(a[0], "-hide_banner");
         assert!(a.last().unwrap().ends_with("job.m3u8"));
@@ -536,8 +538,10 @@ mod tests {
             (info("a.mp4", MP4, "vp9", None, None, &["flac"]), true),
             (info("a.webm", MKV, "vp9", None, None, &["opus"]), true),
             (info("a.WEBM", MKV, "vp8", None, None, &["vorbis"]), true),
-            (info("a.mkv", MKV, "vp9", None, None, &["opus"]), false),
-            (info("a.mkv", MKV, "h264", Some("High"), Some("yuv420p"), &["aac"]), false),
+            (info("a.mkv", MKV, "vp9", None, None, &["opus"]), true),
+            (info("a.mkv", MKV, "h264", Some("High"), Some("yuv420p"), &["aac"]), true),
+            (info("a.mkv", MKV, "hevc", Some("Main"), Some("yuv420p"), &["aac"]), false),
+            (info("a.mkv", MKV, "h264", Some("High"), Some("yuv420p"), &["ac3"]), false),
             (info("a.avi", "avi", "h264", Some("High"), Some("yuv420p"), &["mp3"]), false),
             (info("a.ts", "mpegts", "h264", Some("High"), Some("yuv420p"), &["aac"]), false),
             (info("a.mp4", MP4, "h264", Some("High"), Some("yuv420p"), &["ac3"]), false),
