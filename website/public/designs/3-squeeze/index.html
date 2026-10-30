@@ -54,8 +54,9 @@ a{color:inherit}
 .hero .wrap{position:relative;z-index:1}
 .status{display:inline-flex;align-items:center;gap:9px;padding:6px 14px 6px 12px;border:1px solid var(--line2);border-radius:999px;font-size:14px;color:var(--ink);background:rgba(10,12,17,.7);text-decoration:none}
 .status i{width:8px;height:8px;border-radius:50%;background:var(--amber);box-shadow:0 0 10px var(--amber)}
-h1{margin:18px 0 10px;font-weight:850;font-size:clamp(36px,8.6vw,118px);line-height:1.02;text-wrap:balance;letter-spacing:-.03em;font-stretch:82%;
+h1{margin:18px 0 10px;font-weight:850;font-size:clamp(38px,6.2vw,88px);line-height:1.02;text-wrap:balance;letter-spacing:-.03em;font-stretch:82%;
   background:linear-gradient(180deg,#fff 20%,#f3dcae 70%,var(--amber) 120%);-webkit-background-clip:text;background-clip:text;color:transparent;padding-bottom:.14em}
+@media (max-width:760px){h1 .wide-br{display:none}}
 h1 .fit{display:inline-block;padding-bottom:.14em;margin-bottom:-.14em;background:linear-gradient(180deg,#ffe2a3 0%,var(--amber) 55%,#e08a1e 110%);-webkit-background-clip:text;background-clip:text;color:transparent}
 .sub{margin:0 auto;max-width:640px;color:var(--mute);font-size:clamp(17px,2vw,20px);line-height:1.5}
 
@@ -289,7 +290,7 @@ footer a:hover{color:var(--ink)}
   <canvas id="bg" aria-hidden="true"></canvas>
   <div class="wrap">
     <a class="status" href="https://github.com/Azmekk/VideoCrop/releases"><i></i><span data-version>v3.0.0</span>&nbsp;is out</a>
-    <h1 id="h">Cut the boring bits.<br><span class="fit">Send the good part.</span></h1>
+    <h1 id="h">Cutting and compressing<br class="wide-br"> media <span class="fit">made easy</span></h1>
     <p class="sub">Trim your clip, crop out the junk, and VideoCrop shrinks it to fit Discord, WhatsApp or wherever it's headed. Free, tiny, no fiddling with settings.</p>
 
     <div class="stage">
@@ -515,10 +516,8 @@ footer a:hover{color:var(--ink)}
   var bgLevel=1, cur=0, timers=[], raf=0, auto=null, visible=true, userHold=0;
   function clear(){timers.forEach(clearTimeout);timers=[];cancelAnimationFrame(raf)}
   function at(ms,fn){timers.push(setTimeout(fn,ms))}
-  var h1=$('h1'),squeezed=false,wide=innerWidth<700?100:125;
-  function h1Stretch(e){h1.style.fontStretch=(wide+(82-wide)*e).toFixed(1)+'%';h1.style.letterSpacing=(.01+(-.04)*e).toFixed(4)+'em'}
   function finalState(t){
-    cancelAnimationFrame(raf);if(!squeezed){squeezed=true;h1.style.fontStretch='';h1.style.letterSpacing=''}
+    cancelAnimationFrame(raf);
     card.classList.remove('crunch');card.classList.add('done');card.classList.toggle('vert',!!t.vert);
     setNum(t.mb);setBars(t.lvl);bgLevel=t.lvl;
     phase.textContent='was 1.84 GB';
@@ -537,10 +536,9 @@ footer a:hover{color:var(--ink)}
     at(380,function(){card.classList.add('crunch');setBars(.08);bgLevel=.15;phase.textContent='pass 1 of 2 · reading'});
     at(1050,function(){
       phase.textContent=t.cap?'pass 2 of 2 · encoding':'encoding';
-      var t0=performance.now(),D=1500,first=!squeezed;
+      var t0=performance.now(),D=1500;
       (function step(){var p=Math.min(1,Math.max(0,(performance.now()-t0)/D)),e=1-Math.pow(1-p,4);
         setNum(Math.exp(Math.log(SRC)+(Math.log(t.mb)-Math.log(SRC))*e));
-        if(first) h1Stretch(e);
         if(p<1) raf=requestAnimationFrame(step);})();
       setBars(t.lvl*.6);
     });
@@ -585,7 +583,7 @@ footer a:hover{color:var(--ink)}
   d.addEventListener('visibilitychange',function(){if(!d.hidden)loop()});
 
   if(RM){run(0)}else{
-    setBars(1);h1Stretch(0);
+    setBars(1);
     at(700,function(){run(0)});
     setTimeout(cycle,0);
     loop();
