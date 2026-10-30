@@ -29,7 +29,7 @@
         {#if plan?.twoPass}<span>two-pass</span>{/if}
       </div>
     </div>
-    <button class="go" onclick={process} disabled={!plan || !!exporter.planError || editor.mode === "crop" || !exporter.ready}
+    <button class="go" onclick={() => process()} disabled={!plan || !!exporter.planError || editor.mode === "crop" || !exporter.ready}
       data-tip={editor.mode === "crop" ? "Apply or cancel the crop first" : !exporter.ready ? "Pick a destination first" : "Ctrl+Enter"}>
       Process
     </button>

@@ -124,6 +124,8 @@ export interface JobPlan {
   twoPass: boolean;
   estimatedSizeBytes: number | null;
   warnings: string[];
+  /** Size target can't be met at watchable quality; confirm before encoding. */
+  sizeAlert: string | null;
 }
 
 export interface EncodeStatus {

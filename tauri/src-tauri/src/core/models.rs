@@ -251,6 +251,9 @@ pub struct JobPlan {
     pub two_pass: bool,
     pub estimated_size_bytes: Option<u64>,
     pub warnings: Vec<String>,
+    /// Set when a size target can't be met at watchable quality (e.g. a 2 h clip into 10 MB).
+    /// The UI asks the user to confirm before encoding.
+    pub size_alert: Option<String>,
 }
 
 // ---------------------------------------------------------------- runtime events

@@ -16,6 +16,9 @@
   {:else}
     <p class="note">Working out the plan…</p>
   {/if}
+  {#if exporter.plan?.sizeAlert}
+    <div class="err" role="alert"><Icon name="alert" size={14} /><span>{exporter.plan.sizeAlert}</span></div>
+  {/if}
   {#each exporter.plan?.warnings ?? [] as w (w)}
     <div class="warn"><Icon name="alert" size={14} /><span>{w}</span></div>
   {/each}

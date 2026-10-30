@@ -84,9 +84,20 @@ export function schedulePlan(draft: JobDraft, delay = 120) {
   }, delay);
 }
 
-export function process() {
+/** Open while the user is asked to confirm a size target that can't look good (plan.sizeAlert). */
+export const sizeConfirm = $state({ open: false, message: "" });
+
+/** Starts the encode. A plan with a size alert asks first; `confirmed` skips the question. */
+export function process(confirmed = false) {
   if (!editor.video || encoder.busy) return;
   if (editor.mode === "crop" || !exporter.ready) return;
+  const alert = exporter.plan?.sizeAlert;
+  if (alert && !confirmed) {
+    sizeConfirm.message = alert;
+    sizeConfirm.open = true;
+    return;
+  }
+  sizeConfirm.open = false;
   editor.player?.pause();
   void encoder.start(buildDraft());
 }

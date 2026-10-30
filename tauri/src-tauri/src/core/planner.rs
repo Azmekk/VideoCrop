@@ -4,7 +4,7 @@
 
 use std::path::Path;
 
-use super::encode::{compute_target_bitrate, derived_even_height, is_positive, round_even};
+use super::encode::{compute_target_bitrate, derived_even_height, is_positive, round_even, MIN_VIDEO_BITRATE_BPS};
 use super::models::*;
 use super::naming;
 use super::presets::MB;
@@ -19,6 +19,9 @@ pub const RESOLUTION_LADDER: [u32; 7] = [2160, 1440, 1080, 720, 540, 480, 360];
 pub const MIN_BITS_PER_PIXEL: f64 = 0.06;
 /// Fallback rung when nothing on the ladder reaches `MIN_BITS_PER_PIXEL`.
 pub const FALLBACK_SHORT_SIDE: u32 = 360;
+/// Below this many bits per pixel per frame the output is a blocky mess at any resolution:
+/// worth stopping the user before they wait for a two-pass encode of it.
+pub const SEVERE_BITS_PER_PIXEL: f64 = 0.02;
 
 /// Quality ceiling for target-size encodes, by output short side and frame rate. Stops a
 /// short clip from ballooning to the full cap (a 10 s clip doesn't need 500 MB).
@@ -162,6 +165,18 @@ pub fn plan(info: &VideoInfo, draft: &JobDraft, catalog: &PresetCatalog, exists:
     // ---- size estimate
     let estimated_size_bytes = estimate_size(info, spec.as_ref(), mode, duration, &audio_kbps_for_size);
 
+    // ---- size targets that can't be met at watchable quality
+    let size_alert = match (spec.as_ref(), output_width.zip(output_height)) {
+        (Some(s), Some((w, h))) if two_pass => {
+            size_alert(s, duration, audio_kbps_for_size(s), w, h, fps, estimated_size_bytes)
+        }
+        _ => None,
+    };
+    if size_alert.is_some() {
+        // The alert says the same thing, louder.
+        warnings.retain(|w| !w.starts_with("Clip is long for"));
+    }
+
     // ---- summary
     let summary = build_summary(info, spec.as_ref(), mode, cut.is_some(), draft_had_filters, crop, resize, (output_width, output_height), two_pass, estimated_size_bytes);
 
@@ -178,7 +193,60 @@ pub fn plan(info: &VideoInfo, draft: &JobDraft, catalog: &PresetCatalog, exists:
         two_pass,
         estimated_size_bytes,
         warnings,
+        size_alert,
     })
+}
+
+/// "45 s", "12 min", "1 h", "1 h 5 min".
+pub fn format_duration(sec: f64) -> String {
+    let total = sec.max(0.0).round() as u64;
+    if total < 90 {
+        return format!("{total} s");
+    }
+    let minutes = (total + 30) / 60;
+    if minutes < 60 {
+        return format!("{minutes} min");
+    }
+    match (minutes / 60, minutes % 60) {
+        (h, 0) => format!("{h} h"),
+        (h, m) => format!("{h} h {m} min"),
+    }
+}
+
+/// Some(message) when a target-size encode can't be watchable: the audio alone overflows the
+/// cap, the video budget is under the encoder's floor, or what's left is far below
+/// `SEVERE_BITS_PER_PIXEL` at the chosen resolution.
+fn size_alert(s: &CompressionSpec, duration: f64, audio_kbps: u32, w: u32, h: u32, fps: f64, estimated: Option<u64>) -> Option<String> {
+    let cap = s.target_size_bytes.filter(|b| *b > 0)?;
+    if !is_positive(duration) {
+        return None;
+    }
+    let budget_bits = cap as f64 * 8.0 * SAFETY_MARGIN;
+    let audio_bits = audio_kbps as f64 * 1000.0 * duration;
+    let dur = format_duration(duration);
+    let cap_s = format_mb(cap);
+    const FIX: &str = "Cut it shorter or pick a bigger size limit.";
+    let actual = estimated
+        .filter(|e| *e > cap)
+        .map(|e| format!(" It'll come out around {} instead, and look rough.", format_mb(e)))
+        .unwrap_or_default();
+
+    if audio_bits >= budget_bits {
+        let audio = format_mb((audio_bits / 8.0) as u64);
+        return Some(format!("A {dur} clip can't fit in {cap_s}: the audio alone needs about {audio}.{actual} {FIX}"));
+    }
+    let video_bps = (budget_bits - audio_bits) / duration;
+    if video_bps < MIN_VIDEO_BITRATE_BPS as f64 {
+        return Some(format!("A {dur} clip won't fit in {cap_s}: there's almost no room left for the video.{actual} {FIX}"));
+    }
+    let bpp = video_bps / (w.max(1) as f64 * h.max(1) as f64 * fps.max(1.0));
+    if bpp < SEVERE_BITS_PER_PIXEL {
+        let kbps = (video_bps / 1000.0).round() as u64;
+        return Some(format!(
+            "Squeezing {dur} into {cap_s} leaves about {kbps} kb/s for the video, so it'll look blurry and blocky even at {w}×{h}. Fine for a meme, not much else. {FIX}"
+        ));
+    }
+    None
 }
 
 /// Clamps to the source, drops a full-range cut, enforces the 100 ms minimum.
@@ -884,6 +952,59 @@ mod tests {
         assert!(plan(&hd(), &d, &catalog(), |_| false).is_err());
     }
 
+    // ---- size alerts
+
+    #[test]
+    fn two_hour_clip_into_discord_alerts_audio_overflows() {
+        let p = run(&src(1920, 1080, 30.0, 7200.0), &draft(platform("discord")));
+        let alert = p.size_alert.expect("alert");
+        assert!(alert.starts_with("A 2 h clip can't fit in 10 MB: the audio alone needs about 115 MB."), "{alert}");
+        assert!(alert.contains("It'll come out around"), "{alert}");
+        assert!(alert.ends_with("Cut it shorter or pick a bigger size limit."), "{alert}");
+        assert!(p.warnings.iter().all(|w| !w.starts_with("Clip is long")), "{:?}", p.warnings);
+    }
+
+    #[test]
+    fn ten_minute_silent_clip_into_discord_alerts_blocky() {
+        let mut d = draft(platform("discord"));
+        d.mode = OutputMode::VideoOnly;
+        let p = run(&src(1920, 1080, 30.0, 600.0), &d);
+        let alert = p.size_alert.expect("alert");
+        assert!(alert.starts_with("Squeezing 10 min into 10 MB leaves about 129 kb/s for the video"), "{alert}");
+        assert!(alert.contains("at 640×360"), "{alert}");
+    }
+
+    #[test]
+    fn tiny_custom_target_alerts_no_room_for_video() {
+        let mut s = base_spec();
+        s.rate_control = RateControl::TargetSize;
+        s.target_size_bytes = Some(1_000_000);
+        let p = run(&src(1920, 1080, 30.0, 60.0), &draft(custom(s)));
+        let alert = p.size_alert.expect("alert");
+        assert!(alert.starts_with("A 60 s clip won't fit in 1 MB: there's almost no room left for the video."), "{alert}");
+    }
+
+    #[test]
+    fn reasonable_targets_have_no_alert() {
+        // 3 min 1080p60 to Discord is low quality but watchable: the gentle warning only.
+        let long = run(&src(1920, 1080, 60.0, 180.0), &draft(platform("discord")));
+        assert_eq!(long.size_alert, None);
+        assert_eq!(long.warnings, ["Clip is long for 10 MB — consider cutting it"]);
+        assert_eq!(run(&src(1920, 1080, 30.0, 60.0), &draft(platform("discord"))).size_alert, None);
+        assert_eq!(run(&src(1920, 1080, 30.0, 7200.0), &draft(platform("youtube"))).size_alert, None);
+        assert_eq!(run(&src(1920, 1080, 30.0, 7200.0), &draft(quality("web-medium"))).size_alert, None);
+    }
+
+    #[test]
+    fn durations_read_naturally() {
+        assert_eq!(format_duration(45.4), "45 s");
+        assert_eq!(format_duration(89.0), "89 s");
+        assert_eq!(format_duration(600.0), "10 min");
+        assert_eq!(format_duration(3600.0), "1 h");
+        assert_eq!(format_duration(3900.0), "1 h 5 min");
+        assert_eq!(format_duration(7200.0), "2 h");
+    }
+
     // ---- custom rate control
 
     #[test]
@@ -1106,7 +1227,10 @@ mod tests {
         d.resize = Some(rs(1920, 1080, false));
         let p = run(&src(1920, 1080, 60.0, 180.0), &d);
         assert_eq!(p.resize, Some(rs(1920, 1080, false)));
-        assert_eq!(p.warnings, ["Clip is long for 10 MB — consider cutting it"]);
+        // Forcing 1080p60 into 10 MB for 3 min is far past "long": the confirm-first alert.
+        assert!(p.warnings.is_empty(), "{:?}", p.warnings);
+        let alert = p.size_alert.expect("alert");
+        assert!(alert.contains("blurry and blocky even at 1920×1080"), "{alert}");
     }
 
     #[test]

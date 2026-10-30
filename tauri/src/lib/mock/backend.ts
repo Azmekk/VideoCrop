@@ -103,6 +103,10 @@ function plan(d: JobDraft): JobPlan {
     outputWidth: d.mode === "audioOnly" ? null : w, outputHeight: d.mode === "audioOnly" ? null : h,
     spec: s, crop: d.crop, resize: d.resize, cut: d.cut, mode: d.mode, twoPass,
     estimatedSizeBytes: Math.round(est), warnings,
+    // `?sizealert` previews the confirm-before-encoding dialog on any capped share preset.
+    sizeAlert: c.kind === "platform" && new URLSearchParams(location.search).has("sizealert")
+      ? "A 2 h clip can't fit in 10 MB: the audio alone needs about 115 MB. It'll come out around 135 MB instead, and look rough. Cut it shorter or pick a bigger size limit."
+      : null,
   };
 }
 

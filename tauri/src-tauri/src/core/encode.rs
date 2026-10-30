@@ -441,6 +441,7 @@ mod tests {
             mode,
             estimated_size_bytes: None,
             warnings: vec![],
+            size_alert: None,
         }
     }
 

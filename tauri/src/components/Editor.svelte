@@ -12,6 +12,7 @@
   import ExportPanel from "./panels/ExportPanel.svelte";
   import SummaryPanel from "./panels/SummaryPanel.svelte";
   import ProcessBar from "./ProcessBar.svelte";
+  import SizeConfirm from "./SizeConfirm.svelte";
 
   // Re-plan on every edit; the backend owns the summary, output name and estimate.
   $effect(() => {
@@ -48,6 +49,7 @@
     <ProcessBar />
   </aside>
 </div>
+<SizeConfirm />
 
 <style>
   .editor { flex: 1; min-width: 0; display: flex; }

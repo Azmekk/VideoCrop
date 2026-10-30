@@ -1,7 +1,7 @@
 <script lang="ts">
   import { editor } from "../../lib/state/editor.svelte";
   import { crop } from "../../lib/state/crop.svelte";
-  import { applyCrop, enterCropMode } from "../../lib/state/pipeline.svelte";
+  import { applyCrop, enterCropMode, exitCropMode } from "../../lib/state/pipeline.svelte";
   import { aspectLabel, normalizeCrop } from "../../lib/util/geometry";
   import type { CropSpec } from "../../lib/types";
   import Section from "./Section.svelte";
@@ -34,7 +34,10 @@
 
 <Section title="Crop" icon="crop" {status} active={!!crop.spec || editing}>
   {#snippet actions()}
-    {#if crop.spec && !editing}
+    {#if editing}
+      <button class="btn ghost sm" onclick={() => exitCropMode(false)} data-tip="Discard changes (Esc)">Cancel</button>
+      <button class="btn primary sm" onclick={() => exitCropMode(true)} data-tip="Apply crop (Enter)"><Icon name="check" size={13} /> Apply</button>
+    {:else if crop.spec}
       <button class="btn ghost sm" onclick={() => applyCrop(null)} data-tip="Remove the crop"><Icon name="reset" size={13} /> Reset</button>
     {/if}
   {/snippet}
