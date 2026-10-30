@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  VideoCrop app icon: the title-bar mark (frame + amber crop brackets) on a dark tile.
+  Geometry is the 18px title-bar mark scaled x11 and centered on a 256 canvas.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a2e36"/>
+      <stop offset="1" stop-color="#16181d"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="52" fill="url(#tile)"/>
+  <rect x="8.75" y="8.75" width="238.5" height="238.5" rx="51.25" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="1.5"/>
+  <rect x="40" y="62" width="176" height="132" rx="27.5" fill="none" stroke="#e7e9ee" stroke-width="15.4"/>
+  <path d="M95 100.5H78.5v55H95M161 100.5h16.5v55H161" fill="none" stroke="#f5b83d" stroke-width="17.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

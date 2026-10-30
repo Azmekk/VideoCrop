@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VideoCrop: cut, crop and compress videos on Windows</title>
+<meta name="description" content="VideoCrop is a free Windows app to cut, crop, resize and compress videos. A 2 MB installer, opens instantly, and everything stays on your PC.">
+<meta name="theme-color" content="#06070a">
+<meta property="og:type" content="website">
+<meta property="og:title" content="VideoCrop: your footage, finished">
+<meta property="og:description" content="Cut, crop, resize and compress videos on Windows. Free, tiny, private.">
+<meta property="og:image" content="../../assets/editor-dark.webp">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../../assets/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&family=Geist:wght@300..600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#06070a; --bg2:#0b0c10; --panel:#101217; --line:rgba(236,232,222,.09); --line2:rgba(236,232,222,.16);
+  --ink:#eeebe4; --muted:#9a9ca4; --dim:#64666e;
+  --amber:#f5b83d; --amber-h:#ffc857; --amber-ink:#1b1405; --leak:#ff7a2e;
+  --serif:"Newsreader",Georgia,serif; --sans:"Geist",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font:400 17px/1.6 var(--sans);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%;height:auto}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-radius:6px}
+.wrap{width:min(1160px,100% - 40px);margin-inline:auto}
+.mono{font-family:var(--mono)}
+
+/* --- letterbox intro --- */
+.lb{position:fixed;left:0;right:0;height:50.5vh;background:#000;z-index:100;pointer-events:none;animation:lb 1.7s cubic-bezier(.7,0,.2,1) .2s forwards}
+.lb.t{top:0;transform-origin:top}.lb.b{bottom:0;transform-origin:bottom}
+.lb::after{content:"";position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(245,184,61,.5),transparent)}
+.lb.t::after{bottom:0}.lb.b::after{top:0}
+@keyframes lb{0%{transform:scaleY(1)}35%,52%{transform:scaleY(.26)}100%{transform:scaleY(0);visibility:hidden}}
+
+/* --- grain + edges --- */
+#grain{position:fixed;inset:-200px;z-index:90;pointer-events:none;opacity:.09;mix-blend-mode:overlay;background-repeat:repeat;animation:grain .5s steps(5) infinite}
+@keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-61px,37px)}40%{transform:translate(43px,-89px)}60%{transform:translate(-97px,-23px)}80%{transform:translate(71px,83px)}100%{transform:translate(0,0)}}
+.strip{position:fixed;top:0;bottom:0;width:30px;overflow:hidden;z-index:5;pointer-events:none;opacity:.5}
+.strip.l{left:10px}.strip.r{right:10px}
+.strip i{position:absolute;left:0;right:0;top:-96px;bottom:-96px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='96'%3E%3Crect width='30' height='96' fill='%230c0d11'/%3E%3Cg fill='%2306070a'%3E%3Crect x='2.5' y='2' width='3' height='4' rx='1'/%3E%3Crect x='2.5' y='14' width='3' height='4' rx='1'/%3E%3Crect x='2.5' y='26' width='3' height='4' rx='1'/%3E%3Crect x='2.5' y='38' width='3' height='4' rx='1'/%3E%3Crect x='2.5' y='50' width='3' height='4' rx='1'/%3E%3Crect x='2.5' y='62' width='3' height='4' rx='1'/%3E%3Crect x='2.5' y='74' width='3' height='4' rx='1'/%3E%3Crect x='2.5' y='86' width='3' height='4' rx='1'/%3E%3Crect x='24.5' y='2' width='3' height='4' rx='1'/%3E%3Crect x='24.5' y='14' width='3' height='4' rx='1'/%3E%3Crect x='24.5' y='26' width='3' height='4' rx='1'/%3E%3Crect x='24.5' y='38' width='3' height='4' rx='1'/%3E%3Crect x='24.5' y='50' width='3' height='4' rx='1'/%3E%3Crect x='24.5' y='62' width='3' height='4' rx='1'/%3E%3Crect x='24.5' y='74' width='3' height='4' rx='1'/%3E%3Crect x='24.5' y='86' width='3' height='4' rx='1'/%3E%3C/g%3E%3Crect x='8' y='3' width='14' height='42' rx='1.5' fill='%232a2e36'/%3E%3Crect x='8' y='27' width='14' height='18' rx='1.5' fill='%23f5b83d' fill-opacity='.35'/%3E%3Ccircle cx='15' cy='16' r='3.5' fill='%23e7e9ee' fill-opacity='.25'/%3E%3Crect x='8' y='51' width='14' height='42' rx='1.5' fill='%2316181d'/%3E%3Cpath d='M8 80l5-9 4 6 5-10v26H8z' fill='%23ff7a2e' fill-opacity='.3'/%3E%3C/svg%3E") repeat-y;animation:roll 14s linear infinite}
+.strip.r i{animation-direction:reverse;animation-duration:17s}
+@keyframes roll{to{transform:translateY(96px)}}
+
+/* --- header --- */
+header{position:sticky;top:0;z-index:50;background:rgba(6,7,10,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.nav{display:flex;align-items:center;justify-content:space-between;height:64px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:600;letter-spacing:-.01em}
+.brand img{width:28px;height:28px}
+.nav ul{display:flex;align-items:center;gap:26px;list-style:none;font-size:15px}
+.nav ul a{text-decoration:none;color:var(--muted);transition:color .2s}
+.nav ul a:hover{color:var(--ink)}
+.nav .pill{color:var(--amber-ink);background:var(--amber);padding:8px 16px;border-radius:999px;font-weight:500}
+.nav .pill:hover{color:var(--amber-ink);background:var(--amber-h)}
+
+/* --- hero --- */
+.hero{position:relative;padding:44px 0 0;overflow:hidden}
+.leaks{position:absolute;inset:0;overflow:hidden;pointer-events:none;-webkit-mask:linear-gradient(#000 55%,transparent);mask:linear-gradient(#000 55%,transparent)}
+.off .leak{animation-play-state:paused}
+.leak{position:absolute;width:900px;height:700px;top:-260px;right:-260px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,122,46,.34),rgba(245,184,61,.12) 45%,transparent 72%);filter:blur(30px);mix-blend-mode:screen;animation:drift 22s ease-in-out infinite alternate;pointer-events:none}
+.leak.two{width:620px;height:520px;top:auto;bottom:-200px;left:-260px;right:auto;opacity:.55;animation-duration:28s;animation-direction:alternate-reverse}
+@keyframes drift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(-160px,90px) scale(1.15)}100%{transform:translate(-60px,200px) scale(.95)}}
+.frame{position:relative;margin-inline:auto;width:min(1080px,100% - 88px);min-height:min(660px,calc(100vh - 120px));display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:72px 28px 80px}
+.corner{position:absolute;width:34px;height:34px;border:2.5px solid var(--amber);border-radius:3px}
+.corner.tl{top:0;left:0;border-right:0;border-bottom:0}.corner.tr{top:0;right:0;border-left:0;border-bottom:0}
+.corner.bl{bottom:0;left:0;border-right:0;border-top:0}.corner.br{bottom:0;right:0;border-left:0;border-top:0}
+.hud{position:absolute;font:500 12px/1 var(--mono);color:var(--dim);letter-spacing:.06em}
+.hud.tc{right:46px;bottom:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.hud.tc b{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amber);margin-right:8px;vertical-align:1px}
+.hud.reel{left:46px;top:12px}
+.hud.ratio{right:46px;top:12px}
+
+.release{display:inline-flex;align-items:center;gap:9px;padding:6px 14px 6px 11px;border:1px solid var(--line2);border-radius:999px;background:rgba(16,18,23,.7);font-size:14px;color:#d7d4cc;text-decoration:none;animation:flicker 5.5s steps(1) infinite}
+.release .dot{width:8px;height:8px;border-radius:50%;background:var(--amber);box-shadow:0 0 10px var(--amber)}
+@keyframes flicker{0%,100%{opacity:1}61%{opacity:.82}62%{opacity:1}64%{opacity:.88}65%{opacity:1}88%{opacity:.9}89%{opacity:1}}
+h1{font:350 clamp(54px,9.4vw,132px)/.95 var(--serif);font-optical-sizing:auto;letter-spacing:-.035em;margin:28px 0 22px}
+h1 em{font-style:italic;font-variant-ligatures:no-common-ligatures;font-weight:300;background:linear-gradient(100deg,#ffd27a 0%,var(--amber) 40%,var(--leak) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;padding-right:.08em}
+.sub{font-size:clamp(17px,1.6vw,20px);color:var(--muted);max-width:34em;font-weight:300}
+.cta{margin-top:38px;display:flex;flex-direction:column;align-items:center;gap:16px}
+.dl{display:inline-flex;align-items:center;gap:16px;padding:14px 30px 14px 16px;border-radius:22px;background:var(--amber);color:var(--amber-ink);text-decoration:none;box-shadow:0 0 0 1px rgba(255,210,122,.4) inset,0 18px 60px -12px rgba(245,184,61,.45);transition:background .2s,transform .2s,box-shadow .2s}
+.dl:hover{background:var(--amber-h);transform:translateY(-2px);box-shadow:0 0 0 1px rgba(255,220,150,.5) inset,0 24px 70px -12px rgba(255,200,87,.55)}
+.dl .ico{width:46px;height:46px;border-radius:14px;background:rgba(27,20,5,.12);display:grid;place-items:center}
+.dl .t{display:flex;flex-direction:column;text-align:left;line-height:1.25}
+.dl .t span:first-child{font-size:20px;font-weight:600;letter-spacing:-.01em}
+.dl .t span:last-child{font:500 12.5px var(--mono);opacity:.72}
+.alt{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 22px;font-size:14.5px}
+.alt a{color:#d7d4cc;text-decoration:underline;text-decoration-color:rgba(236,232,222,.3);text-underline-offset:5px}
+.alt a:hover{text-decoration-color:var(--amber)}
+.alt .m{color:var(--dim)}
+
+/* --- reveal --- */
+.rv{opacity:0;transform:translateY(18px);transition:opacity .9s ease,transform .9s cubic-bezier(.2,.7,.2,1)}
+.rv.in{opacity:1;transform:none}
+.rv.cut{transition:none}
+.intro .rv{transition-delay:calc(var(--d,0) * 1ms)}
+
+/* --- scenes --- */
+.slate{font:500 12.5px/1 var(--mono);letter-spacing:.14em;color:var(--amber);display:flex;align-items:center;gap:12px}
+.slate::before{content:"";width:22px;height:1px;background:currentColor}
+h2{font:350 clamp(38px,5vw,64px)/1.02 var(--serif);letter-spacing:-.025em;margin:18px 0 18px}
+h2 em{font-style:italic;color:#f7d79a}
+.lede{color:var(--muted);font-size:18px;max-width:31em;font-weight:300}
+
+.projection{position:relative;padding:120px 0 40px;text-align:center;overflow-x:clip}
+.projection .slate{justify-content:center}.projection .slate::after{content:"";width:22px;height:1px;background:currentColor}
+.projection .lede{margin-inline:auto}
+.screen{position:relative;margin:64px auto 0;width:min(1160px,100% - 40px)}
+.beam{position:absolute;left:50%;top:-180px;width:140%;height:calc(100% + 180px);transform:translateX(-50%);background:conic-gradient(from 180deg at 50% 0,transparent 160deg,rgba(255,226,170,.07) 172deg,rgba(255,226,170,.11) 180deg,rgba(255,226,170,.07) 188deg,transparent 200deg);pointer-events:none;-webkit-mask:linear-gradient(transparent,#000 30%,transparent 85%);mask:linear-gradient(transparent,#000 30%,transparent 85%)}
+.win{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--line2);background:var(--panel);box-shadow:0 0 0 1px rgba(0,0,0,.6),0 40px 120px -30px rgba(245,184,61,.32),0 0 180px -40px rgba(255,214,140,.25)}
+.win .bar{display:flex;align-items:center;gap:8px;height:34px;padding:0 14px;border-bottom:1px solid var(--line);font:500 11.5px var(--mono);color:var(--dim)}
+.win .bar i{width:10px;height:10px;border-radius:50%;background:#262931}
+.win .bar span{margin-left:10px}
+.glowfloor{position:absolute;left:8%;right:8%;bottom:-70px;height:90px;background:radial-gradient(closest-side,rgba(245,184,61,.22),transparent);filter:blur(20px);pointer-events:none}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);margin-top:110px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.stat{padding:30px 26px;border-left:1px solid var(--line)}
+.stat:first-child{border-left:0}
+.stat b{display:block;font:350 clamp(36px,4vw,52px)/1 var(--serif);letter-spacing:-.02em}
+.stat b small{font-size:.5em;color:var(--muted);margin-left:4px}
+.stat span{display:block;margin-top:10px;color:var(--muted);font-size:15px}
+
+.scene{padding:130px 0 0}
+.split{display:grid;grid-template-columns:5fr 7fr;gap:72px;align-items:center}
+.split.flip .copy{order:2}
+.points{list-style:none;margin-top:26px;display:grid;gap:12px;color:#cfccc4;font-size:16px}
+.points li{padding-left:22px;position:relative}
+.points li::before{content:"";position:absolute;left:0;top:.72em;width:10px;height:1px;background:var(--amber)}
+.visual{position:relative;border-radius:14px;border:1px solid var(--line);background:linear-gradient(180deg,#0e1015,#090a0d);padding:28px}
+
+/* cut visual */
+.tl-strip{display:grid;grid-template-columns:repeat(10,1fr);gap:3px;height:74px;border-radius:6px;overflow:hidden;position:relative}
+.tl-strip span{background:linear-gradient(160deg,var(--c1,#2a2e36),var(--c2,#16181d))}
+.tl-strip span:nth-child(3n){--c1:#3a3226;--c2:#1a1712}
+.tl-strip span:nth-child(4n+1){--c1:#24303a;--c2:#12171c}
+.tl-strip span:nth-child(5n){--c1:#4a3518;--c2:#1c140a}
+.tl-sel{position:absolute;top:0;bottom:0;left:24%;right:31%;border:2px solid var(--amber);border-radius:6px;box-shadow:0 0 0 999px rgba(6,7,10,.55)}
+.tl-sel::before,.tl-sel::after{content:"";position:absolute;top:50%;width:6px;height:26px;margin-top:-13px;border-radius:3px;background:var(--amber)}
+.tl-sel::before{left:-1px}.tl-sel::after{right:-1px}
+.tl-wrap{position:relative;padding:6px 0;overflow:hidden;border-radius:6px}
+.ruler{display:flex;justify-content:space-between;font:500 11px var(--mono);color:var(--dim);margin-top:16px}
+.times{display:flex;justify-content:space-between;gap:10px;margin-top:22px;flex-wrap:wrap}
+.times div{font:500 13px var(--mono);color:var(--muted);border:1px solid var(--line2);border-radius:8px;padding:8px 12px}
+.times div b{color:var(--ink);font-weight:500;margin-left:6px}
+
+/* crop visual */
+.cropv{padding:0;overflow:hidden}
+.cropv img{width:100%}
+.ratios{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.ratios span{font:500 12.5px var(--mono);padding:6px 11px;border-radius:999px;border:1px solid var(--line2);color:#cfccc4}
+.ratios span.on{border-color:var(--amber);color:var(--amber)}
+
+/* resize visual */
+.sizes{position:relative;aspect-ratio:16/10}
+.sizes div{position:absolute;left:0;bottom:0;border:1px solid var(--line2);border-radius:6px;display:flex;align-items:flex-start;justify-content:flex-end;padding:8px 10px;font:500 12px var(--mono);color:var(--dim)}
+.sizes .s1{width:100%;height:100%}
+.sizes .s2{width:66.6%;height:66.6%;border-color:rgba(245,184,61,.6);color:var(--amber);background:rgba(245,184,61,.05)}
+.sizes .s3{width:44.4%;height:44.4%}
+.sizes .s4{width:33.3%;height:33.3%}
+.lock{position:absolute;right:28px;bottom:28px;font:500 12px var(--mono);color:var(--muted)}
+
+/* credits */
+.credits{padding:150px 0 0;text-align:center}
+.credits .slate{justify-content:center}.credits .slate::after{content:"";width:22px;height:1px;background:currentColor}
+.credits .lede{margin-inline:auto}
+.roll{margin:64px auto 0;max-width:760px;display:grid;grid-template-columns:1fr auto 1fr;column-gap:28px;row-gap:20px;align-items:baseline}
+.roll dt{grid-column:1;text-align:right;font:400 clamp(22px,2.6vw,30px)/1.15 var(--serif);letter-spacing:-.01em}
+.roll dd{grid-column:3;text-align:left;font:500 14px var(--mono);color:var(--muted)}
+.roll dd b{color:var(--amber);font-weight:500}
+.roll .sep{grid-column:2;width:5px;height:5px;border-radius:50%;background:var(--line2);align-self:center}
+.fine{margin:56px auto 0;max-width:36em;color:var(--muted);font-size:15.5px}
+.codecs{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:26px}
+.codecs span{font:500 12.5px var(--mono);padding:7px 12px;border-radius:8px;background:var(--panel);border:1px solid var(--line);color:#cfccc4}
+
+/* plays + private */
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.card{border:1px solid var(--line);border-radius:18px;padding:40px 36px;background:linear-gradient(180deg,rgba(16,18,23,.8),rgba(9,10,13,.8));position:relative;overflow:hidden}
+.card h3{font:400 clamp(28px,3vw,38px)/1.08 var(--serif);letter-spacing:-.02em;margin:16px 0 14px}
+.card p{color:var(--muted);font-size:16px;font-weight:300}
+.card .slate{color:var(--amber);font-size:12.5px;font-weight:500}
+.reel{margin-top:28px;display:grid;gap:8px}
+.reel div{display:flex;justify-content:space-between;gap:14px;font:500 13px var(--mono);padding:10px 14px;border-radius:8px;background:rgba(255,255,255,.025);border:1px solid var(--line)}
+.reel div span:last-child{color:var(--amber)}
+.reel div span:first-child{color:#cfccc4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.local{margin-top:28px;font:500 13px/1.9 var(--mono);color:var(--dim)}
+.local b{color:#cfccc4;font-weight:500}
+
+/* roll credits */
+.finale{position:relative;padding:180px 0 150px;text-align:center;overflow:hidden}
+.finale .leak{top:auto;bottom:-380px;right:50%;margin-right:-450px;opacity:.75}
+.finale .end{font:500 12.5px var(--mono);letter-spacing:.14em;color:var(--dim)}
+.finale h2{font-size:clamp(60px,10vw,140px);line-height:.95;margin:26px 0 22px}
+.finale .lede{margin-inline:auto;max-width:36em}
+.billing{margin:40px auto 0;display:flex;justify-content:center;flex-wrap:wrap;gap:8px 34px;color:var(--muted);font-size:15px}
+.billing span b{display:block;font:500 11px var(--mono);letter-spacing:.12em;color:var(--dim);margin-bottom:4px;font-weight:500}
+
+footer{border-top:1px solid var(--line);padding:28px 0 36px;font-size:14.5px;color:var(--muted)}
+footer .wrap{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px}
+footer nav{display:flex;flex-wrap:wrap;gap:8px 22px}
+footer a{text-decoration:none}footer a:hover{color:var(--ink)}
+
+@media (max-width:980px){
+  .split{grid-template-columns:1fr;gap:44px}.split.flip .copy{order:0}
+  .pair{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr 1fr}.stat:nth-child(3){border-left:0}.stat:nth-child(n+3){border-top:1px solid var(--line)}
+}
+@media (max-width:760px){
+  .strip{display:none}
+  .nav ul li.hide{display:none}
+  .nav ul{gap:18px}
+  .frame{width:calc(100% - 32px);padding:56px 14px 64px;min-height:auto}
+  .hud.ratio{display:none}.hud.reel{left:42px}.hud.tc{right:42px}
+  .scene{padding-top:96px}
+  .projection{padding-top:90px}
+  .credits{padding-top:110px}
+  .roll{column-gap:14px;row-gap:16px}
+  .roll .sep{display:none}
+  .roll{grid-template-columns:1fr 1fr}.roll dd{grid-column:2}
+  .card{padding:32px 24px}
+  .visual{padding:20px}
+  .finale{padding:130px 0 110px}
+  .dl{padding:12px 22px 12px 12px;gap:13px}
+  .dl .t span:first-child{font-size:18px}
+}
+@media (max-width:420px){
+  .wrap{width:calc(100% - 32px)}
+  .stat{padding:24px 16px}
+  .times div{flex:1 1 40%}
+}
+@media (prefers-reduced-motion:reduce){
+  .lb{display:none}
+  .strip i,.leak,.release{animation:none}
+  .rv{opacity:1;transform:none;transition:none}
+  #grain{display:none}
+  html{scroll-behavior:auto}
+  .dl:hover{transform:none}
+}
+</style>
+</head>
+<body>
+<div class="lb t" aria-hidden="true"></div><div class="lb b" aria-hidden="true"></div>
+<div id="grain" aria-hidden="true"></div>
+<div class="strip l" aria-hidden="true"><i></i></div><div class="strip r" aria-hidden="true"><i></i></div>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="#top"><img src="../../assets/icon.svg" alt="" width="28" height="28">VideoCrop</a>
+    <nav aria-label="Main"><ul>
+      <li class="hide"><a href="#scenes">Features</a></li>
+      <li class="hide"><a href="#presets">Presets</a></li>
+      <li><a href="https://github.com/Azmekk/VideoCrop">GitHub</a></li>
+      <li><a class="pill" data-download="primary" href="https://github.com/Azmekk/VideoCrop/releases">Download</a></li>
+    </ul></nav>
+  </div>
+</header>
+
+<main id="top">
+<section class="hero intro" aria-labelledby="hero-h">
+  <div class="leaks" aria-hidden="true"><div class="leak"></div><div class="leak two"></div></div>
+  <div class="frame">
+    <span class="corner tl" aria-hidden="true"></span><span class="corner tr" aria-hidden="true"></span>
+    <span class="corner bl" aria-hidden="true"></span><span class="corner br" aria-hidden="true"></span>
+    <span class="hud reel" aria-hidden="true">REEL 3</span>
+    <span class="hud ratio" aria-hidden="true">16:9 · 24 FPS</span>
+    <span class="hud tc" aria-hidden="true"><b></b><span id="tc">00:00:12:08</span></span>
+
+    <a class="release rv" style="--d:1050" href="https://github.com/Azmekk/VideoCrop/releases"><span class="dot"></span><span><span data-version>v3.0.0</span> is out</span></a>
+    <h1 id="hero-h" class="rv" style="--d:1180">Your footage, <em>finished.</em></h1>
+    <p class="sub rv" style="--d:1310">Cut, crop, resize and compress videos on Windows. A 2&nbsp;MB app that opens instantly and never uploads a frame.</p>
+    <div class="cta rv" style="--d:1440">
+      <a class="dl" data-download="primary" href="https://github.com/Azmekk/VideoCrop/releases">
+        <span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5.1l7.4-1v7.2H3V5.1zm0 13.8l7.4 1v-7.1H3v6.1zm8.2 1.1L21 21.4v-8.6h-9.8V20zm0-15.9v7.2H21V2.6l-9.8 1.5z"/></svg></span>
+        <span class="t"><span data-download-label>Download for Windows</span><span data-download-detail>v3.0.0 · x64 · 2.0 MB</span></span>
+      </a>
+      <div class="alt">
+        <a href="https://github.com/Azmekk/VideoCrop">Source on GitHub</a>
+        <a data-download="portable-x64" href="https://github.com/Azmekk/VideoCrop/releases">Portable exe</a>
+        <span class="m">Windows 10 and 11 · x64 &amp; ARM64</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="projection" id="scenes" aria-labelledby="s1-h">
+  <div class="wrap">
+    <p class="slate rv">SCENE 01 — THE EDIT</p>
+    <h2 id="s1-h" class="rv">One window, <em>every cut.</em></h2>
+    <p class="lede rv">Load a clip, mark what you want, pick where it's going. VideoCrop handles the encode.</p>
+  </div>
+  <div class="screen rv">
+    <div class="beam" aria-hidden="true"></div>
+    <div class="win">
+      <div class="bar" aria-hidden="true"><i></i><i></i><i></i><span>VideoCrop</span></div>
+      <img src="../../assets/editor-dark.webp" width="1440" height="900" alt="The VideoCrop editor in dark theme: a video preview, a zoomable timeline with a cut selected, and the Discord share preset chosen.">
+    </div>
+    <div class="glowfloor" aria-hidden="true"></div>
+  </div>
+  <div class="wrap">
+    <div class="stats">
+      <div class="stat rv"><b>2<small>MB</small></b><span>Installer download</span></div>
+      <div class="stat rv"><b>5<small>MB</small></b><span>Installed app</span></div>
+      <div class="stat rv"><b>0</b><span>Uploads or telemetry</span></div>
+      <div class="stat rv"><b>2</b><span>Builds: x64 and ARM64</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="scene" aria-labelledby="s2-h">
+  <div class="wrap split">
+    <div class="copy">
+      <p class="slate rv">SCENE 02 — CUT</p>
+      <h2 id="s2-h" class="rv">Trim to the <em>exact</em> frame.</h2>
+      <p class="lede rv">A zoomable timeline with a filmstrip, so you can see where you are before you get there.</p>
+      <ul class="points rv">
+        <li>Drag away from the track to scrub slower and finer</li>
+        <li>Type start and end times when you know them</li>
+        <li>Frame-accurate cuts, or instant keyframe cuts with no re&#8209;encode</li>
+      </ul>
+    </div>
+    <div class="visual rv" aria-hidden="true">
+      <div class="tl-wrap"><div class="tl-strip"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="tl-sel"></div></div>
+      <div class="ruler"><span>00:00</span><span>00:30</span><span>01:00</span><span>01:30</span><span>02:00</span></div>
+      <div class="times"><div>In<b>00:00:29.13</b></div><div>Out<b>00:01:22.04</b></div><div>Length<b>52.9 s</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="scene" aria-labelledby="s3-h">
+  <div class="wrap split flip">
+    <div class="copy">
+      <p class="slate rv">SCENE 03 — CROP</p>
+      <h2 id="s3-h" class="rv">Frame it on the <em>full-res</em> still.</h2>
+      <p class="lede rv">Crop on a full-resolution frame, not a blurry preview, and watch the result live before you export.</p>
+      <div class="ratios rv" aria-label="Aspect ratios"><span class="on">16:9</span><span>4:3</span><span>1:1</span><span>9:16</span><span>4:5</span><span>Original</span></div>
+    </div>
+    <div class="visual cropv rv">
+      <img src="../../assets/crop-light.webp" width="1440" height="900" loading="lazy" alt="VideoCrop crop mode in light theme, with a crop rectangle drawn over a full-resolution frame and aspect-ratio options.">
+    </div>
+  </div>
+</section>
+
+<section class="scene" aria-labelledby="s4-h">
+  <div class="wrap split">
+    <div class="copy">
+      <p class="slate rv">SCENE 04 — RESIZE</p>
+      <h2 id="s4-h" class="rv">Smaller, never <em>softer.</em></h2>
+      <p class="lede rv">Resize with the aspect locked. Height presets skip anything bigger than your source, so nothing gets upscaled.</p>
+      <ul class="points rv">
+        <li>One-click 75%, 50% and 25%</li>
+        <li>Works on the cropped frame, so the numbers you see are the numbers you get</li>
+      </ul>
+    </div>
+    <div class="visual rv" aria-hidden="true">
+      <div class="sizes"><div class="s1">1920×1080</div><div class="s2">1280×720</div><div class="s3">854×480</div><div class="s4">640×360</div></div>
+      <span class="lock">aspect locked</span>
+    </div>
+  </div>
+</section>
+
+<section class="credits" id="presets" aria-labelledby="s5-h">
+  <div class="wrap">
+    <p class="slate rv">SCENE 05 — SHARE</p>
+    <h2 id="s5-h" class="rv">Made to fit <em>wherever it's going.</em></h2>
+    <p class="lede rv">Pick the destination. VideoCrop picks the size, bitrate and resolution.</p>
+    <dl class="roll rv">
+      <dt>Discord</dt><span class="sep"></span><dd>under <b>10 MB</b></dd>
+      <dt>Discord Nitro Basic</dt><span class="sep"></span><dd>under <b>50 MB</b></dd>
+      <dt>Discord Nitro</dt><span class="sep"></span><dd>under <b>500 MB</b></dd>
+      <dt>YouTube</dt><span class="sep"></span><dd>high-quality upload</dd>
+      <dt>X / Twitter</dt><span class="sep"></span><dd>under <b>512 MB</b></dd>
+      <dt>TikTok, Reels, Shorts</dt><span class="sep"></span><dd>vertical <b>1080×1920</b></dd>
+      <dt>WhatsApp</dt><span class="sep"></span><dd>under <b>16 MB</b></dd>
+      <dt>Email</dt><span class="sep"></span><dd>under <b>25 MB</b></dd>
+    </dl>
+    <p class="fine rv">Size caps are hit with two-pass encoding, and the resolution is chosen so the clip still looks good. Want control? Quality presets and a Custom panel cover CRF, bitrate, target size, 10-bit and the audio codec.</p>
+    <div class="codecs rv"><span>H.264</span><span>H.265</span><span>AV1</span><span>Audio only</span><span>Video only</span></div>
+  </div>
+</section>
+
+<section class="scene" aria-label="Playback and privacy">
+  <div class="wrap pair">
+    <article class="card rv">
+      <p class="slate">SCENE 06 — PLAYBACK</p>
+      <h3>Plays <em>everything</em> you throw at it.</h3>
+      <p>Multi-hour OBS recordings in HEVC, AV1 or MKV open instantly. Files Windows can't decode stream through an on-demand preview, on the GPU when there is one. The export always comes from the original.</p>
+      <div class="reel" aria-hidden="true">
+        <div><span>obs_2026-10-14_raid.mkv</span><span>3:12:48</span></div>
+        <div><span>drone_pass_hevc.mp4</span><span>HEVC</span></div>
+        <div><span>clip_av1_10bit.webm</span><span>AV1</span></div>
+      </div>
+    </article>
+    <article class="card rv">
+      <p class="slate">SCENE 07 — PRIVATE</p>
+      <h3>Your footage <em>stays</em> on your PC.</h3>
+      <p>Everything runs locally with ffmpeg. No telemetry, no uploads, no account. If ffmpeg is already on your PATH, VideoCrop uses it. Otherwise it downloads one, once.</p>
+      <p class="local" aria-hidden="true">source&nbsp;&nbsp;<b>D:\Clips\match.mp4</b><br>encode&nbsp;&nbsp;<b>ffmpeg, on this machine</b><br>network&nbsp;<b>none</b></p>
+    </article>
+  </div>
+</section>
+
+<section class="finale" aria-labelledby="end-h">
+  <div class="leak" aria-hidden="true"></div>
+  <div class="wrap">
+    <p class="end rv">FADE OUT</p>
+    <h2 id="end-h" class="rv">Roll <em>credits.</em></h2>
+    <p class="lede rv">Free for Windows 10 and 11. Install it in seconds and finish your next clip.</p>
+    <div class="cta rv">
+      <a class="dl" data-download="primary" href="https://github.com/Azmekk/VideoCrop/releases">
+        <span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5.1l7.4-1v7.2H3V5.1zm0 13.8l7.4 1v-7.1H3v6.1zm8.2 1.1L21 21.4v-8.6h-9.8V20zm0-15.9v7.2H21V2.6l-9.8 1.5z"/></svg></span>
+        <span class="t"><span data-download-label>Download for Windows</span><span data-download-detail>v3.0.0 · x64 · 2.0 MB</span></span>
+      </a>
+      <div class="alt">
+        <a data-download="windows-arm64" href="https://github.com/Azmekk/VideoCrop/releases">ARM64 installer</a>
+        <a data-download="portable-x64" href="https://github.com/Azmekk/VideoCrop/releases">Portable x64</a>
+        <a data-download="portable-arm64" href="https://github.com/Azmekk/VideoCrop/releases">Portable ARM64</a>
+      </div>
+    </div>
+    <div class="billing rv">
+      <span><b>STARRING</b>Your footage</span>
+      <span><b>ENCODING BY</b>ffmpeg</span>
+      <span><b>BUILT WITH</b>Tauri</span>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Vexbyte</span>
+    <nav aria-label="Footer">
+      <a href="https://github.com/Azmekk/VideoCrop/releases">Changelog</a>
+      <a href="https://github.com/Azmekk/VideoCrop">Source</a>
+      <a href="https://github.com/Azmekk/VideoCrop/releases">Releases</a>
+      <a href="https://github.com/Azmekk/VideoCrop/issues">Report an issue</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../../assets/downloads.js" defer></script>
+<script>
+(function(){
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var visible = !document.hidden;
+  document.addEventListener('visibilitychange', function(){ visible = !document.hidden; });
+
+  // remove letterbox bars once they've opened
+  document.querySelectorAll('.lb').forEach(function(el){
+    el.addEventListener('animationend', function(){ el.remove(); });
+  });
+  setTimeout(function(){ document.querySelectorAll('.lb').forEach(function(el){ el.remove(); }); }, 3200);
+
+  // scroll reveal (hero waits for the letterbox to open)
+  var items = [].slice.call(document.querySelectorAll('.rv'));
+  var show = function(el){ el.classList.add('in'); };
+  if (reduce || !('IntersectionObserver' in window)) { items.forEach(show); }
+  else {
+    document.querySelectorAll('.intro .rv').forEach(show);
+    var io = new IntersectionObserver(function(es){
+      es.forEach(function(e){ if (e.isIntersecting){ show(e.target); io.unobserve(e.target); } });
+    }, { rootMargin: '0px 0px -8% 0px' });
+    // already on screen at load or after a resize (tall windows, static captures): show at once, no transition
+    var settle = function(){ items.forEach(function(el){
+      if (!el.closest('.intro') && !el.classList.contains('in') && el.getBoundingClientRect().top < innerHeight){ el.classList.add('cut'); show(el); io.unobserve(el); }
+    }); };
+    items.forEach(function(el){ if (!el.closest('.intro')) io.observe(el); });
+    settle();
+    addEventListener('resize', settle);
+    // fallback: anything still hidden after the intro is offscreen, so show it without a transition
+    setTimeout(function(){ items.forEach(function(el){ if (!el.closest('.intro') && !el.classList.contains('in')){ el.classList.add('cut'); show(el); } }); }, 3500);
+    // static captures sometimes freeze a transition midway; settle everything once it should be long done
+    setTimeout(function(){ items.forEach(function(el){ el.classList.add('cut'); }); }, 6000);
+  }
+
+  // timecode, 24 fps
+  var tc = document.getElementById('tc'), heroOn = true;
+  var hero = document.querySelector('.hero');
+  if ('IntersectionObserver' in window) new IntersectionObserver(function(es){ heroOn = es[0].isIntersecting; hero.classList.toggle('off', !heroOn); }).observe(hero);
+  var start = performance.now(), base = (12 * 24) + 8, last = -1;
+  var p = function(n){ return n < 10 ? '0' + n : '' + n; };
+  function tick(now){
+    if (visible && heroOn){
+      var f = base + Math.floor((now - start) / 1000 * 24);
+      if (f !== last){
+        last = f;
+        tc.textContent = p(Math.floor(f / 86400)) + ':' + p(Math.floor(f / 1440) % 60) + ':' + p(Math.floor(f / 24) % 60) + ':' + p(f % 24);
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  if (!reduce) requestAnimationFrame(tick);
+
+  // film grain: one noise tile from a small canvas, jittered with CSS steps
+  var g = document.getElementById('grain');
+  if (!reduce){
+    var c = document.createElement('canvas'); c.width = c.height = 180;
+    var ctx = c.getContext && c.getContext('2d');
+    if (ctx){
+      var img = ctx.createImageData(180, 180), d = img.data;
+      for (var i = 0; i < d.length; i += 4){ var v = Math.random() * 255 | 0; d[i] = d[i+1] = d[i+2] = v; d[i+3] = 255; }
+      ctx.putImageData(img, 0, 0);
+      g.style.backgroundImage = 'url(' + c.toDataURL() + ')';
+    }
+    document.addEventListener('visibilitychange', function(){ g.style.animationPlayState = document.hidden ? 'paused' : 'running'; });
+  }
+})();
+</script>
+</body>
+</html>

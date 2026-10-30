@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VideoCrop: make any clip fit</title>
+<meta name="description" content="VideoCrop is a free Windows app that cuts, crops, resizes and compresses videos. One click shrinks a clip to fit Discord, WhatsApp, email, X, YouTube or Reels.">
+<meta name="theme-color" content="#05060a">
+<meta property="og:type" content="website">
+<meta property="og:title" content="VideoCrop: make any clip fit">
+<meta property="og:description" content="Cut, crop and compress videos on Windows. One click squeezes a clip under Discord's 10 MB, WhatsApp's 16 MB or email's 25 MB.">
+<meta property="og:image" content="../../assets/editor-dark.webp">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../../assets/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#05060a; --bg2:#0a0c11; --tile:#16181d; --tile2:#2a2e36; --line:rgba(231,233,238,.09); --line2:rgba(231,233,238,.16);
+  --ink:#e7e9ee; --mute:#9399a5; --dim:#5d636e;
+  --amber:#f5b83d; --amber2:#ffc857; --amberInk:#1b1405; --over:#ff6b5b;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --sans:"Archivo",system-ui,sans-serif;
+  --wrap:1180px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.6 var(--sans);font-stretch:100%;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+img{max-width:100%;height:auto;display:block}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-radius:6px}
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 24px}
+.mono{font-family:var(--mono)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* header */
+.top{position:sticky;top:0;z-index:20;background:rgba(5,6,10,.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:700;font-size:17px}
+.brand img{width:30px;height:30px}
+.nav{display:flex;align-items:center;gap:26px;font-size:15px}
+.nav a{text-decoration:none;color:var(--mute)}
+.nav a:hover{color:var(--ink)}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:999px;border:1px solid var(--line2);color:var(--ink)!important}
+.pill.solid{background:var(--ink);color:#05060a!important;border-color:var(--ink);font-weight:600}
+.pill.solid:hover{background:#fff}
+@media (max-width:760px){.nav .opt{display:none}.nav{gap:10px}}
+
+/* hero */
+.hero{position:relative;text-align:center;padding:40px 0 36px;overflow:hidden}
+#bg{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.hero::after{content:"";position:absolute;inset:0;background:radial-gradient(60% 50% at 50% 38%,rgba(245,184,61,.07),transparent 70%);pointer-events:none}
+.hero .wrap{position:relative;z-index:1}
+.status{display:inline-flex;align-items:center;gap:9px;padding:6px 14px 6px 12px;border:1px solid var(--line2);border-radius:999px;font-size:14px;color:var(--ink);background:rgba(10,12,17,.7);text-decoration:none}
+.status i{width:8px;height:8px;border-radius:50%;background:var(--amber);box-shadow:0 0 10px var(--amber)}
+h1{margin:18px 0 6px;font-weight:850;font-size:clamp(58px,12vw,150px);line-height:.92;letter-spacing:-.03em;font-stretch:82%;
+  background:linear-gradient(180deg,#fff 20%,#f3dcae 70%,var(--amber) 120%);-webkit-background-clip:text;background-clip:text;color:transparent;padding-bottom:.06em}
+.sub{margin:0 auto;max-width:640px;color:var(--mute);font-size:clamp(17px,2vw,20px);line-height:1.5}
+
+/* squeeze stage */
+.stage{margin:22px auto 0;max-width:680px}
+.cardBox{position:relative;height:164px;display:flex;align-items:center;justify-content:center}
+.card{position:relative;width:100%;max-width:640px;display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:center;text-align:left;
+  padding:18px 22px 18px 18px;border-radius:20px;background:linear-gradient(180deg,#14161b,#0d0f13);border:1px solid var(--line2);
+  box-shadow:0 30px 80px -30px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.05);transform-origin:50% 50%;transition:transform .9s cubic-bezier(.6,0,.2,1),border-color .5s}
+.card.done{transform:scale(.88);border-color:rgba(245,184,61,.45)}
+.thumb{width:92px;height:62px;border-radius:10px;background:linear-gradient(135deg,#3a2a48,#1d2a3a 55%,#2c1f17);position:relative;overflow:hidden;transition:width .8s cubic-bezier(.6,0,.2,1),height .8s cubic-bezier(.6,0,.2,1)}
+.thumb::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 70% 60%,rgba(255,120,60,.55),transparent 40%),radial-gradient(circle at 25% 30%,rgba(140,110,255,.45),transparent 45%)}
+.thumb svg{position:absolute;left:50%;top:50%;width:22px;height:22px;transform:translate(-50%,-50%);color:#fff;opacity:.85}
+.card.vert .thumb{width:40px;height:70px}
+.fname{font-family:var(--mono);font-size:15px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spec{font-family:var(--mono);font-size:12.5px;color:var(--mute);margin-top:2px;white-space:nowrap}
+.spec b{color:var(--amber);font-weight:500}
+.bars{display:flex;align-items:flex-end;gap:2px;height:30px;margin-top:10px}
+.bars span{flex:1;height:100%;background:var(--ink);opacity:.55;border-radius:1px;transform-origin:bottom;transform:scaleY(.8);transition:transform .7s cubic-bezier(.5,0,.2,1),background-color .5s,opacity .5s}
+.card.crunch .bars span{background:var(--over);opacity:.8}
+.card.done .bars span{background:var(--amber);opacity:.9}
+.size{text-align:right;min-width:150px}
+.num{font-weight:800;font-stretch:72%;font-size:58px;line-height:.9;letter-spacing:-.02em;font-variant-numeric:tabular-nums;display:flex;align-items:baseline;justify-content:flex-end;gap:5px}
+.num small{font-size:24px;font-weight:700;color:var(--mute);font-stretch:85%}
+.card.done .num{color:var(--amber)}
+.phase{font-family:var(--mono);font-size:11.5px;color:var(--dim);margin-top:6px;white-space:nowrap}
+.badge{position:absolute;right:-8px;top:-16px;display:flex;align-items:center;gap:7px;padding:7px 13px 7px 10px;border-radius:999px;background:var(--amber);color:var(--amberInk);font:600 13.5px/1 var(--sans);
+  box-shadow:0 8px 30px -6px rgba(245,184,61,.6);opacity:0;transform:translateY(8px) scale(.7);transition:opacity .35s,transform .5s cubic-bezier(.3,1.6,.5,1)}
+.badge svg{width:15px;height:15px}
+.card.done .badge{opacity:1;transform:none}
+.result{font-family:var(--mono);font-size:13px;color:var(--mute);margin:2px 0 16px;min-height:1.6em}
+.result b{color:var(--ink);font-weight:500}
+.chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:8px 14px 8px 11px;border-radius:12px;border:1px solid var(--line2);background:rgba(14,16,21,.8);color:var(--mute);font:500 14px/1 var(--sans);cursor:pointer;transition:color .2s,border-color .2s,background .2s}
+.chip svg{width:18px;height:18px;flex:none}
+.chip em{font-style:normal;font-family:var(--mono);font-size:11.5px;color:var(--dim)}
+.chip:hover{color:var(--ink);border-color:rgba(231,233,238,.3)}
+.chip[aria-pressed="true"]{color:var(--ink);border-color:var(--amber);background:rgba(245,184,61,.1)}
+.chip[aria-pressed="true"] em{color:var(--amber)}
+
+/* download */
+.dl{display:inline-flex;align-items:center;gap:16px;margin-top:30px;padding:15px 30px 15px 16px;border-radius:20px;background:var(--amber);color:var(--amberInk);text-decoration:none;text-align:left;
+  box-shadow:0 0 0 1px rgba(255,255,255,.15) inset,0 18px 50px -14px rgba(245,184,61,.55);transition:background .2s,transform .2s}
+.dl:hover{background:var(--amber2);transform:translateY(-1px)}
+.dl .ic{width:44px;height:44px;border-radius:12px;background:rgba(27,20,5,.12);display:grid;place-items:center}
+.dl .ic svg{width:22px;height:22px}
+.dl strong{display:block;font-size:22px;font-weight:750;font-stretch:90%;line-height:1.15}
+.dl .mono{font-size:13px;opacity:.75}
+.links{margin-top:16px;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 20px;font-size:15px;color:var(--mute)}
+.links a{text-decoration:none;color:var(--ink);border-bottom:1px solid var(--line2);padding-bottom:2px}
+.links a:hover{border-color:var(--amber)}
+.more{margin-top:10px;font-size:13px;color:var(--dim)}
+.more a{color:var(--mute);text-decoration:underline;text-decoration-color:var(--line2);text-underline-offset:3px}
+
+/* sections */
+section{padding:110px 0 0}
+.kick{font-family:var(--mono);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);margin:0 0 14px}
+h2{margin:0;font-weight:800;font-stretch:88%;font-size:clamp(36px,5.2vw,62px);line-height:1;letter-spacing:-.025em;max-width:16ch}
+.lede{color:var(--mute);max-width:600px;margin:18px 0 0;font-size:18px}
+
+/* screenshot */
+.shot{padding-top:40px}
+.frame{border-radius:16px;border:1px solid var(--line2);background:#0c0d11;overflow:hidden;box-shadow:0 60px 120px -40px rgba(0,0,0,.95),0 0 0 6px rgba(231,233,238,.025)}
+.frame .bar{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px;border-bottom:1px solid var(--line);font:12px var(--mono);color:var(--dim)}
+.frame .bar i{width:10px;height:10px;border-radius:50%;background:#2a2e36}
+.frame .bar span{margin-left:10px}
+.shotIn{position:relative}
+.mark{position:absolute;border:2px solid var(--amber);border-radius:10px;box-shadow:0 0 0 4px rgba(245,184,61,.18),0 0 40px rgba(245,184,61,.35)}
+.tag{position:absolute;padding:7px 12px;border-radius:10px;background:var(--amber);color:var(--amberInk);font:600 13px/1.25 var(--sans);white-space:nowrap;box-shadow:0 10px 30px -8px rgba(0,0,0,.8)}
+.tag small{display:block;font:500 11.5px var(--mono);opacity:.75}
+.m1{left:76.1%;top:67.4%;width:11%;height:7.7%}
+.t1{right:25%;top:63.5%}
+.t1::after{content:"";position:absolute;right:-7px;top:50%;margin-top:-6px;border:6px solid transparent;border-left-color:var(--amber);border-right:0}
+.m2{left:75.6%;top:93.6%;width:15.5%;height:5.2%}
+.t2{right:25.5%;top:91%}
+.t2::after{content:"";position:absolute;right:-7px;top:50%;margin-top:-6px;border:6px solid transparent;border-left-color:var(--amber);border-right:0}
+.notes{display:none}
+@media (max-width:820px){.tag{display:none}.notes{display:grid;gap:8px;margin:16px 0 0;padding:0;list-style:none;font-size:15px;color:var(--mute)}.notes li::before{content:"";display:inline-block;width:10px;height:10px;border:2px solid var(--amber);border-radius:3px;margin-right:10px;vertical-align:-1px}}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:28px}
+.stat{padding:22px 22px 20px;border:1px solid var(--line);border-radius:16px;background:var(--bg2)}
+.stat b{display:block;font-weight:800;font-stretch:72%;font-size:54px;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stat b small{font-size:.45em;color:var(--mute);margin-left:3px;font-stretch:90%}
+.stat span{display:block;margin-top:8px;color:var(--mute);font-size:15px;line-height:1.4}
+@media (max-width:820px){.stats{grid-template-columns:1fr 1fr}}
+
+/* how it fits */
+.flow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;margin-top:48px;border:1px solid var(--line);border-radius:22px;overflow:hidden;background:var(--bg2)}
+.step{padding:28px 28px 30px;border-left:1px solid var(--line);position:relative;min-width:0}
+.step:first-child{border-left:0}
+.step h3{margin:0;font-size:22px;font-weight:750;font-stretch:90%;display:flex;gap:12px;align-items:baseline}
+.step h3 .mono{font-size:13px;color:var(--amber);font-weight:500}
+.step p{color:var(--mute);font-size:15.5px;margin:8px 0 22px;line-height:1.5}
+.viz{height:170px;position:relative}
+.eq{font-family:var(--mono);font-size:14px;color:var(--mute);line-height:1.9}
+.eq b{color:var(--ink);font-weight:500}
+.eq .big{display:block;font-family:var(--sans);font-weight:800;font-stretch:72%;font-size:50px;color:var(--amber);line-height:1;margin:6px 0 14px;letter-spacing:-.02em}
+.split{display:flex;height:16px;border-radius:5px;overflow:hidden;background:#1a1d23}
+.split i{display:block;height:100%}
+.split .va{width:74%;background:var(--amber)}
+.split .au{width:20%;background:#e7e9ee;opacity:.6}
+.splitL{display:flex;justify-content:space-between;font:11.5px var(--mono);color:var(--dim);margin-top:7px}
+.rung{display:grid;grid-template-columns:52px 1fr 26px;gap:10px;align-items:center;font:13px var(--mono);color:var(--dim);height:34px;transition:color .3s}
+.rung .need{height:8px;border-radius:4px;background:#1f2229;position:relative}
+.rung .need i{position:absolute;inset:0;border-radius:4px;background:currentColor;opacity:.5;transform-origin:left}
+.rung .ok{text-align:center;opacity:0}
+.cap{position:absolute;left:62px;top:-2px;bottom:-2px;border-left:2px dashed var(--amber);width:0}
+.cap::after{content:"budget";position:absolute;top:-18px;left:-22px;font:11px var(--mono);color:var(--amber)}
+.in .rung{animation:rungOn 4.8s infinite}
+.in .rung .ok{animation:rungOk 4.8s infinite}
+.rung:nth-child(2),.rung:nth-child(2) .ok{animation-delay:.6s!important}
+.rung:nth-child(3),.rung:nth-child(3) .ok{animation-delay:1.2s!important}
+.rung:nth-child(4),.rung:nth-child(4) .ok{animation-delay:1.8s!important}
+@keyframes rungOn{0%,4%{color:var(--dim)}8%,18%{color:var(--over)}26%,100%{color:var(--dim)}}
+.rung.pick{animation-name:rungPick!important}
+.rung.pick .ok{animation-name:rungOkPick!important}
+@keyframes rungPick{0%,4%{color:var(--dim)}8%,92%{color:var(--amber)}100%{color:var(--dim)}}
+@keyframes rungOk{0%,100%{opacity:0}}
+@keyframes rungOkPick{0%,6%{opacity:0}10%,92%{opacity:1}100%{opacity:0}}
+.rung .ok{color:inherit}
+.rung.pick{color:var(--amber)}.rung.pick .ok{opacity:1}
+.tp{width:100%;height:150px;display:block}
+.tp .curve{fill:none;stroke:#e7e9ee;stroke-opacity:.35;stroke-width:1.5}
+.tp .fill{fill:var(--amber);fill-opacity:.85}
+.in .tp .fill{animation:fillIn 2.2s cubic-bezier(.5,0,.3,1) 1.2s both}
+@keyframes fillIn{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+.tp .scan{stroke:var(--amber);stroke-width:2;transform:translateX(0);opacity:0}
+.in .tp .scan{animation:scan 1.3s ease-in-out .1s both}
+@keyframes scan{0%{opacity:1;transform:translateX(0)}90%{opacity:1}100%{opacity:0;transform:translateX(300px)}}
+.tpL{display:flex;justify-content:space-between;font:11.5px var(--mono);color:var(--dim);margin-top:4px}
+.tpL b{color:var(--amber);font-weight:500}
+@media (max-width:900px){.flow{grid-template-columns:1fr}.step{border-left:0;border-top:1px solid var(--line)}.step:first-child{border-top:0}}
+
+/* presets */
+.presets{margin-top:44px;border-top:1px solid var(--line)}
+.pr{display:grid;grid-template-columns:40px minmax(150px,1.1fr) 120px 2fr;gap:18px;align-items:center;padding:16px 4px;border-bottom:1px solid var(--line)}
+.pr .g{width:40px;height:40px;border-radius:11px;background:var(--tile);border:1px solid var(--line);display:grid;place-items:center;color:var(--mute)}
+.pr .g svg{width:20px;height:20px}
+.pr .n{font-weight:650;font-size:17px;line-height:1.25}
+.pr .n small{display:block;font:400 12.5px var(--mono);color:var(--dim);margin-top:2px}
+.pr .c{font-weight:800;font-stretch:72%;font-size:34px;line-height:1;text-align:right;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.pr .c small{font-size:.5em;color:var(--mute);margin-left:2px}
+.pr .c.na{font-size:18px;color:var(--mute);font-weight:600;font-stretch:90%}
+.meter{height:10px;border-radius:5px;background:#12141a;position:relative;overflow:hidden}
+.meter i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:linear-gradient(90deg,rgba(245,184,61,.35),var(--amber))}
+.meter.open i{background:repeating-linear-gradient(90deg,rgba(231,233,238,.25) 0 6px,transparent 6px 11px)}
+.scale{display:grid;grid-template-columns:40px minmax(150px,1.1fr) 120px 2fr;gap:18px;padding:10px 4px 0;font:11.5px var(--mono);color:var(--dim)}
+.scale div:last-child{display:flex;justify-content:space-between}
+@media (max-width:760px){.pr,.scale{grid-template-columns:40px 1fr auto}.meter{grid-column:2/4}.scale{display:none}.pr{row-gap:10px}}
+
+/* features */
+.feat{display:grid;grid-template-columns:1fr 1fr;gap:56px;margin-top:48px;align-items:start}
+.fl{margin:0;padding:0;list-style:none;border-top:1px solid var(--line)}
+.fl li{display:grid;grid-template-columns:150px 1fr;gap:18px;padding:22px 0;border-bottom:1px solid var(--line)}
+.fl h3{margin:0;font-weight:800;font-stretch:80%;font-size:30px;line-height:1.05;letter-spacing:-.01em}
+.fl p{margin:0;color:var(--mute);font-size:16px;line-height:1.55}
+.fl p b{color:var(--ink);font-weight:500}
+.side{position:sticky;top:96px}
+.side figcaption{margin-top:12px;font-size:14px;color:var(--dim)}
+@media (max-width:900px){.feat{grid-template-columns:1fr;gap:36px}.side{position:static}}
+@media (max-width:520px){.fl li{grid-template-columns:1fr;gap:6px}}
+
+/* cta + footer */
+.cta{text-align:center;padding:140px 0 120px;position:relative}
+.cta::before{content:"";position:absolute;left:0;right:0;bottom:0;height:46%;background:repeating-linear-gradient(90deg,rgba(245,184,61,.07) 0 7px,transparent 7px 12px);mask:radial-gradient(60% 100% at 50% 100%,#000,transparent);pointer-events:none}
+.cta .wrap{position:relative}
+.cta h2{margin:0 auto;max-width:none;font-size:clamp(46px,8vw,104px);font-stretch:78%;font-weight:850}
+.cta .lede{margin:18px auto 0}
+footer{border-top:1px solid var(--line);padding:28px 0;font-size:14px;color:var(--dim)}
+footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px}
+footer nav{display:flex;flex-wrap:wrap;gap:8px 22px}
+footer a{text-decoration:none;color:var(--mute)}
+footer a:hover{color:var(--ink)}
+
+/* reveal */
+.js .rv{opacity:0;transform:translateY(18px);transition:opacity .8s ease,transform .8s cubic-bezier(.2,.7,.2,1)}
+.js .rv.in{opacity:1;transform:none}
+.js .rv.now{transition:none}
+
+@media (max-width:560px){
+  .hero{padding-top:36px}
+  .card{grid-template-columns:auto 1fr;gap:12px 14px;padding:16px}
+  .size{grid-column:1/3;display:flex;align-items:baseline;justify-content:space-between;text-align:left;min-width:0}
+  .num{font-size:46px}
+  .thumb{width:70px;height:48px}.card.vert .thumb{width:32px;height:56px}
+  .cardBox{height:214px}
+  .badge{right:6px;top:-14px}
+  .dl{padding:13px 22px 13px 13px;gap:13px}.dl strong{font-size:19px}
+  section{padding-top:84px}
+  .stat b{font-size:42px}
+  .step{padding:24px 20px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+  .js .rv{opacity:1;transform:none}
+  .rung.pick{color:var(--amber)}.rung.pick .ok{opacity:1}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="g-chat" viewBox="0 0 24 24"><path d="M5 4.5h14a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 3.5v-3.5H5A1.5 1.5 0 0 1 3.5 15V6A1.5 1.5 0 0 1 5 4.5z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="9" cy="10.5" r="1.3" fill="currentColor"/><circle cx="15" cy="10.5" r="1.3" fill="currentColor"/></symbol>
+    <symbol id="g-phone" viewBox="0 0 24 24"><path d="M12 3.2a8.8 8.8 0 0 0-7.6 13.2L3.3 20.7l4.4-1.1A8.8 8.8 0 1 0 12 3.2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9.2 8.2c-.3 2.9 3.4 6.8 6.4 6.6l.9-1.3-1.9-1.1-.9.7a4.3 4.3 0 0 1-2.4-2.4l.7-.9-1.1-1.9z" fill="currentColor"/></symbol>
+    <symbol id="g-mail" viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="m4 7 8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+    <symbol id="g-post" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M7.5 9h9M7.5 12.5h9M7.5 16h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+    <symbol id="g-play" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M10 9v6l5-3z" fill="currentColor"/></symbol>
+    <symbol id="g-vert" viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M10.5 9.5v5l4-2.5z" fill="currentColor"/></symbol>
+    <symbol id="g-down" viewBox="0 0 24 24"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="g-film" viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5z" fill="currentColor"/></symbol>
+    <symbol id="g-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </defs>
+</svg>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#"><img src="../../assets/icon.svg" alt="" width="30" height="30">VideoCrop</a>
+    <nav class="nav" aria-label="Main">
+      <a class="opt" href="#fit">How it fits</a>
+      <a class="opt" href="#presets">Presets</a>
+      <a class="opt" href="#features">Features</a>
+      <a class="pill opt" href="https://github.com/Azmekk/VideoCrop">GitHub</a>
+      <a class="pill solid" href="https://github.com/Azmekk/VideoCrop/releases" data-download="primary">Download</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<section class="hero" aria-labelledby="h">
+  <canvas id="bg" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <a class="status" href="https://github.com/Azmekk/VideoCrop/releases"><i></i><span data-version>v3.0.0</span>&nbsp;is out</a>
+    <h1 id="h">Make it fit.</h1>
+    <p class="sub">One click squeezes a clip under Discord's 10&nbsp;MB, WhatsApp's 16 or email's 25. Cut, crop and compress videos on Windows, free.</p>
+
+    <div class="stage">
+      <div class="cardBox">
+        <div class="card" id="card">
+          <div class="thumb"><svg><use href="#g-film"/></svg></div>
+          <div style="min-width:0">
+            <div class="fname">boss-fight.mkv</div>
+            <div class="spec" id="spec">1920×1080 · 60 fps · 3:12</div>
+            <div class="bars" id="bars" aria-hidden="true"></div>
+          </div>
+          <div class="size">
+            <div class="num" id="num">1.84<small>GB</small></div>
+            <div class="phase" id="phase">original</div>
+          </div>
+          <div class="badge" id="badge"><svg><use href="#g-check"/></svg><span id="badgeT">fits Discord · 10 MB</span></div>
+        </div>
+      </div>
+      <p class="result" id="result" aria-live="polite">Pick where it's going.</p>
+      <div class="chips" role="group" aria-label="Squeeze the clip for">
+        <button class="chip" type="button" data-t="0" aria-pressed="true"><svg aria-hidden="true"><use href="#g-chat"/></svg>Discord<em>10 MB</em></button>
+        <button class="chip" type="button" data-t="1" aria-pressed="false"><svg aria-hidden="true"><use href="#g-phone"/></svg>WhatsApp<em>16 MB</em></button>
+        <button class="chip" type="button" data-t="2" aria-pressed="false"><svg aria-hidden="true"><use href="#g-mail"/></svg>Email<em>25 MB</em></button>
+        <button class="chip" type="button" data-t="3" aria-pressed="false"><svg aria-hidden="true"><use href="#g-post"/></svg>X<em>512 MB</em></button>
+        <button class="chip" type="button" data-t="4" aria-pressed="false"><svg aria-hidden="true"><use href="#g-play"/></svg>YouTube</button>
+        <button class="chip" type="button" data-t="5" aria-pressed="false"><svg aria-hidden="true"><use href="#g-vert"/></svg>Reels / Shorts</button>
+      </div>
+    </div>
+
+    <a class="dl" href="https://github.com/Azmekk/VideoCrop/releases" data-download="primary">
+      <span class="ic"><svg aria-hidden="true"><use href="#g-down"/></svg></span>
+      <span><strong data-download-label>Download for Windows</strong><span class="mono" data-download-detail>v3.0.0 · x64 · 2.0 MB</span></span>
+    </a>
+    <div class="links">
+      <a href="https://github.com/Azmekk/VideoCrop">Source on GitHub</a>
+      <span>Windows 10 and 11 · x64 &amp; ARM64</span>
+    </div>
+    <p class="more">Also: <a href="https://github.com/Azmekk/VideoCrop/releases" data-download="windows-arm64">ARM64 installer</a> · <a href="https://github.com/Azmekk/VideoCrop/releases" data-download="portable-x64">portable x64</a> · <a href="https://github.com/Azmekk/VideoCrop/releases" data-download="portable-arm64">portable ARM64</a></p>
+  </div>
+</section>
+
+<div class="wrap shot">
+  <figure class="frame rv" style="margin:0">
+    <div class="bar" aria-hidden="true"><i></i><i></i><i></i><span>VideoCrop · Sample recording.mp4</span></div>
+    <div class="shotIn">
+      <img src="../../assets/editor-dark.webp" width="1440" height="900" loading="lazy" alt="The VideoCrop editor in dark theme: a video preview, a filmstrip timeline with a 7.5 second cut selected, and the Export panel with the Discord share preset chosen, estimating about 4.6 MB with two-pass encoding.">
+      <div class="mark m1" aria-hidden="true"></div>
+      <div class="tag t1" aria-hidden="true">Discord preset, one click<small>≤ 10 MB, two-pass</small></div>
+      <div class="mark m2" aria-hidden="true"></div>
+      <div class="tag t2" aria-hidden="true">Size known before you hit Process<small>about 4.6 MB</small></div>
+    </div>
+  </figure>
+  <ul class="notes">
+    <li>The Discord preset is selected: one click caps the export at 10 MB with two-pass encoding.</li>
+    <li>The size estimate (about 4.6 MB here) is shown before you hit Process.</li>
+  </ul>
+
+  <div class="stats">
+    <div class="stat rv"><b>2<small>MB</small></b><span>installer, about 5 MB installed</span></div>
+    <div class="stat rv"><b>8</b><span>one-click share presets</span></div>
+    <div class="stat rv"><b>2<small>pass</small></b><span>encoding that lands under the cap</span></div>
+    <div class="stat rv"><b>0</b><span>uploads. Everything runs on your PC</span></div>
+  </div>
+</div>
+
+<section id="fit" aria-labelledby="fitH">
+  <div class="wrap">
+    <p class="kick">How it fits</p>
+    <h2 id="fitH">A size cap, turned into a plan.</h2>
+    <p class="lede">You pick where the clip is going. VideoCrop works out how many bits that leaves, picks a resolution that still looks good at that rate, then encodes twice so the file lands just under the line.</p>
+
+    <div class="flow rv">
+      <div class="step">
+        <h3><span class="mono">1</span>Budget the bitrate</h3>
+        <p>The cap divided by the clip's length is the bitrate you can afford. Audio takes its share first.</p>
+        <div class="viz eq">
+          <b>10 MB</b> ÷ <b>3:12</b> =
+          <span class="big">437 kb/s</span>
+          <div class="split"><i class="va"></i><i class="au"></i></div>
+          <div class="splitL"><span>video</span><span>audio · margin</span></div>
+        </div>
+      </div>
+      <div class="step">
+        <h3><span class="mono">2</span>Walk down the ladder</h3>
+        <p>Too few bits for 1080p means mush. It steps down until the picture holds up, and never upscales.</p>
+        <div class="viz" style="padding-top:16px">
+          <div style="position:relative">
+            <div class="rung"><span>1080p</span><span class="need"><i style="width:100%"></i></span><span class="ok">✕</span></div>
+            <div class="rung"><span>720p</span><span class="need"><i style="width:62%"></i></span><span class="ok">✕</span></div>
+            <div class="rung pick"><span>540p</span><span class="need"><i style="width:30%"></i></span><span class="ok">✓</span></div>
+            <div class="rung"><span>360p</span><span class="need"><i style="width:15%"></i></span><span class="ok"></span></div>
+            <span class="cap" style="left:calc(62px + (100% - 98px) * .33)"></span>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <h3><span class="mono">3</span>Encode in two passes</h3>
+        <p>Pass one reads the whole clip. Pass two spends bits on the busy fights and saves them on the menus.</p>
+        <div class="viz">
+          <svg class="tp" viewBox="0 0 300 150" preserveAspectRatio="none" aria-hidden="true">
+            <line x1="0" y1="34" x2="300" y2="34" stroke="#f5b83d" stroke-dasharray="4 4" stroke-opacity=".7"/>
+            <path class="fill" d="M0 150V112L20 104 40 116 60 70 80 52 100 84 120 120 140 126 160 88 180 46 200 40 220 62 240 108 260 98 280 72 300 90V150Z"/>
+            <path class="curve" d="M0 112L20 104 40 116 60 70 80 52 100 84 120 120 140 126 160 88 180 46 200 40 220 62 240 108 260 98 280 72 300 90"/>
+            <line class="scan" x1="0" y1="0" x2="0" y2="150"/>
+          </svg>
+          <div class="tpL"><span>cap 10 MB</span><span>lands at <b>9.7 MB</b></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="presets" aria-labelledby="prH">
+  <div class="wrap">
+    <p class="kick">Share presets</p>
+    <h2 id="prH">Eight places a clip goes. One click each.</h2>
+    <p class="lede">Each preset knows its app's limit. Capped ones use two-pass to land under it. Want full control instead? The Quality and Custom tabs take H.264, H.265 or AV1, CRF, bitrate, target size and 10-bit.</p>
+    <div class="presets rv">
+      <div class="pr"><span class="g"><svg><use href="#g-chat"/></svg></span><span class="n">Discord<small>free accounts</small></span><span class="c">10<small>MB</small></span><span class="meter"><i style="width:33%"></i></span></div>
+      <div class="pr"><span class="g"><svg><use href="#g-phone"/></svg></span><span class="n">WhatsApp<small>chats and groups</small></span><span class="c">16<small>MB</small></span><span class="meter"><i style="width:40%"></i></span></div>
+      <div class="pr"><span class="g"><svg><use href="#g-mail"/></svg></span><span class="n">Email<small>typical attachment limit</small></span><span class="c">25<small>MB</small></span><span class="meter"><i style="width:47%"></i></span></div>
+      <div class="pr"><span class="g"><svg><use href="#g-chat"/></svg></span><span class="n">Discord Nitro Basic</span><span class="c">50<small>MB</small></span><span class="meter"><i style="width:57%"></i></span></div>
+      <div class="pr"><span class="g"><svg><use href="#g-chat"/></svg></span><span class="n">Discord Nitro</span><span class="c">500<small>MB</small></span><span class="meter"><i style="width:90%"></i></span></div>
+      <div class="pr"><span class="g"><svg><use href="#g-post"/></svg></span><span class="n">X / Twitter</span><span class="c">512<small>MB</small></span><span class="meter"><i style="width:90.3%"></i></span></div>
+      <div class="pr"><span class="g"><svg><use href="#g-play"/></svg></span><span class="n">YouTube<small>high quality upload</small></span><span class="c na">no cap</span><span class="meter open"><i style="width:100%"></i></span></div>
+      <div class="pr"><span class="g"><svg><use href="#g-vert"/></svg></span><span class="n">TikTok / Reels / Shorts<small>vertical 1080×1920</small></span><span class="c na">no cap</span><span class="meter open"><i style="width:100%"></i></span></div>
+    </div>
+    <div class="scale" aria-hidden="true"><div></div><div></div><div></div><div><span>1 MB</span><span>10</span><span>100</span><span>1 GB</span></div></div>
+  </div>
+</section>
+
+<section id="features" aria-labelledby="ftH">
+  <div class="wrap">
+    <p class="kick">The rest of the kit</p>
+    <h2 id="ftH">Trim it, frame it, then send it.</h2>
+    <div class="feat">
+      <ul class="fl rv">
+        <li><h3>Cut</h3><p>A zoomable timeline with a filmstrip. Drag away from the track to scrub slower, or type exact times. Choose <b>frame-accurate</b> or an <b>instant keyframe cut</b>.</p></li>
+        <li><h3>Crop</h3><p>Frame it on a full-resolution still with a live preview. 16:9, 4:3, 1:1, 9:16, 4:5 or the original aspect.</p></li>
+        <li><h3>Resize</h3><p>Aspect lock, 75, 50 and 25% options, and height presets that <b>never upscale</b>.</p></li>
+        <li><h3>Plays everything</h3><p>Multi-hour OBS recordings in HEVC, AV1 or MKV open instantly. Files Windows can't decode stream through a GPU preview. The export is always made from the original.</p></li>
+        <li><h3>Private</h3><p>Runs locally with ffmpeg. <b>No telemetry, no uploads.</b> It uses your ffmpeg if one is on your PATH, or downloads one once.</p></li>
+        <li><h3>Light or dark</h3><p>Both themes, a 5 MB app that opens instantly, and a popup when a new version is out.</p></li>
+      </ul>
+      <figure class="side rv" style="margin:0">
+        <div class="frame">
+          <div class="bar" aria-hidden="true"><i></i><i></i><i></i><span>Crop</span></div>
+          <img src="../../assets/crop-light.webp" width="1440" height="900" loading="lazy" alt="VideoCrop's crop mode in light theme, with a crop rectangle and aspect ratio buttons over a full-resolution still.">
+        </div>
+        <figcaption>Crop mode, light theme.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="cta" aria-labelledby="ctaH">
+  <div class="wrap">
+    <h2 id="ctaH">Your next clip fits.</h2>
+    <p class="lede">Free for Windows 10 and 11. About 2 MB to download.</p>
+    <a class="dl" href="https://github.com/Azmekk/VideoCrop/releases" data-download="primary">
+      <span class="ic"><svg aria-hidden="true"><use href="#g-down"/></svg></span>
+      <span><strong data-download-label>Download for Windows</strong><span class="mono" data-download-detail>v3.0.0 · x64 · 2.0 MB</span></span>
+    </a>
+    <div class="links">
+      <a href="https://github.com/Azmekk/VideoCrop">Source on GitHub</a>
+      <a href="https://github.com/Azmekk/VideoCrop/releases">All downloads</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Vexbyte</span>
+    <nav aria-label="Footer">
+      <a href="https://github.com/Azmekk/VideoCrop/releases">Changelog</a>
+      <a href="https://github.com/Azmekk/VideoCrop">Source</a>
+      <a href="https://github.com/Azmekk/VideoCrop/releases">Releases</a>
+      <a href="https://github.com/Azmekk/VideoCrop/issues">Report an issue</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="../../assets/downloads.js" defer></script>
+<script>
+(function(){
+  var d=document, root=d.documentElement; root.classList.add('js');
+  var RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var $=function(s){return d.querySelector(s)};
+
+  /* scroll reveal, with a fallback so static captures still show content */
+  var rv=[].slice.call(d.querySelectorAll('.rv'));
+  var show=function(el){el.classList.add('in')};
+  if('IntersectionObserver' in window && !RM){
+    var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){show(e.target);io.unobserve(e.target)}})},{rootMargin:'0px 0px -8% 0px'});
+    rv.forEach(function(el){
+      if(el.getBoundingClientRect().top<innerHeight){el.classList.add('now');show(el)} else io.observe(el)});
+    setTimeout(function(){rv.forEach(show)},2600);
+  } else rv.forEach(show);
+
+  /* targets: result size in MB, label, output */
+  var T=[
+    {n:'Discord',cap:'10 MB',mb:9.7,res:'960×540',note:'1080p → 540p auto',lvl:.18},
+    {n:'WhatsApp',cap:'16 MB',mb:15.6,res:'1280×720',note:'1080p → 720p auto',lvl:.26},
+    {n:'Email',cap:'25 MB',mb:24.3,res:'1280×720',note:'1080p → 720p auto',lvl:.34},
+    {n:'X',cap:'512 MB',mb:148,res:'1920×1080',note:'1080p kept',lvl:.6},
+    {n:'YouTube',cap:'',mb:412,res:'1920×1080',note:'1080p kept · quality preset',lvl:.78},
+    {n:'Reels',cap:'',mb:96,res:'1080×1920',note:'cropped to 9:16 · fits 1080×1920',lvl:.5,vert:1}
+  ];
+  var SRC=1884;
+  var card=$('#card'),num=$('#num'),phase=$('#phase'),spec=$('#spec'),result=$('#result'),badgeT=$('#badgeT');
+  var chips=[].slice.call(d.querySelectorAll('.chip'));
+  var barsEl=$('#bars'),bars=[],shape=[];
+  for(var i=0;i<44;i++){var s=d.createElement('span');barsEl.appendChild(s);bars.push(s);
+    shape.push(.45+.55*Math.abs(Math.sin(i*.61)*Math.cos(i*.23+1))+(i%7==3?.2:0));}
+  function setBars(level,jit){bars.forEach(function(b,i){var h=Math.min(1,Math.max(.06,shape[i]*(level<.2?level:.3+.7*level)+(jit?Math.random()*.08:0)));b.style.transform='scaleY('+h.toFixed(3)+')'})}
+  function fmt(mb){
+    if(mb>=1000) return [(mb/1024).toFixed(2),'GB'];
+    if(mb>=100) return [Math.round(mb)+'','MB'];
+    return [mb.toFixed(1),'MB'];
+  }
+  function setNum(mb){var f=fmt(mb);num.innerHTML=f[0]+'<small>'+f[1]+'</small>'}
+  var bgLevel=1, cur=0, timers=[], raf=0, auto=null, visible=true, userHold=0;
+  function clear(){timers.forEach(clearTimeout);timers=[];cancelAnimationFrame(raf)}
+  function at(ms,fn){timers.push(setTimeout(fn,ms))}
+  var h1=$('h1'),squeezed=false,wide=innerWidth<700?100:125;
+  function h1Stretch(e){h1.style.fontStretch=(wide+(82-wide)*e).toFixed(1)+'%';h1.style.letterSpacing=(.01+(-.04)*e).toFixed(4)+'em'}
+  function finalState(t){
+    cancelAnimationFrame(raf);if(!squeezed){squeezed=true;h1.style.fontStretch='';h1.style.letterSpacing=''}
+    card.classList.remove('crunch');card.classList.add('done');card.classList.toggle('vert',!!t.vert);
+    setNum(t.mb);setBars(t.lvl);bgLevel=t.lvl;
+    phase.textContent='was 1.84 GB';
+    spec.innerHTML='<b>'+t.res+'</b> · '+(t.cap?'two-pass':'quality')+' · 3:12';
+    badgeT.textContent=t.cap?('fits '+t.n+' · '+t.cap):('ready for '+t.n);
+    result.innerHTML='<b>'+t.note+'</b> · '+fmt(t.mb).join(' ')+(t.cap?' of '+t.cap:'');
+  }
+  function run(k){
+    clear(); cur=k; var t=T[k];
+    chips.forEach(function(c,i){c.setAttribute('aria-pressed',i===k?'true':'false')});
+    if(RM){finalState(t);return}
+    card.classList.remove('done','vert','crunch');
+    setNum(SRC);phase.textContent='original';spec.textContent='1920×1080 · 60 fps · 3:12';
+    result.textContent='Squeezing for '+t.n+(t.cap?' · cap '+t.cap:'')+'…';
+    setBars(1,true);bgLevel=1;
+    at(380,function(){card.classList.add('crunch');setBars(.08);bgLevel=.15;phase.textContent='pass 1 of 2 · reading'});
+    at(1050,function(){
+      phase.textContent=t.cap?'pass 2 of 2 · encoding':'encoding';
+      var t0=performance.now(),D=1500,first=!squeezed;
+      (function step(){var p=Math.min(1,Math.max(0,(performance.now()-t0)/D)),e=1-Math.pow(1-p,4);
+        setNum(Math.exp(Math.log(SRC)+(Math.log(t.mb)-Math.log(SRC))*e));
+        if(first) h1Stretch(e);
+        if(p<1) raf=requestAnimationFrame(step);})();
+      setBars(t.lvl*.6);
+    });
+    at(2650,function(){finalState(t)});
+  }
+  function cycle(){
+    clearInterval(auto);
+    auto=setInterval(function(){if(!visible||d.hidden)return;if(Date.now()<userHold)return;run((cur+1)%T.length)},5600);
+  }
+  chips.forEach(function(c,i){c.addEventListener('click',function(){userHold=Date.now()+9000;run(i)})});
+
+  var hero=$('.hero');
+  if('IntersectionObserver' in window){new IntersectionObserver(function(es){visible=es[0].isIntersecting;if(visible)loop()}).observe(hero)}
+
+  /* hero background: a bitrate graph that drops with each squeeze */
+  var cv=$('#bg'),cx=cv.getContext('2d'),W=0,H=0,DPR=1,lv=1,tick=0;
+  function size(){DPR=Math.min(2,window.devicePixelRatio||1);W=cv.clientWidth;H=cv.clientHeight;cv.width=W*DPR;cv.height=H*DPR;cx.setTransform(DPR,0,0,DPR,0,0);draw()}
+  function draw(){
+    cx.clearRect(0,0,W,H);
+    var bw=7,gap=5,n=Math.ceil(W/(bw+gap)),base=H*.97,maxH=H*.42;
+    for(var i=0;i<n;i++){
+      var x=i*(bw+gap),u=i/n,
+        v=.35+.4*Math.abs(Math.sin(i*.17+tick*.6))*Math.abs(Math.cos(i*.043-tick*.25))+.25*Math.abs(Math.sin(i*.9));
+      var h=Math.max(3,maxH*v*lv*(.55+.45*Math.sin(Math.PI*u)));
+      var c=Math.abs(u-.5)<.18;
+      cx.fillStyle=c?'rgba(245,184,61,'+(.09+.05*lv)+')':'rgba(231,233,238,.05)';
+      cx.fillRect(x,base-h,bw,h);
+    }
+    var g=cx.createLinearGradient(0,H*.5,0,H);g.addColorStop(0,'rgba(5,6,10,0)');g.addColorStop(1,'rgba(5,6,10,.6)');
+    cx.fillStyle=g;cx.fillRect(0,H*.5,W,H*.5);
+  }
+  var looping=false,last=0;
+  function loop(){
+    if(looping||RM)return;looping=true;
+    (function f(now){
+      if(!visible||d.hidden){looping=false;return}
+      if(now-last>32){last=now;tick+=.03;lv+=(bgLevel-lv)*.08;draw()}
+      requestAnimationFrame(f);
+    })(performance.now());
+  }
+  addEventListener('resize',size);size();
+  d.addEventListener('visibilitychange',function(){if(!d.hidden)loop()});
+
+  if(RM){run(0)}else{
+    setBars(1);h1Stretch(0);
+    at(700,function(){run(0)});
+    setTimeout(cycle,0);
+    loop();
+  }
+})();
+</script>
+</body>
+</html>

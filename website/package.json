@@ -1,0 +1,11 @@
+{
+  "name": "videocrop-website",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler pages dev",
+    "deploy": "wrangler pages deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.156.0"
+  }
+}
