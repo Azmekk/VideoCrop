@@ -55,7 +55,7 @@ const catalog: PresetCatalog = { quality, platforms, defaultQualityId: "h264-bal
 
 let settings: Settings = (() => {
   try { const s = localStorage.getItem("vc-mock-settings"); if (s) return JSON.parse(s); } catch {}
-  return { theme: "system", lastOutputDir: null, defaultCompression: null, recentFiles: ["C:\\Videos\\OBS\\2026-10-28 21-04-11.mkv", "C:\\Videos\\Clips\\boss fight.mp4"], previewEncoder: null };
+  return { theme: "system", lastOutputDir: null, defaultCompression: null, recentFiles: ["C:\\Videos\\OBS\\2026-10-28 21-04-11.mkv", "C:\\Videos\\Clips\\boss fight.mp4"], previewEncoder: null, skippedUpdate: null };
 })();
 
 let toolsReady = flags.get("tools") !== "0";
@@ -167,6 +167,11 @@ export async function invoke<T>(cmd: string, args?: Record<string, unknown>): Pr
       case "settings_get": return structuredClone(settings);
       case "settings_set": settings = args!.settings as Settings; try { localStorage.setItem("vc-mock-settings", JSON.stringify(settings)); } catch {} return undefined;
       case "reveal_in_folder": console.info("[mock] reveal", args?.path); return undefined;
+      case "check_update":
+        return new URLSearchParams(location.search).has("update")
+          ? { version: "2.1.0", url: "https://github.com/Azmekk/VideoCrop/releases/tag/v2.1.0", notes: "- Faster previews\n- New share presets" }
+          : null;
+      case "open_release_page": console.info("[mock] open", args?.url); return undefined;
       default: throw `Unknown command ${cmd}`;
     }
   })();

@@ -3,6 +3,7 @@ pub mod core;
 pub mod media;
 pub mod settings;
 pub mod state;
+pub mod update;
 
 use std::time::Duration;
 
@@ -31,6 +32,8 @@ pub fn run() {
             commands::settings_get,
             commands::settings_set,
             commands::reveal_in_folder,
+            commands::check_update,
+            commands::open_release_page,
         ])
         .setup(|app| {
             let state = AppState::new(resolve_paths(app.handle())?);

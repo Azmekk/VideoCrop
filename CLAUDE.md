@@ -6,6 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Windows desktop app for compressing, cutting, cropping, and resizing videos using ffmpeg (encode), ffprobe (metadata), and mpv (playback). The design document at `VideoCrop_Plan.md` is the source of truth for behavior — consult it before adding features.
 
+### Tauri port (`tauri/`, branch `tauri-port`)
+
+VideoCrop 2 is a Tauri 2 + Svelte 5 rewrite that replaces the WinUI app and drops mpv (playback is `<video>` fed the original file or an on-demand ffmpeg HLS stream). `tauri/ARCHITECTURE.md` is its spec and contract; read it before changing anything there. The editing rules below (filter order, crop coordinates, cut placement, output naming) carry over unchanged and live in `tauri/src-tauri/src/core/`.
+
+- **Dev:** `cd tauri && pnpm install && pnpm tauri dev` (set `VIDEOCROP_TOOLS_DIR` to a folder with ffmpeg.exe/ffprobe.exe to skip the download). `pnpm dev` alone runs the UI in a browser against a mock backend.
+- **Checks:** `pnpm check` (svelte-check), `cargo test` and `cargo clippy --all-targets -- -D warnings` in `tauri/src-tauri`.
+- **Release:** pushing a `vX.Y.Z` tag runs `.github/workflows/release.yml` (NSIS installer + portable exe, x64 and arm64).
+- `core/` stays pure (no processes, no Tauri) and unit-tested; `core/models.rs` and `src/lib/types.ts` must stay in sync; all `invoke` calls live in `src/lib/api.ts`.
+
 ## Commands
 
 The solution file is `VideoCrop.slnx` (not `.sln`).

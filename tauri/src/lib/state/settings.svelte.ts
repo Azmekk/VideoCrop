@@ -5,6 +5,7 @@ type Theme = Settings["theme"];
 
 const DEFAULTS: Settings = {
   theme: "system", lastOutputDir: null, defaultCompression: null, recentFiles: [], previewEncoder: null,
+  skippedUpdate: null,
 };
 
 function applyTheme(t: Theme) {

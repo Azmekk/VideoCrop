@@ -13,6 +13,7 @@
   import ToolsSetup from "./components/ToolsSetup.svelte";
   import Tooltip from "./components/ui/Tooltip.svelte";
   import Toasts from "./components/ui/Toasts.svelte";
+  import UpdatePopup from "./components/UpdatePopup.svelte";
 
   let phase = $state<"boot" | "tools" | "ready">("boot");
   let dragOver = $state(false);
@@ -70,6 +71,7 @@
   {/if}
   <Tooltip />
   <Toasts />
+  {#if phase === "ready"}<UpdatePopup />{/if}
 </div>
 
 <style>

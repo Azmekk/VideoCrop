@@ -1,94 +1,135 @@
 name: Release
 
+# Push a tag like v2.1.0 to build the Windows installer + portable exe and publish a GitHub release.
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (no leading v), e.g. 2.1.0 — builds artifacts only, no release'
+        required: true
 
 permissions:
   contents: write
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
+    name: Build (${{ matrix.arch }})
     runs-on: windows-latest
     strategy:
+      fail-fast: false
       matrix:
-        rid: [win-x64, win-arm64]
+        include:
+          - arch: x64
+            target: x86_64-pc-windows-msvc
+          - arch: arm64
+            target: aarch64-pc-windows-msvc
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: tauri
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-
-      - name: Derive version from tag
+      - name: Resolve version
         id: ver
-        shell: pwsh
         run: |
-          $tag = "${{ github.ref_name }}"
-          $version = $tag.TrimStart('v')
-          # Strip any pre-release suffix for AssemblyVersion compatibility.
-          $clean = ($version -split '-')[0]
-          "version=$clean" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          "tag=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          $v = if ("${{ github.event_name }}" -eq "workflow_dispatch") { "${{ inputs.version }}" } else { "${{ github.ref_name }}".TrimStart('v') }
+          if ($v -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') { throw "Invalid version '$v'" }
+          "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
-      - name: Restore
-        run: dotnet restore VideoCrop.slnx
-
-      - name: Test
-        run: dotnet test VideoCrop.slnx -c Release --no-restore
-
-      - name: Publish (${{ matrix.rid }})
-        shell: pwsh
-        run: |
-          dotnet publish src/VideoCrop.App `
-            -c Release `
-            -r ${{ matrix.rid }} `
-            --no-self-contained `
-            /p:Version=${{ steps.ver.outputs.version }} `
-            -o publish/${{ matrix.rid }}
-
-      - name: Zip artifact
-        shell: pwsh
-        run: |
-          $zip = "VideoCrop-${{ steps.ver.outputs.tag }}-${{ matrix.rid }}.zip"
-          Compress-Archive -Path publish/${{ matrix.rid }}/* -DestinationPath $zip -Force
-          "ZIP_NAME=$zip" | Out-File -FilePath $env:GITHUB_ENV -Append
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
         with:
-          name: ${{ matrix.rid }}
-          path: ${{ env.ZIP_NAME }}
+          package_json_file: tauri/package.json
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: tauri/pnpm-lock.yaml
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tauri/src-tauri -> target
+          key: ${{ matrix.target }}
+
+      - name: Install frontend deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Check frontend
+        run: pnpm check
+
+      - name: Test core
+        if: matrix.arch == 'x64'
+        working-directory: tauri/src-tauri
+        run: cargo test --locked
+
+      - name: Build installer
+        run: |
+          # Stamp the tag's version into the app (shown in the update check) without editing files in git.
+          @{ version = "${{ steps.ver.outputs.version }}" } | ConvertTo-Json | Set-Content release.conf.json
+          pnpm tauri build --target ${{ matrix.target }} --config release.conf.json
+
+      - name: Collect artifacts
+        id: collect
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          $rel = "src-tauri/target/${{ matrix.target }}/release"
+          New-Item -ItemType Directory -Force out | Out-Null
+          $setup = Get-ChildItem "$rel/bundle/nsis/*-setup.exe" | Select-Object -First 1
+          if (-not $setup) { throw "NSIS installer not found" }
+          Copy-Item $setup.FullName "out/VideoCrop-v$v-${{ matrix.arch }}-setup.exe"
+          Copy-Item "$rel/videocrop.exe" "out/VideoCrop-v$v-${{ matrix.arch }}-portable.exe"
+          Get-ChildItem out | ForEach-Object { "{0,-48} {1,8:N1} MB" -f $_.Name, ($_.Length / 1MB) }
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: videocrop-${{ matrix.arch }}
+          path: tauri/out/*
+          if-no-files-found: error
 
   release:
+    name: Publish release
     needs: build
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
+          merge-multiple: true
 
       - name: Create release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG="${{ github.ref_name }}"
-          # A hyphen in the tag (e.g. v2.0.0-rc1, v1.0.0-beta) marks a
-          # pre-release. GitHub's `releases/latest` API skips prereleases, so
-          # the in-app updater won't offer it to users.
-          PRERELEASE_FLAG=""
-          if [[ "$TAG" == *-* ]]; then PRERELEASE_FLAG="--prerelease"; fi
-          gh release create "$TAG" \
-            --title "$TAG" \
-            --generate-notes \
-            $PRERELEASE_FLAG \
-            artifacts/*/*.zip
+        uses: softprops/action-gh-release@v3
+        with:
+          name: VideoCrop ${{ github.ref_name }}
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: artifacts/*
+          body: |
+            ### Download
+            - **Installer (recommended):** `VideoCrop-${{ github.ref_name }}-x64-setup.exe` — per-user install, no admin needed, adds a Start menu entry and an uninstaller.
+            - **Portable:** `VideoCrop-${{ github.ref_name }}-x64-portable.exe` — single exe, needs the WebView2 runtime (built into Windows 11).
+            - ARM64 builds are the `-arm64` files.
+
+            On first launch VideoCrop downloads ffmpeg (~100 MB) once.

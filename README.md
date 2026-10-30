@@ -4,40 +4,41 @@ A small Windows app for trimming, cropping, resizing, and compressing video file
 
 ## Features
 
-- **Cut** a precise range with a draggable timeline (frame-accurate or fast keyframe-snapped).
-- **Crop** to any rectangle or snap to common aspects (16:9, 4:3, 1:1, 9:16, original).
-- **Resize** with aspect lock and one-click presets (2160p / 1440p / 1080p / 720p / 480p).
-- **Compress** with sensible quality presets (H.264 for compatibility, H.265 / AV1 for smaller files) plus an advanced panel for custom bitrate or target file size.
-- **Output mode** — keep everything, or extract just audio (`.m4a` / `.opus` / `.mp3`) or just video.
-- Embedded preview with transport + volume controls. Auto-updates from new releases.
+- **Cut** a precise range on a zoomable timeline with a filmstrip: frame-accurate or fast (keyframe-snapped). Drag away from the track while scrubbing to slow down for fine control, or type exact times.
+- **Crop** on a full-resolution still to any rectangle, or snap to common aspects (16:9, 4:3, 1:1, 9:16, 4:5, original).
+- **Resize** with aspect lock, height presets that never upscale past the original, and percentage chips.
+- **Share presets**: one click for Discord, YouTube, X, TikTok/Reels/Shorts, WhatsApp or email. Size caps and output resolution are worked out for you.
+- **Compress** with quality presets (H.264 for compatibility, H.265 / AV1 for smaller files), plus a custom panel for codec, bitrate or target file size.
+- **Output mode**: keep everything, or extract just the audio (`.m4a` / `.opus` / `.mp3`) or just the video.
+- Plays anything ffmpeg can open, including multi-hour HEVC/AV1 OBS recordings, with no up-front conversion. Files Windows can't decode are streamed through an on-demand preview.
+- Light and dark themes. Tells you when a new version is out.
 
 ## Download
 
-Grab the latest `VideoCrop-vX.Y.Z-win-x64.zip` (or `win-arm64.zip`) from the [Releases page](https://github.com/Azmekk/VideoCrop/releases). Unzip and run `VideoCrop.App.exe` — no installer.
+Grab the latest release from the [Releases page](https://github.com/Azmekk/VideoCrop/releases):
 
-## Where to put it
-
-Recommended: `%LOCALAPPDATA%\Programs\VideoCrop` (i.e. `C:\Users\<you>\AppData\Local\Programs\VideoCrop`). Avoid `Program Files` — auto-updates need to write to the install folder without UAC prompts.
+- `VideoCrop-vX.Y.Z-x64-setup.exe`: installer (~2 MB, per-user, no admin rights needed, adds a Start menu entry and an uninstaller).
+- `VideoCrop-vX.Y.Z-x64-portable.exe`: a single exe you can run from anywhere.
+- `-arm64` variants for Windows on ARM.
 
 ## Requirements
 
 - Windows 10 version 1809 (October 2018) or newer, 64-bit.
-- [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) (the installer will prompt if it's missing).
-- [Windows App SDK 1.6+ runtime](https://learn.microsoft.com/windows/apps/windows-app-sdk/downloads).
+- Microsoft Edge WebView2 runtime. It's built into Windows 11; on Windows 10 the installer fetches it if it's missing.
 
 ## First run
 
-VideoCrop uses ffmpeg and mpv under the hood. The first time you launch the app, it'll offer to download them (~200 MB total) into a `tools/` folder next to the exe. Click **Download** and wait — that's it.
+VideoCrop uses ffmpeg under the hood. The first time you launch the app, it offers to download it (~100 MB, once) into `%LOCALAPPDATA%\com.azmek.videocrop\tools`. Click **Download** and wait.
 
 ## Using it
 
-1. Drag a video onto the window (or click **Open File…**). It plays back in the preview pane.
+1. Drag a video onto the window (or click to choose a file). It plays in the preview pane.
 2. Adjust any combination of:
-   - **Cut** — start/end times, or drag the handles on the timeline.
-   - **Crop** — click **Edit crop…**, drag a rectangle, optionally pick an aspect, hit Apply.
-   - **Resize** — toggle on, pick a preset height or type a custom size.
-   - **Compression** — pick a preset; flip on *Custom (advanced)* if you need codec-level control.
-3. Confirm the output destination, then click **Process**.
+   - **Cut**: drag the handles on the timeline (mouse wheel zooms), or type start/end times.
+   - **Crop**: click **Crop video**, drag the rectangle, optionally pick an aspect, hit Apply.
+   - **Resize**: toggle it on, then pick a preset or type a size.
+   - **Export**: pick a **Share** target, a **Quality** preset, or go **Custom**.
+3. Check the summary line, then click **Process**.
 
 The output filename is the original with `_VideoCrop` appended (collisions get `_VideoCrop2`, `_VideoCrop3`, etc.).
 
@@ -47,15 +48,29 @@ The output filename is the original with `_VideoCrop` appended (collisions get `
 |---|---|
 | `Ctrl + O` | Open file |
 | `Space` | Play / pause |
-| `I` | Set cut start to current playhead |
-| `O` | Set cut end to current playhead |
+| `I` / `O` | Set cut start / end to the playhead |
+| `←` / `→` | Step one frame |
+| `Shift + ←` / `→` | Jump one second |
+| `Home` / `End` | Go to cut start / end |
+| `+` / `-` | Zoom the timeline |
 | `Ctrl + Enter` | Process |
 
 ## Updates
 
-VideoCrop checks GitHub for a new release each time it starts. When one is available, the in-app banner downloads it in the background and offers a **Restart and update** button — the swap and relaunch happen automatically.
+A few seconds after starting, VideoCrop checks GitHub for a new release. If there is one, a small popup links to the release page. Download the new installer whenever you like, or skip that version.
+
+## Building
+
+```
+cd tauri
+pnpm install
+pnpm tauri dev      # run with hot reload
+pnpm tauri build    # installer in src-tauri/target/release/bundle/nsis
+```
+
+Push a `vX.Y.Z` tag to have GitHub Actions build and publish a release.
 
 ## Credits
 
-- [ffmpeg / ffprobe](https://ffmpeg.org/) — the encoding workhorses.
-- [mpv](https://mpv.io/) — playback and frame screenshots, used as a separate process under its GPLv2+ license.
+- [ffmpeg / ffprobe](https://ffmpeg.org/): the encoding workhorses.
+- [Tauri](https://tauri.app/), [Svelte](https://svelte.dev/) and [hls.js](https://github.com/video-dev/hls.js): the app shell, UI and streaming preview.

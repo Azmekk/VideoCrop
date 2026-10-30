@@ -172,4 +172,13 @@ export interface Settings {
   defaultCompression: CompressionChoice | null;
   recentFiles: string[];
   previewEncoder: string | null;
+  /** Release version the user chose "Skip this version" for. */
+  skippedUpdate: string | null;
+}
+
+/** A newer GitHub release (notification only; the user downloads it themselves). */
+export interface UpdateInfo {
+  version: string;
+  url: string;
+  notes: string | null;
 }

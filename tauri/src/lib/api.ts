@@ -8,7 +8,7 @@ import { invoke as tauriInvoke } from "@tauri-apps/api/core";
 import { listen as tauriListen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
   EncodeResult, EncodeStatus, JobDraft, JobPlan, OpenedVideo, PresetCatalog,
-  Settings, ToolDownloadProgress, ToolStatus,
+  Settings, ToolDownloadProgress, ToolStatus, UpdateInfo,
 } from "./types";
 
 export const inTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -50,6 +50,11 @@ export const api = {
 
   /** Opens Explorer with the file selected. */
   revealInFolder: (path: string) => invoke<void>("reveal_in_folder", { path }),
+
+  /** Newer GitHub release, or null when up to date / offline. */
+  checkUpdate: () => invoke<UpdateInfo | null>("check_update"),
+  /** Opens a VideoCrop release page in the default browser. */
+  openReleasePage: (url: string) => invoke<void>("open_release_page", { url }),
 };
 
 export const events = {

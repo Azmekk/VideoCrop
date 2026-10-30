@@ -327,7 +327,7 @@ pub struct OpenedVideo {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", default)]
 pub struct Settings {
     /// "system" | "light" | "dark"
     pub theme: String,
@@ -336,6 +336,8 @@ pub struct Settings {
     pub recent_files: Vec<String>,
     /// Cached result of preview-encoder detection ("h264_nvenc", "libx264", ...).
     pub preview_encoder: Option<String>,
+    /// Release version the user chose "Skip this version" for (no leading "v").
+    pub skipped_update: Option<String>,
 }
 
 impl Default for Settings {
@@ -346,6 +348,7 @@ impl Default for Settings {
             default_compression: None,
             recent_files: Vec::new(),
             preview_encoder: None,
+            skipped_update: None,
         }
     }
 }

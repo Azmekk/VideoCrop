@@ -62,7 +62,10 @@ export function codecString(info: VideoInfo): string | null {
 
 /** True when the hint and the browser agree the file can be played directly. */
 export function canPlayDirect(info: VideoInfo, hint: boolean, probe: HTMLVideoElement): boolean {
-  if (!hint) return false;
+  // The backend says "no" to HEVC because support is per-machine (hardware + HEVC extension);
+  // in an mp4/mov container let canPlayType decide instead.
+  const hevcInMp4 = /^(hevc|h265)$/i.test(info.videoCodec) && /mp4|mov/i.test(info.containerFormat);
+  if (!hint && !hevcInMp4) return false;
   const s = codecString(info);
   if (!s) return false;
   return probe.canPlayType(s) !== "";

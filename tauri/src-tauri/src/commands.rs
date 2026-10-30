@@ -11,6 +11,7 @@ use crate::media::session::{PreviewFns, Session};
 use crate::media::{encoder, hwdetect, process, protocol, tools};
 use crate::settings;
 use crate::state::{lock, AppState};
+use crate::update;
 
 const PROBE_TIMEOUT: Duration = Duration::from_secs(30);
 
@@ -164,4 +165,26 @@ fn reveal(path: &str) -> Result<(), String> {
         .spawn()
         .map(|_| ())
         .map_err(|e| e.to_string())
+}
+
+/// Latest GitHub release if it is newer than this build; None when up to date or offline.
+#[tauri::command]
+pub async fn check_update(app: AppHandle) -> Result<Option<update::UpdateInfo>, String> {
+    let current = app.package_info().version.to_string();
+    tauri::async_runtime::spawn_blocking(move || update::check(&current))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+/// Opens a VideoCrop release page in the default browser. Only release URLs are accepted.
+#[tauri::command]
+pub async fn open_release_page(url: String) -> Result<(), String> {
+    if !url.starts_with(update::RELEASES_PREFIX) || url.contains('"') {
+        return Err("Refusing to open a non-release URL.".into());
+    }
+    std::process::Command::new("explorer.exe")
+        .arg(&url)
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| format!("Could not open the browser: {e}"))
 }

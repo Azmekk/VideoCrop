@@ -151,3 +151,4 @@ frame). The frontend keeps at most one scrub request in flight and coalesces to 
   saved to localStorage (`vc-theme`, read in index.html before paint) and settings.
 - In plain-browser dev (`pnpm dev` without Tauri) `lib/api.ts` callers get a mock backend
   (dev-only dynamic import) so the UI can be iterated in a browser.
+- Update check: `check_update` command (GitHub latest release, notification only) + `UpdatePopup.svelte`; skipped version saved as `Settings.skippedUpdate`.

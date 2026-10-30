@@ -25,9 +25,16 @@
 
 <header class="bar" data-tauri-drag-region>
   <div class="brand" data-tauri-drag-region>
+    <!-- Small-size rendition of the app icon (assets/icon-proposal.svg). -->
     <svg class="mark" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-      <rect x="1" y="3" width="16" height="12" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.4" />
-      <path d="M6 6.5H4.5v5H6M12 6.5h1.5v5H12" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+      <defs>
+        <linearGradient id="vc-tile" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#38BDF8" /><stop offset="1" stop-color="#1D4ED8" />
+        </linearGradient>
+      </defs>
+      <rect x="0.5" y="0.5" width="17" height="17" rx="4" fill="url(#vc-tile)" />
+      <rect x="3.5" y="5.5" width="11" height="7" rx="1" fill="none" stroke="#fff" stroke-width="1.1" />
+      <path d="M5.5 9V7.5H7M11 7.5h1.5V9M12.5 9.5V10.5H11M7 10.5H5.5V9.5" fill="none" stroke="#fff" stroke-width="1.1" stroke-linecap="round" />
     </svg>
     <span class="name" data-tauri-drag-region>VideoCrop</span>
   </div>
