@@ -41,7 +41,7 @@
       <span class="badge"><Icon name="download" size={15} /></span>
       <div>
         <div id="update-title" class="title">VideoCrop {update.version} is available</div>
-        <div class="sub">Download the new installer from GitHub when you're ready.</div>
+        <div class="sub">Download the new version from the website when you're ready.</div>
       </div>
       <button class="btn ghost sm icon" aria-label="Later" data-tip="Remind me next launch" onclick={() => (update = null)}>
         <Icon name="close" size={13} />

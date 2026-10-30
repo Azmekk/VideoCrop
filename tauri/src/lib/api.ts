@@ -53,7 +53,7 @@ export const api = {
 
   /** Newer GitHub release, or null when up to date / offline. */
   checkUpdate: () => invoke<UpdateInfo | null>("check_update"),
-  /** Opens a VideoCrop release page in the default browser. */
+  /** Opens the VideoCrop download page in the default browser. */
   openReleasePage: (url: string) => invoke<void>("open_release_page", { url }),
 };
 

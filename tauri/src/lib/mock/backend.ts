@@ -173,7 +173,7 @@ export async function invoke<T>(cmd: string, args?: Record<string, unknown>): Pr
       case "reveal_in_folder": console.info("[mock] reveal", args?.path); return undefined;
       case "check_update":
         return new URLSearchParams(location.search).has("update")
-          ? { version: "2.1.0", url: "https://github.com/Azmekk/VideoCrop/releases/tag/v2.1.0", notes: "- Faster previews\n- New share presets" }
+          ? { version: "2.1.0", url: "https://videocrop.vexbyte.com/", notes: "- Faster previews\n- New share presets" }
           : null;
       case "open_release_page": console.info("[mock] open", args?.url); return undefined;
       default: throw `Unknown command ${cmd}`;

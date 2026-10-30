@@ -1,13 +1,13 @@
 //! "A new version is available" check against GitHub releases. Notification only: the user
-//! downloads the new installer from the release page themselves. No auto-install.
+//! downloads the new installer from the website themselves. No auto-install.
 
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
 const LATEST_RELEASE_API: &str = "https://api.github.com/repos/Azmekk/VideoCrop/releases/latest";
-/// The only URLs `open_release_page` will hand to the shell.
-pub const RELEASES_PREFIX: &str = "https://github.com/Azmekk/VideoCrop/releases";
+/// Where "Download" leads, and the only URL `open_release_page` will hand to the shell.
+pub const DOWNLOAD_PAGE: &str = "https://videocrop.vexbyte.com/";
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -21,7 +21,6 @@ pub struct UpdateInfo {
 #[derive(Deserialize)]
 struct Release {
     tag_name: String,
-    html_url: String,
     body: Option<String>,
     #[serde(default)]
     draft: bool,
@@ -76,14 +75,9 @@ pub fn check(current_version: &str) -> Result<Option<UpdateInfo>, String> {
     if release.draft || release.prerelease || !is_newer(&release.tag_name, current_version) {
         return Ok(None);
     }
-    let url = if release.html_url.starts_with(RELEASES_PREFIX) {
-        release.html_url
-    } else {
-        format!("{RELEASES_PREFIX}/latest")
-    };
     Ok(Some(UpdateInfo {
         version: release.tag_name.trim_start_matches(['v', 'V']).to_owned(),
-        url,
+        url: DOWNLOAD_PAGE.to_owned(),
         notes: release.body.filter(|b| !b.trim().is_empty()),
     }))
 }

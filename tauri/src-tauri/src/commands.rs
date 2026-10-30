@@ -180,11 +180,11 @@ pub async fn check_update(app: AppHandle) -> Result<Option<update::UpdateInfo>, 
         .map_err(|e| e.to_string())?
 }
 
-/// Opens a VideoCrop release page in the default browser. Only release URLs are accepted.
+/// Opens the VideoCrop download page in the default browser. No other URL is accepted.
 #[tauri::command]
 pub async fn open_release_page(url: String) -> Result<(), String> {
-    if !url.starts_with(update::RELEASES_PREFIX) || url.contains('"') {
-        return Err("Refusing to open a non-release URL.".into());
+    if url != update::DOWNLOAD_PAGE {
+        return Err("Refusing to open a URL other than the download page.".into());
     }
     std::process::Command::new("explorer.exe")
         .arg(&url)
