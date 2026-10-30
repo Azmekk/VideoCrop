@@ -127,7 +127,10 @@ jobs:
         with:
           name: VideoCrop ${{ github.ref_name }}
           generate_release_notes: true
+          # Published immediately on the tag push, never a draft. Tags with a suffix (v3.1.0-beta) are prereleases.
+          draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
+          make_latest: ${{ !contains(github.ref_name, '-') }}
           files: artifacts/*
           body: |
             ### Download
