@@ -1,7 +1,8 @@
 //! Locate and download ffmpeg/ffprobe. Port of `ToolDownloadService.cs` (mpv no longer needed).
 //!
-//! Resolution order (each tool independently): `VIDEOCROP_TOOLS_DIR` (dev override),
-//! `<app_local_data_dir>/tools` (where downloads land), `tools/` next to the exe.
+//! Resolution order (ffmpeg + ffprobe from the same place): `VIDEOCROP_TOOLS_DIR` (dev override),
+//! `<app_local_data_dir>/tools` (where downloads land), `tools/` next to the exe, then PATH
+//! if that ffmpeg passes `toolcheck` (the download is only offered when none of these work).
 
 use std::fs;
 use std::io::{self, Read, Write};
@@ -14,6 +15,8 @@ use tauri::{AppHandle, Emitter};
 use crate::core::models::{ToolDownloadProgress, ToolStatus};
 use crate::state::{AppState, Paths};
 
+use super::toolcheck;
+
 pub const ENV_TOOLS_DIR: &str = "VIDEOCROP_TOOLS_DIR";
 pub const FFMPEG_EXE: &str = "ffmpeg.exe";
 pub const FFPROBE_EXE: &str = "ffprobe.exe";
@@ -24,47 +27,60 @@ const USER_AGENT: &str = concat!("VideoCrop/", env!("CARGO_PKG_VERSION"));
 pub struct ToolPaths {
     pub ffmpeg: PathBuf,
     pub ffprobe: PathBuf,
+    /// "dev" (VIDEOCROP_TOOLS_DIR), "bundled" (our download / portable tools dir) or "path".
+    pub source: &'static str,
 }
 
-pub fn candidate_dirs(paths: &Paths) -> Vec<PathBuf> {
+pub fn candidate_dirs(paths: &Paths) -> Vec<(PathBuf, &'static str)> {
     let mut dirs = Vec::with_capacity(3);
     if let Some(env) = std::env::var_os(ENV_TOOLS_DIR).filter(|v| !v.is_empty()) {
-        dirs.push(PathBuf::from(env));
+        dirs.push((PathBuf::from(env), "dev"));
     }
-    dirs.push(paths.tools_dir.clone());
+    dirs.push((paths.tools_dir.clone(), "bundled"));
     if let Some(d) = &paths.exe_tools_dir {
-        dirs.push(d.clone());
+        dirs.push((d.clone(), "bundled"));
     }
     dirs
 }
 
-fn find_in(dirs: &[PathBuf], exe: &str) -> Option<PathBuf> {
-    dirs.iter().map(|d| d.join(exe)).find(|p| p.is_file())
+/// Our own tools dirs first (known-good builds), then a user ffmpeg on PATH if it passes
+/// `toolcheck`. Err carries why the PATH ffmpeg was rejected, if there was one.
+fn resolve(paths: &Paths) -> Result<ToolPaths, Option<String>> {
+    for (dir, source) in candidate_dirs(paths) {
+        let (ffmpeg, ffprobe) = (dir.join(FFMPEG_EXE), dir.join(FFPROBE_EXE));
+        if ffmpeg.is_file() && ffprobe.is_file() {
+            return Ok(ToolPaths { ffmpeg, ffprobe, source });
+        }
+    }
+    let (ffmpeg, ffprobe) = toolcheck::find_on_path().ok_or(None)?;
+    match toolcheck::check(&ffmpeg, &paths.config_dir) {
+        None => Ok(ToolPaths { ffmpeg, ffprobe, source: "path" }),
+        Some(problem) => Err(Some(problem)),
+    }
 }
 
-/// Resolves both tools (uses the cache when present).
+/// Resolves both tools (uses the cache when present). The first call with a new PATH ffmpeg
+/// runs it once to check its encoders, so call this off the main thread.
 pub fn status(state: &AppState) -> ToolStatus {
     let tools_dir = state.paths.tools_dir.to_string_lossy().into_owned();
-    if let Some(t) = state.tools.read().unwrap_or_else(|e| e.into_inner()).clone() {
-        return ToolStatus {
-            ffmpeg: Some(t.ffmpeg.to_string_lossy().into_owned()),
-            ffprobe: Some(t.ffprobe.to_string_lossy().into_owned()),
-            ready: true,
-            tools_dir,
-        };
-    }
-    let dirs = candidate_dirs(&state.paths);
-    let ffmpeg = find_in(&dirs, FFMPEG_EXE);
-    let ffprobe = find_in(&dirs, FFPROBE_EXE);
-    if let (Some(ffmpeg), Some(ffprobe)) = (&ffmpeg, &ffprobe) {
-        *state.tools.write().unwrap_or_else(|e| e.into_inner()) =
-            Some(ToolPaths { ffmpeg: ffmpeg.clone(), ffprobe: ffprobe.clone() });
-    }
-    ToolStatus {
-        ready: ffmpeg.is_some() && ffprobe.is_some(),
-        ffmpeg: ffmpeg.map(|p| p.to_string_lossy().into_owned()),
-        ffprobe: ffprobe.map(|p| p.to_string_lossy().into_owned()),
-        tools_dir,
+    let cached = state.tools.read().unwrap_or_else(|e| e.into_inner()).clone();
+    let resolved = match cached {
+        Some(t) => Ok(t),
+        None => resolve(&state.paths),
+    };
+    match resolved {
+        Ok(t) => {
+            *state.tools.write().unwrap_or_else(|e| e.into_inner()) = Some(t.clone());
+            ToolStatus {
+                ffmpeg: Some(t.ffmpeg.to_string_lossy().into_owned()),
+                ffprobe: Some(t.ffprobe.to_string_lossy().into_owned()),
+                ready: true,
+                tools_dir,
+                source: Some(t.source.to_owned()),
+                problem: None,
+            }
+        }
+        Err(problem) => ToolStatus { ffmpeg: None, ffprobe: None, ready: false, tools_dir, source: None, problem },
     }
 }
 

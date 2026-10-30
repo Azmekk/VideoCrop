@@ -9,4 +9,5 @@ pub mod session;
 #[cfg(test)]
 mod smoke;
 pub mod stream;
+pub mod toolcheck;
 pub mod tools;

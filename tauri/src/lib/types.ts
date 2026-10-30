@@ -149,6 +149,10 @@ export interface ToolStatus {
   ffprobe: string | null;
   ready: boolean;
   toolsDir: string;
+  /** "bundled" (downloaded by VideoCrop), "path" or "dev". */
+  source: string | null;
+  /** Why the ffmpeg found on PATH can't be used, if one was found. */
+  problem: string | null;
 }
 
 export interface ToolDownloadProgress {

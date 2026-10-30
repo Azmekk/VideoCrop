@@ -299,6 +299,10 @@ pub struct ToolStatus {
     pub ffprobe: Option<String>,
     pub ready: bool,
     pub tools_dir: String,
+    /// Where the tools came from: "bundled" (downloaded by VideoCrop), "path" or "dev".
+    pub source: Option<String>,
+    /// Why the ffmpeg found on PATH can't be used (shown on the setup screen), if one was found.
+    pub problem: Option<String>,
 }
 
 /// Emitted as `tools://progress`.

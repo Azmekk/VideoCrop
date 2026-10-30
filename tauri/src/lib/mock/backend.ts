@@ -131,7 +131,7 @@ export async function invoke<T>(cmd: string, args?: Record<string, unknown>): Pr
   await sleep(cmd === "plan_job" ? 5 : 60);
   const r = ((): unknown => {
     switch (cmd) {
-      case "tools_status": return { ffmpeg: toolsReady ? "C:\\tools\\ffmpeg.exe" : null, ffprobe: toolsReady ? "C:\\tools\\ffprobe.exe" : null, ready: toolsReady, toolsDir: "C:\\Users\\you\\AppData\\Local\\VideoCrop\\tools" } satisfies ToolStatus;
+      case "tools_status": return { ffmpeg: toolsReady ? "C:\\tools\\ffmpeg.exe" : null, ffprobe: toolsReady ? "C:\\tools\\ffprobe.exe" : null, ready: toolsReady, toolsDir: "C:\\Users\\you\\AppData\\Local\\VideoCrop\\tools", source: toolsReady ? "path" : null, problem: toolsReady ? null : "The ffmpeg on your PATH (C:/ffmpeg/bin/ffmpeg.exe) is missing libsvtav1, libx265 (VideoCrop needs a full GPL build)." } satisfies ToolStatus;
       case "tools_download": return (async () => {
         const failOnce = flags.get("tools") === "0" && !sessionStorage.getItem("vc-mock-tools-failed");
         for (let i = 0; i <= 100; i += 2) {
@@ -140,7 +140,7 @@ export async function invoke<T>(cmd: string, args?: Record<string, unknown>): Pr
           await sleep(40);
         }
         toolsReady = true;
-        return { ffmpeg: "C:\\tools\\ffmpeg.exe", ffprobe: "C:\\tools\\ffprobe.exe", ready: true, toolsDir: "C:\\tools" } satisfies ToolStatus;
+        return { ffmpeg: "C:\\tools\\ffmpeg.exe", ffprobe: "C:\\tools\\ffprobe.exe", ready: true, toolsDir: "C:\\tools", source: "bundled", problem: null } satisfies ToolStatus;
       })();
       case "open_video": {
         const path = String(args?.path ?? "sample.mp4");

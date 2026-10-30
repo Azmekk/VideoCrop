@@ -17,7 +17,11 @@ const PROBE_TIMEOUT: Duration = Duration::from_secs(30);
 
 #[tauri::command]
 pub async fn tools_status(state: State<'_, AppState>) -> Result<ToolStatus, String> {
-    Ok(tools::status(&state))
+    // May run a PATH ffmpeg once to check its encoders: keep it off the async workers.
+    let state = state.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || tools::status(&state))
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]

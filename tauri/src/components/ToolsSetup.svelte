@@ -3,7 +3,8 @@
   import { api, events } from "../lib/api";
   import Icon from "./ui/Icon.svelte";
 
-  let { onready }: { onready: () => void } = $props();
+  /** Why the ffmpeg on PATH was rejected, when there is one. */
+  let { problem = null, onready }: { problem?: string | null; onready: () => void } = $props();
 
   let step = $state<"idle" | "downloading" | "error">("idle");
   let fraction = $state(0);
@@ -39,6 +40,9 @@
       VideoCrop uses <strong>ffmpeg</strong> to read and encode video. It's downloaded once
       (about 100–150 MB) and kept on this PC — you won't see this again.
     </p>
+    {#if problem}
+      <div class="why" role="note"><Icon name="info" size={15} /><span>{problem}</span></div>
+    {/if}
 
     {#if step === "idle"}
       <button class="btn primary big" onclick={start}><Icon name="download" size={15} /> Download ffmpeg</button>
@@ -56,6 +60,12 @@
 </section>
 
 <style>
+  .why {
+    display: flex; gap: 8px; align-items: flex-start; text-align: left; font-size: 12.5px; line-height: 1.45;
+    padding: 8px 10px; border-radius: var(--r-2); background: var(--surface-2); color: var(--text-2);
+    overflow-wrap: anywhere;
+  }
+  .why :global(svg) { flex: none; margin-top: 1px; color: var(--accent-text); }
   .wrap { flex: 1; display: grid; place-items: center; padding: 24px; }
   .card {
     width: min(440px, 100%); padding: 28px; border-radius: var(--r-4);

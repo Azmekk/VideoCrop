@@ -17,6 +17,7 @@
 
   let phase = $state<"boot" | "tools" | "ready">("boot");
   let dragOver = $state(false);
+  let toolsProblem = $state<string | null>(null);
 
   // The editor (player, timeline, panels) is its own chunk so the first paint stays light.
   // It is preloaded when the browser goes idle, and awaited if a file opens before that.
@@ -38,6 +39,7 @@
         encoder.init(),
       ]);
       exporter.restore();
+      toolsProblem = status?.problem ?? null;
       phase = status && !status.ready ? "tools" : "ready";
       (window.requestIdleCallback ?? ((f: () => void) => setTimeout(f, 300)))(() => void loadEditor());
     })();
@@ -57,7 +59,7 @@
   <TitleBar />
   <main>
     {#if phase === "tools"}
-      <ToolsSetup onready={() => (phase = "ready")} />
+      <ToolsSetup problem={toolsProblem} onready={() => (phase = "ready")} />
     {:else if phase === "ready"}
       {#if editor.video && Editor}
         <Editor />
