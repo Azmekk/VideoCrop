@@ -1,4 +1,4 @@
-# VideoCrop 2 (Tauri) — architecture
+# VideoCrop 3 (Tauri) — architecture
 
 Port of the WinUI 3 app (`../src`, `../VideoCrop_Plan.md`) to Tauri 2 + Svelte 5.
 Product goals, in priority order: **small bundle, fast startup**, plays every file

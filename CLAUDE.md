@@ -8,7 +8,7 @@ Windows desktop app for compressing, cutting, cropping, and resizing videos usin
 
 ### Tauri port (`tauri/`, branch `tauri-port`)
 
-VideoCrop 2 is a Tauri 2 + Svelte 5 rewrite that replaces the WinUI app and drops mpv (playback is `<video>` fed the original file or an on-demand ffmpeg HLS stream). `tauri/ARCHITECTURE.md` is its spec and contract; read it before changing anything there. The editing rules below (filter order, crop coordinates, cut placement, output naming) carry over unchanged and live in `tauri/src-tauri/src/core/`.
+VideoCrop 3 is a Tauri 2 + Svelte 5 rewrite that replaces the WinUI app and drops mpv (playback is `<video>` fed the original file or an on-demand ffmpeg HLS stream). `tauri/ARCHITECTURE.md` is its spec and contract; read it before changing anything there. The editing rules below (filter order, crop coordinates, cut placement, output naming) carry over unchanged and live in `tauri/src-tauri/src/core/`.
 
 - **Dev:** `cd tauri && pnpm install && pnpm tauri dev` (set `VIDEOCROP_TOOLS_DIR` to a folder with ffmpeg.exe/ffprobe.exe to skip the download). `pnpm dev` alone runs the UI in a browser against a mock backend.
 - **Checks:** `pnpm check` (svelte-check), `cargo test` and `cargo clippy --all-targets -- -D warnings` in `tauri/src-tauri`.

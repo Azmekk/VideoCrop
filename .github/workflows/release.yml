@@ -21,15 +21,18 @@ concurrency:
 jobs:
   build:
     name: Build (${{ matrix.arch }})
-    runs-on: windows-latest
+    # Each architecture builds natively on its own runner, in parallel (no emulation, no cross-compile).
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - arch: x64
             target: x86_64-pc-windows-msvc
+            runner: windows-latest
           - arch: arm64
             target: aarch64-pc-windows-msvc
+            runner: windows-11-arm
     defaults:
       run:
         shell: pwsh
