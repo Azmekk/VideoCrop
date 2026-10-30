@@ -1,6 +1,21 @@
 # VideoCrop
 
+[![Latest release](https://img.shields.io/github/v/release/Azmekk/VideoCrop?label=download)](https://github.com/Azmekk/VideoCrop/releases/latest)
+[![CI](https://github.com/Azmekk/VideoCrop/actions/workflows/ci.yml/badge.svg)](https://github.com/Azmekk/VideoCrop/actions/workflows/ci.yml)
+![Windows 10/11, x64 and ARM64](https://img.shields.io/badge/Windows-10%20%7C%2011%20%C2%B7%20x64%20%7C%20ARM64-0078d4)
+
 A small Windows app for trimming, cropping, resizing, and compressing video files. Pick a clip, tweak what you want, hit Process.
+
+## What's new in 3.0
+
+VideoCrop 3 is a ground-up rewrite on [Tauri](https://tauri.app/):
+
+- **Tiny and fast:** a ~2 MB installer and ~5 MB app (no .NET runtime, no mpv). The window is up almost instantly.
+- **Plays everything:** long OBS recordings in HEVC/AV1/MKV play straight away. Anything Windows can't decode is streamed through an on-demand preview, so there's no conversion step up front.
+- **Share presets:** one click targets Discord, YouTube, X, TikTok/Reels/Shorts, WhatsApp or email.
+- **A better timeline:** zoom, filmstrip thumbnails, fine scrubbing and typed times.
+- **New look:** light and dark themes.
+- **Uses your ffmpeg:** if a suitable ffmpeg is already on your PATH, nothing is downloaded.
 
 ## Features
 
@@ -20,6 +35,10 @@ Grab the latest release from the [Releases page](https://github.com/Azmekk/Video
 - `VideoCrop-vX.Y.Z-x64-setup.exe`: installer (~2 MB, per-user, no admin rights needed, adds a Start menu entry and an uninstaller).
 - `VideoCrop-vX.Y.Z-x64-portable.exe`: a single exe you can run from anywhere.
 - `-arm64` variants for Windows on ARM.
+
+### Upgrading from 2.x
+
+Version 2 can't update itself to 3. Install 3.x with the installer above, then remove the old version by running `uninstall.bat` from its folder (or just delete the folder). Your videos are untouched. Settings start fresh.
 
 ## Requirements
 
@@ -63,6 +82,8 @@ A few seconds after starting, VideoCrop checks GitHub for a new release. If ther
 
 ## Building
 
+Needs [Rust](https://rustup.rs/), Node 24 and [pnpm](https://pnpm.io/).
+
 ```
 cd tauri
 pnpm install
@@ -70,7 +91,12 @@ pnpm tauri dev      # run with hot reload
 pnpm tauri build    # installer in src-tauri/target/release/bundle/nsis
 ```
 
-Push a `vX.Y.Z` tag to have GitHub Actions build and publish a release.
+- `pnpm dev` runs just the UI in a browser against a mock backend.
+- Checks: `pnpm check`, plus `cargo test` and `cargo clippy` in `tauri/src-tauri`.
+- See [`tauri/ARCHITECTURE.md`](tauri/ARCHITECTURE.md) for how it fits together.
+- Push a `vX.Y.Z` tag to have GitHub Actions build x64 and ARM64 natively and publish a release.
+
+The original WinUI 3 / .NET version (2.x) still lives in `src/` for reference.
 
 ## Credits
 
