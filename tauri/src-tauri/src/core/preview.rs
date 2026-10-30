@@ -50,7 +50,7 @@ impl PreviewEncoder {
         match self {
             Self::Nvenc => &["-preset", "p1", "-tune", "ll", "-rc", "vbr", "-cq", "26", "-forced-idr", "1"],
             Self::Qsv => &["-preset", "veryfast", "-global_quality", "26"],
-            Self::Amf => &["-quality", "speed", "-rc", "cqp", "-qp_i", "24", "-qp_p", "26"],
+            Self::Amf => &["-quality", "speed", "-rc", "cqp", "-qp_i", "27", "-qp_p", "29"],
             Self::X264 => &["-preset", "ultrafast", "-tune", "zerolatency", "-crf", "26", "-sc_threshold", "0"],
         }
     }
@@ -405,8 +405,8 @@ mod tests {
         assert_eq!(value_after(&m, "-c:v").as_deref(), Some("h264_amf"));
         assert_eq!(value_after(&m, "-quality").as_deref(), Some("speed"));
         assert_eq!(value_after(&m, "-rc").as_deref(), Some("cqp"));
-        assert_eq!(value_after(&m, "-qp_i").as_deref(), Some("24"));
-        assert_eq!(value_after(&m, "-qp_p").as_deref(), Some("26"));
+        assert_eq!(value_after(&m, "-qp_i").as_deref(), Some("27"));
+        assert_eq!(value_after(&m, "-qp_p").as_deref(), Some("29"));
 
         for a in [&n, &q, &m] {
             assert_eq!(value_after(a, "-force_key_frames").as_deref(), Some("expr:gte(t,n_forced*4)"));
