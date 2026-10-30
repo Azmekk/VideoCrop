@@ -1,0 +1,40 @@
+[package]
+name = "videocrop"
+version = "2.0.0"
+description = "Cut, crop, resize and compress videos"
+authors = ["Azmek"]
+edition = "2021"
+rust-version = "1.90"
+
+[lib]
+name = "videocrop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["process", "io-util", "fs", "time", "sync", "macros", "rt-multi-thread"] }
+ureq = "3"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+rand = { version = "0.9", default-features = false, features = ["std", "thread_rng"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = [
+  "Win32_Foundation",
+  "Win32_System_JobObjects",
+  "Win32_System_Threading",
+  "Win32_Security",
+] }
+
+# Small binary + fast startup are explicit product goals.
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
