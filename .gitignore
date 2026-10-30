@@ -42,3 +42,6 @@ tauri/node_modules/
 tauri/dist/
 tauri/src-tauri/target/
 tauri/src-tauri/gen/
+
+# Dev-only sample media for the browser mock
+tauri/dev-media/
