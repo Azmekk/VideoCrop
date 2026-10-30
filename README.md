@@ -28,7 +28,9 @@ Grab the latest release from the [Releases page](https://github.com/Azmekk/Video
 
 ## First run
 
-VideoCrop uses ffmpeg under the hood. The first time you launch the app, it offers to download it (~100 MB, once) into `%LOCALAPPDATA%\com.azmek.videocrop\tools`. Click **Download** and wait.
+VideoCrop uses ffmpeg under the hood. If you already have ffmpeg 6 or newer on your PATH, it is used as is. It needs to be a full GPL build with libx264, libx265, SVT-AV1, VP9, Opus and LAME, like the gyan.dev or BtbN builds.
+
+Otherwise, the first time you launch the app it offers to download one (~100 MB, once) into `%LOCALAPPDATA%\com.azmek.videocrop\tools`. If your PATH ffmpeg didn't qualify, it tells you why.
 
 ## Using it
 

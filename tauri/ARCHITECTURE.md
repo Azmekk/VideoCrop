@@ -27,6 +27,7 @@ tauri/
     media/       runtime: processes, files, network
       process.rs spawn helper: CREATE_NO_WINDOW, kill-on-close Job Object, stdout/stderr lines
       tools.rs   locate + download ffmpeg/ffprobe (BtbN GPL zip) into app-local-data/tools
+      toolcheck.rs  PATH ffmpeg: scoop-shim resolution, encoder/version check, cached verdict
       session.rs one open video: id, info, temp dir, HLS job state, frame grabs
       stream.rs  HLS job supervisor (start/restart/throttle/retry)
       protocol.rs `stream` URI scheme handler (direct w/ ranges, playlist, segments, frames)
