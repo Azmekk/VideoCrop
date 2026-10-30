@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>VideoCrop: make any clip fit</title>
+<title>VideoCrop: cut, crop and compress videos to fit anywhere</title>
 <meta name="description" content="VideoCrop is a free Windows app that cuts, crops, resizes and compresses videos. One click shrinks a clip to fit Discord, WhatsApp, email, X, YouTube or Reels.">
 <meta name="theme-color" content="#05060a">
 <meta property="og:type" content="website">
-<meta property="og:title" content="VideoCrop: make any clip fit">
+<meta property="og:title" content="VideoCrop: cut, crop and compress videos to fit anywhere">
 <meta property="og:description" content="Cut, crop and compress videos on Windows. One click squeezes a clip under Discord's 10 MB, WhatsApp's 16 MB or email's 25 MB.">
 <meta property="og:image" content="../../assets/editor-dark.webp">
 <meta name="twitter:card" content="summary_large_image">
@@ -54,8 +54,9 @@ a{color:inherit}
 .hero .wrap{position:relative;z-index:1}
 .status{display:inline-flex;align-items:center;gap:9px;padding:6px 14px 6px 12px;border:1px solid var(--line2);border-radius:999px;font-size:14px;color:var(--ink);background:rgba(10,12,17,.7);text-decoration:none}
 .status i{width:8px;height:8px;border-radius:50%;background:var(--amber);box-shadow:0 0 10px var(--amber)}
-h1{margin:18px 0 6px;font-weight:850;font-size:clamp(58px,12vw,150px);line-height:.92;letter-spacing:-.03em;font-stretch:82%;
+h1{margin:18px 0 10px;font-weight:850;font-size:clamp(46px,8.6vw,118px);line-height:.92;letter-spacing:-.03em;font-stretch:82%;
   background:linear-gradient(180deg,#fff 20%,#f3dcae 70%,var(--amber) 120%);-webkit-background-clip:text;background-clip:text;color:transparent;padding-bottom:.06em}
+h1 .fit{display:inline-block;background:linear-gradient(180deg,#ffe2a3 0%,var(--amber) 55%,#e08a1e 110%);-webkit-background-clip:text;background-clip:text;color:transparent}
 .sub{margin:0 auto;max-width:640px;color:var(--mute);font-size:clamp(17px,2vw,20px);line-height:1.5}
 
 /* squeeze stage */
@@ -288,8 +289,8 @@ footer a:hover{color:var(--ink)}
   <canvas id="bg" aria-hidden="true"></canvas>
   <div class="wrap">
     <a class="status" href="https://github.com/Azmekk/VideoCrop/releases"><i></i><span data-version>v3.0.0</span>&nbsp;is out</a>
-    <h1 id="h">Make it fit.</h1>
-    <p class="sub">One click squeezes a clip under Discord's 10&nbsp;MB, WhatsApp's 16 or email's 25. Cut, crop and compress videos on Windows, free.</p>
+    <h1 id="h">Cut it. Crop it.<br><span class="fit">Make it fit.</span></h1>
+    <p class="sub">A free video editor for the boring part: trim the clip, crop the frame, then one click shrinks it under Discord's 10&nbsp;MB, WhatsApp's 16 or email's 25.</p>
 
     <div class="stage">
       <div class="cardBox">
