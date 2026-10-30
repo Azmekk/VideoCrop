@@ -6,7 +6,7 @@
 
 **Cut, crop, resize and compress videos on Windows: fast, tiny and free.**
 
-[![Latest release](https://img.shields.io/github/v/release/Azmekk/VideoCrop?label=download&color=f5b83d)](https://github.com/Azmekk/VideoCrop/releases/latest)
+[![Latest release](https://img.shields.io/github/v/release/Azmekk/VideoCrop?label=download&color=f5b83d&cacheSeconds=3600)](https://github.com/Azmekk/VideoCrop/releases/latest)
 [![CI](https://github.com/Azmekk/VideoCrop/actions/workflows/ci.yml/badge.svg)](https://github.com/Azmekk/VideoCrop/actions/workflows/ci.yml)
 ![Windows 10/11 · x64 · ARM64](https://img.shields.io/badge/Windows-10%20%7C%2011%20%C2%B7%20x64%20%7C%20ARM64-0078d4)
 [![Downloads](https://img.shields.io/github/downloads/Azmekk/VideoCrop/total?color=555)](https://github.com/Azmekk/VideoCrop/releases)
