@@ -2,28 +2,22 @@
 
 export interface View { start: number; span: number }
 
-export function clampView(v: View, duration: number, minSpan: number): View {
-  const span = Math.min(duration, Math.max(minSpan, v.span));
-  const start = Math.min(duration - span, Math.max(0, v.start));
+/** Clamps `v` inside [lo, hi]. */
+export function clampView(v: View, hi: number, minSpan: number, lo = 0): View {
+  const span = Math.min(hi - lo, Math.max(minSpan, v.span));
+  const start = Math.min(hi - span, Math.max(lo, v.start));
   return { start, span };
 }
 
 /** Zoom by `factor` (<1 zooms in) keeping time `anchor` under the same pixel. */
-export function zoomAround(v: View, factor: number, anchor: number, duration: number, minSpan: number): View {
-  const span = Math.min(duration, Math.max(minSpan, v.span * factor));
+export function zoomAround(v: View, factor: number, anchor: number, hi: number, minSpan: number, lo = 0): View {
+  const span = Math.min(hi - lo, Math.max(minSpan, v.span * factor));
   const rel = v.span > 0 ? (anchor - v.start) / v.span : 0.5;
-  return clampView({ start: anchor - rel * span, span }, duration, minSpan);
+  return clampView({ start: anchor - rel * span, span }, hi, minSpan, lo);
 }
 
-export const pan = (v: View, dt: number, duration: number, minSpan: number): View =>
-  clampView({ start: v.start + dt, span: v.span }, duration, minSpan);
-
-/** View that frames [a, b] with a little breathing room. */
-export function frameRange(a: number, b: number, duration: number, minSpan: number, pad = 0.06): View {
-  const len = Math.max(b - a, minSpan);
-  const span = len * (1 + pad * 2);
-  return clampView({ start: a - len * pad, span }, duration, minSpan);
-}
+export const pan = (v: View, dt: number, hi: number, minSpan: number, lo = 0): View =>
+  clampView({ start: v.start + dt, span: v.span }, hi, minSpan, lo);
 
 export const timeToX = (t: number, v: View, width: number) => ((t - v.start) / v.span) * width;
 export const xToTime = (x: number, v: View, width: number) => v.start + (x / width) * v.span;

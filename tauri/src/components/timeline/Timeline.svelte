@@ -40,6 +40,12 @@
     untrack(() => { timeline.fitAll(); resetThumbs(v.frameUrl); });
   });
 
+  // While zoomed to the cut, re-frame when the cut changes (after a handle drag ends, or from the panel).
+  $effect(() => {
+    const s = cut.start, e = cut.end, f = timeline.focus;
+    if (f && !dragging && (s !== f.lo || e !== f.hi)) untrack(() => timeline.zoomToCut());
+  });
+
   // Page the view to follow playback when zoomed.
   $effect(() => {
     const t = editor.time;
@@ -148,7 +154,7 @@
 <div class="timeline">
   <div class="head">
     <div class="tools">
-      <button class="btn ghost sm icon" onclick={() => timeline.zoomBy(1.6)} disabled={!timeline.zoomed} aria-label="Zoom out" data-tip="Zoom out (−)"><Icon name="zoomOut" size={15} /></button>
+      <button class="btn ghost sm icon" onclick={() => timeline.zoomBy(1.6)} disabled={!timeline.canZoomOut} aria-label="Zoom out" data-tip="Zoom out (−)"><Icon name="zoomOut" size={15} /></button>
       <button class="btn ghost sm icon" onclick={() => timeline.zoomBy(1 / 1.6)} disabled={view.span <= timeline.minSpan + 1e-6} aria-label="Zoom in" data-tip="Zoom in (+)"><Icon name="zoomIn" size={15} /></button>
       <button class="btn ghost sm" onclick={() => timeline.zoomToCut()} disabled={cut.isFull} data-tip="Fit the cut to the timeline"><Icon name="fitCut" size={14} /> Zoom to cut</button>
       <button class="btn ghost sm" onclick={() => timeline.fitAll()} disabled={!timeline.zoomed} data-tip="Show the whole video"><Icon name="fitAll" size={14} /> Show all</button>
@@ -169,7 +175,7 @@
         <Filmstrip {view} {width} height={52} duration={dur} {fps} {aspect} />
         <div class="dim" style:left="0" style:width="{clamp(xs.s, 0, width)}px"></div>
         <div class="dim" style:left="{clamp(xs.e, 0, width)}px" style:right="0"></div>
-        <div class="range" style:left="{xs.s}px" style:width="{Math.max(0, xs.e - xs.s)}px"></div>
+        <div class="range" style:left="{clamp(xs.s, 0, width)}px" style:width="{Math.max(0, clamp(xs.e, 0, width) - clamp(xs.s, 0, width))}px"></div>
 
         {#if xs.s >= -12 && xs.s <= width}
           <div class="handle start" style:left="{xs.s}px" role="slider" tabindex="0"
