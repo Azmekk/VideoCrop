@@ -9,7 +9,7 @@ import { resolve } from "node:path";
 function devMedia(): Plugin {
   const root = resolve(import.meta.dirname, "dev-media");
   const ffmpeg = process.env.VC_FFMPEG
-    ?? resolve(import.meta.dirname, "../src/VideoCrop.App/bin/Debug/net10.0-windows10.0.26100.0/win-x64/tools/ffmpeg.exe");
+    ?? "ffmpeg"; // from PATH
   const types: Record<string, string> = {
     mp4: "video/mp4", jpg: "image/jpeg", m3u8: "application/vnd.apple.mpegurl", ts: "video/mp2t",
   };

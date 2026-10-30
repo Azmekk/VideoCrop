@@ -1,0 +1,37 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time to report this! A few details make it much easier to fix.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: VideoCrop version
+      placeholder: "3.0.0"
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: "Windows 11 24H2, x64"
+  - type: textarea
+    id: file
+    attributes:
+      label: The video file
+      description: Container, codec, resolution, length, and where it came from (OBS, phone, …). Running `ffprobe yourfile` gives all of this.
+  - type: textarea
+    id: log
+    attributes:
+      label: ffmpeg output
+      description: If an export failed, expand "ffmpeg output" on the error card and paste it here.
+      render: text

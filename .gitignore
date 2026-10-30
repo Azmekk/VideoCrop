@@ -1,22 +1,15 @@
-# Build output
-**/bin/
-**/obj/
-**/publish/
+# Tauri app
+tauri/node_modules/
+tauri/dist/
+tauri/dev-media/
+tauri/src-tauri/target/
+tauri/src-tauri/gen/
 
-# IDE
-.vs/
-.idea/
-*.user
-*.suo
-*.userosscache
-*.sln.docstates
+# Local tooling
+.claude/
+.playwright-mcp/
 .vscode/
-
-# .NET test/coverage
-*.coverage
-*.coveragexml
-coverage*.xml
-TestResults/
+.idea/
 
 # Logs
 *.log
@@ -26,22 +19,3 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 .DS_Store
-
-# Update staging directory (created at runtime next to the exe)
-update/
-
-# tools/ is created at runtime next to the exe by ToolDownloadService.
-tools/
-
-# NuGet
-*.nupkg
-.nuget/
-
-# Tauri port
-tauri/node_modules/
-tauri/dist/
-tauri/src-tauri/target/
-tauri/src-tauri/gen/
-
-# Dev-only sample media for the browser mock
-tauri/dev-media/

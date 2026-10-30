@@ -4,80 +4,57 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Windows desktop app for compressing, cutting, cropping, and resizing videos using ffmpeg (encode), ffprobe (metadata), and mpv (playback). The design document at `VideoCrop_Plan.md` is the source of truth for behavior — consult it before adding features.
+Windows desktop app for cutting, cropping, resizing and compressing videos. Tauri 2 (Rust) + Svelte 5, with ffmpeg/ffprobe as external processes. All app code lives in `tauri/`. `tauri/ARCHITECTURE.md` is the spec and the data contract: read it before changing behavior.
 
-### Tauri port (`tauri/`, branch `tauri-port`)
-
-VideoCrop 3 is a Tauri 2 + Svelte 5 rewrite that replaces the WinUI app and drops mpv (playback is `<video>` fed the original file or an on-demand ffmpeg HLS stream). `tauri/ARCHITECTURE.md` is its spec and contract; read it before changing anything there. The editing rules below (filter order, crop coordinates, cut placement, output naming) carry over unchanged and live in `tauri/src-tauri/src/core/`.
-
-- **Dev:** `cd tauri && pnpm install && pnpm tauri dev` (set `VIDEOCROP_TOOLS_DIR` to a folder with ffmpeg.exe/ffprobe.exe to skip the download). `pnpm dev` alone runs the UI in a browser against a mock backend.
-- **Checks:** `pnpm check` (svelte-check), `cargo test` and `cargo clippy --all-targets -- -D warnings` in `tauri/src-tauri`.
-- **Release:** pushing a `vX.Y.Z` tag runs `.github/workflows/release.yml` (NSIS installer + portable exe, x64 and arm64).
-- `core/` stays pure (no processes, no Tauri) and unit-tested; `core/models.rs` and `src/lib/types.ts` must stay in sync; all `invoke` calls live in `src/lib/api.ts`.
+Versions up to 2.x were a WinUI 3 / .NET app with mpv playback. That code was removed and is only in git history (before the 3.0 merge).
 
 ## Commands
 
-The solution file is `VideoCrop.slnx` (not `.sln`).
+Run from `tauri/` unless noted.
 
-- **Build:** `dotnet build VideoCrop.slnx -c Debug`
-- **Run all tests:** `dotnet test VideoCrop.slnx -c Debug`
-- **Run a single test class:** `dotnet test VideoCrop.slnx --filter "FullyQualifiedName~EncodeCommandBuilderTests"`
-- **Run a single test:** `dotnet test VideoCrop.slnx --filter "FullyQualifiedName~OutputNamerTests.Collision_with_base_uses_index_2"`
-- **Run the app:** `dotnet run --project src/VideoCrop.App` (the WinUI 3 unpackaged-launch path through `Microsoft.Windows.SDK.BuildTools.WinApp`)
-- **Release publish:** `dotnet publish src/VideoCrop.App -r win-x64 -c Release --no-self-contained`
-- **External tools**: ffmpeg/ffprobe (BtbN GPL Windows build) and mpv (shinchiro Windows build) are downloaded into `tools/` next to the exe by `ToolDownloadService` at runtime, the first time the app launches with the tools missing. There is no separate fetch script — the workflow ships only .NET binaries; the app pulls the tools.
-
-Targets: `net10.0-windows10.0.26100.0` (App) and `net10.0` (Core/Tests). `TargetPlatformMinVersion` is `10.0.17763.0` (Win10 1809+).
+- **Install:** `pnpm install`
+- **Run the app:** `pnpm tauri dev`. Set `VIDEOCROP_TOOLS_DIR` to a folder with ffmpeg.exe/ffprobe.exe to override tool lookup.
+- **UI only, in a browser:** `pnpm dev`, which uses the mock backend in `src/lib/mock/backend.ts`. URL flags: `?stream` (HLS path), `?tools=0` (setup screen), `?fail` (failed encode), `?update` (update popup). The sample clip lives in gitignored `dev-media/`.
+- **Frontend check:** `pnpm check` (svelte-check, must be 0 errors / 0 warnings).
+- **Rust tests:** `cargo test` in `tauri/src-tauri`. Single test: `cargo test planner::tests::discord`. Real-ffmpeg smoke test: `VIDEOCROP_TOOLS_DIR=… VIDEOCROP_SMOKE_FILE=… cargo test smoke -- --ignored --nocapture`.
+- **Lint:** `cargo clippy --all-targets -- -D warnings` in `tauri/src-tauri`.
+- **Installer:** `pnpm tauri build` produces an NSIS installer in `src-tauri/target/release/bundle/nsis`.
+- **Release:** push a `vX.Y.Z` tag. `.github/workflows/release.yml` builds x64 (`windows-latest`) and arm64 (`windows-11-arm`, native) and publishes the installer + portable exe. `workflow_dispatch` builds artifacts without publishing.
 
 ## Architecture
 
-The solution is intentionally split so the encode/playback logic stays UI-free and unit-testable.
+- **`src-tauri/src/core/`** is pure logic: no processes, no Tauri, no filesystem writes (existence checks are injected closures). It covers ffmpeg argument building (`encode.rs`, `preview.rs`), ffprobe parsing, progress parsing, output naming, presets and the planner. Everything here is unit-tested; keep it that way.
+- **`core/models.rs` is the IPC contract** (serde camelCase) and is mirrored by `src/lib/types.ts`. Change both together.
+- **`src-tauri/src/media/`** is the runtime. It spawns processes (`process.rs`: `CREATE_NO_WINDOW`, kill-on-close Job Object), resolves and downloads tools (`tools.rs`, `toolcheck.rs`), serves the `stream` protocol (`protocol.rs`), supervises the on-demand HLS preview (`stream.rs`, `session.rs`), runs encodes (`encoder.rs`) and detects hardware encoders (`hwdetect.rs`).
+- **`commands.rs`** holds thin `#[tauri::command]` wrappers.
+- **Frontend:** `src/lib/api.ts` is the only place that calls `invoke`/`listen`. State lives in rune stores (`src/lib/state/*.svelte.ts`), pure helpers in `src/lib/util/`, and components in `src/components/`. The editor is lazy-loaded and hls.js is lazy-imported only on the stream path.
 
-- **`VideoCrop.Core`** — pure .NET library, no UI deps. Contains models (`CompressionSpec`, `CutSpec`, `CropSpec`, `ResizeSpec`, `EncodeJob`, `VideoInfo`), process wrappers (`ExternalProcess`, `FfprobeRunner`, `FfmpegRunner`, `MpvHost`, `MpvIpcClient`), IO helpers (`ToolLocator`, `OutputNamer`, `TempFileManager`), and the encode command construction (`EncodeCommandBuilder`, `EncodeProgressParser`, `PresetLibrary`).
-- **`VideoCrop.App`** — WinUI 3 (Windows App SDK 2.0+). MVVM is wired with **`CommunityToolkit.Mvvm` runtime classes only** (`ObservableObject`, `RelayCommand`) — no source-generator attributes. JSON uses `System.Text.Json` reflection-based deserialization with `[JsonPropertyName]` DTOs.
-- **`VideoCrop.Tests`** — xUnit + FluentAssertions. Has `InternalsVisibleTo` access to Core (via `src/VideoCrop.Core/Properties/AssemblyInfo.cs`) so testable helpers can stay `internal` (e.g. `FfprobeRunner.ParseVideoInfo`).
+### Playback
 
-### External-tool resolution
+`<video>` plays the original file (`/{sid}/direct`, range requests) when WebView2 can decode it. Otherwise it plays an on-demand HLS stream (`/{sid}/hls/…`): a synthetic VOD playlist of 4 s segments, produced by one continuous ffmpeg job that restarts on far seeks and is throttled when it runs ahead. Still frames (`/{sid}/frame`) drive scrubbing, the filmstrip and the crop editor. Details are in ARCHITECTURE.md.
 
-All ffmpeg/ffprobe/mpv invocations go through `IToolLocator`, which resolves in order: bundled `tools/` next to the app exe → user-configured path in settings → `PATH`. If you add a new external-tool call, route it through `ToolLocator.TryResolve` — don't shell out directly.
+### Rules that must not regress
 
-### mpv embedding
+- Filter chain order is fixed: `crop=W:H:X:Y,scale=W2:H2:flags=lanczos`. `CropSpec` is in **source pixels**. Resize sees the **post-crop** frame. Output dimensions are even, using `-2` for the derived axis when aspect-locked.
+- `-ss` before `-i` gives a fast, keyframe-snapped cut; after `-i` gives an accurate one (`CutSpec.accurate`).
+- With compression off, everything is stream-copied and crop/resize are ignored. Audio-only output goes to `.m4a/.opus/.mp3/.mka`.
+- Output names are `<base>_VideoCrop[N].<ext>`, with an existing suffix stripped first.
+- The planner's `JobPlan.summary` is the single source of truth shown before Process. Never compute summaries in TypeScript.
+- Progress comes from `-progress pipe:1 -nostats` via `ProgressParser`. Never scrape stderr for progress.
+- Arguments are always passed as a `Vec<String>`, never as a shell string.
+- Respect anamorphic SAR (`VideoInfo::display_aspect_ratio`).
+- When changing `core/encode.rs` or `core/planner.rs`, extend their tests. Bad command construction is the most common source of bugs in apps like this.
 
-- The app spawns mpv as a separate process (not linking to libmpv) for GPLv2+ isolation. Pass `--wid=<HWND>` pointing at a native Win32 child window created by `VideoCrop.App/Interop/VideoHostWindow.cs` (via `CreateWindowExW`) parented to the WinUI window's HWND.
-- The native window is repositioned on every `SizeChanged` of the XAML placeholder via `SetWindowPos`, scaled by `GetDpiForWindow`. Multi-monitor mixed-DPI is the most common breakage.
-- IPC is over a named pipe (`\\.\pipe\videocrop-mpv-<guid>`) using `MpvIpcClient` — a `NamedPipeClientStream` with an async read loop that demultiplexes property changes (`observe_property`) from command replies (matched by `request_id`).
-- `PlayerViewModel.SeekClampedAsync` / `MpvIpcClient.SeekClampedAsync` enforces playback bounds when a cut is active. Bounds also flow to mpv via `ab-loop-a` / `ab-loop-b` for free preview looping. UI code should not call raw `seek` — always go through the clamped helper.
+### Defaults to confirm with the user before changing
 
-### ffmpeg progress
+- `_VideoCrop` suffix.
+- Stream-copy audio on cut-only.
+- Single-file processing.
+- Container tied to codec, with an override in Custom.
+- Keep only the first video + first audio stream.
+- Windows 10 1809+ baseline.
+- Platform preset caps (Discord 10 MB, etc.).
 
-Encoder invocations include `-progress pipe:1 -nostats`. Parse the resulting line-buffered key=value stream with `EncodeProgressParser` (a stateful per-encode instance). Do not scrape the human-readable stderr for progress.
+## Product goals
 
-### Crop + Resize pipeline contract
-
-`EncodeCommandBuilder` always composes the filter chain as `crop=W:H:X:Y,scale=W2:H2:flags=lanczos` — fixed order. Rules enforced across the code:
-
-- `CropSpec` is always in **source-pixel coordinates**, independent of resize.
-- Resize sees the **post-crop** frame as its input. Aspect-lock math, height presets, and the "Input" readout in `ResizeViewModel` all use post-crop dimensions when crop is active.
-- Output dimensions must be even (yuv420p constraint). `ResizeSpec.WithEvenDimensions()` rounds down; the command builder uses `-2` for the unlocked axis when aspect-locked.
-- The pipeline summary (`MainViewModel.PipelineSummary`) is the single source of truth shown to the user before they hit Process — keep it accurate when changing how crop or resize interact.
-
-When changing `EncodeCommandBuilder`, also extend `tests/VideoCrop.Tests/EncodeCommandBuilderTests.cs`. Bad command construction is the #1 source of bugs in apps like this — the builder is a pure function specifically so it can be covered exhaustively.
-
-### Output filenames
-
-`OutputNamer.GetNextAvailable` standardizes on suffix `_VideoCrop` (capital V, capital C). It strips an existing `_VideoCrop[N]` suffix from the source basename so re-encoding an already-suffixed file doesn't double up.
-
-## Conventions
-
-- **Primary constructors** are used for services with a simple inject-and-store pattern (`FfprobeRunner`, `FfmpegRunner`, `MpvHost`, `MpvIpcClient`, `ToolLocator`, most ViewModels, `AppServices`, `ExternalProcessException`). Constructors that wire events or build child VMs (e.g. `MainViewModel`, `CropDialog`) keep a classic body.
-- **XAML namespace prefixes** must all be declared. Using a `views:` or `ctrl:` prefix without the matching `xmlns:` declaration causes the WinUI XAML compiler to exit with code 1 and **no `output.json` / no human-readable error** — only the symptom that pass 2 fails silently. If you see `MSB3073` from `XamlCompiler.exe` with no other diagnostic, that's the first thing to check.
-- **No `Task.Run` for I/O.** Process I/O is already async via `Process.WaitForExitAsync` and stream events. Don't wrap async-over-sync.
-- **Arguments via `ArgumentList`**, never a single command string — see `ExternalProcessOptions` and how `EncodeCommandBuilder` emits `List<string>`. Path quoting is delegated to `ProcessStartInfo`.
-- **Sample-aspect-ratio awareness:** `VideoInfo.DisplayAspectRatio` accounts for anamorphic SAR. Don't assume SAR 1:1.
-- **Cut path selection:** `-ss` before `-i` is fast/inaccurate (keyframe-snapped seek); after `-i` is slow/accurate (decode-then-cut). `EncodeCommandBuilder` flips the placement based on `CutSpec.Accurate`.
-
-## Key open items
-
-The plan's §10 "Open Questions" got these defaults during initial implementation: `_VideoCrop` suffix capitalization, stream-copy audio on cut-only, single-file processing in v1, container hard-tied to codec with override in advanced panel, strip extras to first video + first audio, Win10 1809+ baseline. Confirm with the user before changing any of these.
-
-Packaging (Phase 11): MSIX vs unpackaged distribution, code signing, installer, and .NET 10 Desktop Runtime detection on first launch are all deferred — `dotnet publish` works but nothing is wrapped or signed yet.
+Small bundle and fast startup are explicit priorities: keep dependencies minimal on both sides, keep the main JS chunk lean, and do nothing slow in Tauri `setup`. Updates are notification-only (`check_update` + `UpdatePopup.svelte`); there is deliberately no auto-installer.

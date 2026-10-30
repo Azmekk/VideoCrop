@@ -1,0 +1,16 @@
+name: Feature request
+description: Suggest an idea or a new share preset
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like?
+      description: Describe the feature and the problem it solves for you.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Anything else?
+      description: Alternatives you've considered, examples from other apps, screenshots…

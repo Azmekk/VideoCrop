@@ -1,4 +1,4 @@
-//! Locate and download ffmpeg/ffprobe. Port of `ToolDownloadService.cs` (mpv no longer needed).
+//! Locate and download ffmpeg/ffprobe.
 //!
 //! Resolution order (ffmpeg + ffprobe from the same place): `VIDEOCROP_TOOLS_DIR` (dev override),
 //! `<app_local_data_dir>/tools` (where downloads land), `tools/` next to the exe, then PATH

@@ -1,104 +1,143 @@
+<div align="center">
+
+<img src="assets/icon.svg" width="96" height="96" alt="VideoCrop icon">
+
 # VideoCrop
 
-[![Latest release](https://img.shields.io/github/v/release/Azmekk/VideoCrop?label=download)](https://github.com/Azmekk/VideoCrop/releases/latest)
+**Cut, crop, resize and compress videos on Windows: fast, tiny and free.**
+
+[![Latest release](https://img.shields.io/github/v/release/Azmekk/VideoCrop?label=download&color=f5b83d)](https://github.com/Azmekk/VideoCrop/releases/latest)
 [![CI](https://github.com/Azmekk/VideoCrop/actions/workflows/ci.yml/badge.svg)](https://github.com/Azmekk/VideoCrop/actions/workflows/ci.yml)
-![Windows 10/11, x64 and ARM64](https://img.shields.io/badge/Windows-10%20%7C%2011%20%C2%B7%20x64%20%7C%20ARM64-0078d4)
+![Windows 10/11 · x64 · ARM64](https://img.shields.io/badge/Windows-10%20%7C%2011%20%C2%B7%20x64%20%7C%20ARM64-0078d4)
+[![Downloads](https://img.shields.io/github/downloads/Azmekk/VideoCrop/total?color=555)](https://github.com/Azmekk/VideoCrop/releases)
 
-A small Windows app for trimming, cropping, resizing, and compressing video files. Pick a clip, tweak what you want, hit Process.
+[**Download**](https://github.com/Azmekk/VideoCrop/releases/latest) · [Features](#features) · [FAQ](#faq) · [Building](#building-from-source)
 
-## What's new in 3.0
+<img src="assets/screenshots/editor-dark.webp" alt="VideoCrop editor with the timeline, cut handles and Discord share preset selected" width="900">
 
-VideoCrop 3 is a ground-up rewrite on [Tauri](https://tauri.app/):
+</div>
 
-- **Tiny and fast:** a ~2 MB installer and ~5 MB app (no .NET runtime, no mpv). The window is up almost instantly.
-- **Plays everything:** long OBS recordings in HEVC/AV1/MKV play straight away. Anything Windows can't decode is streamed through an on-demand preview, so there's no conversion step up front.
-- **Share presets:** one click targets Discord, YouTube, X, TikTok/Reels/Shorts, WhatsApp or email.
-- **A better timeline:** zoom, filmstrip thumbnails, fine scrubbing and typed times.
-- **New look:** light and dark themes.
-- **Uses your ffmpeg:** if a suitable ffmpeg is already on your PATH, nothing is downloaded.
+Drop in a clip, trim it, crop it, pick where it's going (Discord, YouTube, …) and hit **Process**. VideoCrop handles the codec, bitrate and resolution, and that includes making a gameplay clip fit under Discord's 10 MB limit.
 
 ## Features
 
-- **Cut** a precise range on a zoomable timeline with a filmstrip: frame-accurate or fast (keyframe-snapped). Drag away from the track while scrubbing to slow down for fine control, or type exact times.
-- **Crop** on a full-resolution still to any rectangle, or snap to common aspects (16:9, 4:3, 1:1, 9:16, 4:5, original).
-- **Resize** with aspect lock, height presets that never upscale past the original, and percentage chips.
-- **Share presets**: one click for Discord, YouTube, X, TikTok/Reels/Shorts, WhatsApp or email. Size caps and output resolution are worked out for you.
-- **Compress** with quality presets (H.264 for compatibility, H.265 / AV1 for smaller files), plus a custom panel for codec, bitrate or target file size.
-- **Output mode**: keep everything, or extract just the audio (`.m4a` / `.opus` / `.mp3`) or just the video.
-- Plays anything ffmpeg can open, including multi-hour HEVC/AV1 OBS recordings, with no up-front conversion. Files Windows can't decode are streamed through an on-demand preview.
-- Light and dark themes. Tells you when a new version is out.
+<table>
+<tr>
+<td width="50%" valign="top">
+
+### ✂️ Cut
+A zoomable timeline with filmstrip thumbnails. Scroll to zoom right down to individual frames. While scrubbing, drag away from the track to slow down for fine control. Or type exact times. Cuts can be frame-accurate or instant (keyframe-snapped).
+
+### 🔲 Crop
+Crop on a full-resolution still with handles, rule-of-thirds guides and one-click aspects (16:9, 4:3, 1:1, 9:16, 4:5, original). Preview the cropped result live.
+
+### ↔️ Resize
+Aspect-locked width and height, presets that never upscale past your source, and quick 75/50/25% options.
+
+</td>
+<td width="50%" valign="top">
+
+### 📤 Share presets
+One click for **Discord** (10 MB, Nitro 50 / 500 MB), **YouTube**, **X**, **TikTok / Reels / Shorts**, **WhatsApp** and **email**. Size caps are hit with two-pass encoding, and the resolution is picked automatically so the clip still looks good.
+
+### 🎚️ Full control when you want it
+Quality presets for H.264, H.265 and AV1, plus a custom panel: codec, CRF, target bitrate or target file size, speed, audio codec, 10-bit. You can also extract just the audio or just the video.
+
+### ▶️ Plays everything
+Multi-hour OBS recordings in HEVC, AV1 or MKV open instantly. Anything Windows can't decode is streamed through an on-demand preview, so there's no conversion step up front.
+
+</td>
+</tr>
+</table>
+
+<div align="center">
+<img src="assets/screenshots/crop-light.webp" alt="Crop mode in the light theme with a 9:16 crop selected" width="900">
+<br><sub>Crop mode in the light theme</sub>
+</div>
 
 ## Download
 
-Grab the latest release from the [Releases page](https://github.com/Azmekk/VideoCrop/releases):
+Get the latest version from the [**Releases page**](https://github.com/Azmekk/VideoCrop/releases/latest):
 
-- `VideoCrop-vX.Y.Z-x64-setup.exe`: installer (~2 MB, per-user, no admin rights needed, adds a Start menu entry and an uninstaller).
-- `VideoCrop-vX.Y.Z-x64-portable.exe`: a single exe you can run from anywhere.
-- `-arm64` variants for Windows on ARM.
+| File | What it is |
+|---|---|
+| `VideoCrop-vX.Y.Z-x64-setup.exe` | **Installer (recommended).** About 2 MB. Per-user, no admin rights, Start menu entry and uninstaller. |
+| `VideoCrop-vX.Y.Z-x64-portable.exe` | A single exe. Run it from anywhere. |
+| `…-arm64-…` | The same, for Windows on ARM. |
 
-### Upgrading from 2.x
+**Requirements:** Windows 10 (1809) or 11, with the WebView2 runtime. WebView2 is built into Windows 11; on Windows 10 the installer fetches it if it's missing.
 
-Version 2 can't update itself to 3. Install 3.x with the installer above, then remove the old version by running `uninstall.bat` from its folder (or just delete the folder). Your videos are untouched. Settings start fresh.
+**ffmpeg:** if ffmpeg 6+ (a full build, e.g. from gyan.dev or BtbN) is already on your PATH, VideoCrop uses it. Otherwise it offers a one-time ~100 MB download on first launch.
 
-## Requirements
-
-- Windows 10 version 1809 (October 2018) or newer, 64-bit.
-- Microsoft Edge WebView2 runtime. It's built into Windows 11; on Windows 10 the installer fetches it if it's missing.
-
-## First run
-
-VideoCrop uses ffmpeg under the hood. If you already have ffmpeg 6 or newer on your PATH, it is used as is. It needs to be a full GPL build with libx264, libx265, SVT-AV1, VP9, Opus and LAME, like the gyan.dev or BtbN builds.
-
-Otherwise, the first time you launch the app it offers to download one (~100 MB, once) into `%LOCALAPPDATA%\com.azmek.videocrop\tools`. If your PATH ffmpeg didn't qualify, it tells you why.
+> [!NOTE]
+> **Upgrading from 2.x?** Version 2 can't update itself to 3. Install 3.x, then remove the old version with `uninstall.bat` from its folder (or just delete the folder).
 
 ## Using it
 
-1. Drag a video onto the window (or click to choose a file). It plays in the preview pane.
-2. Adjust any combination of:
-   - **Cut**: drag the handles on the timeline (mouse wheel zooms), or type start/end times.
-   - **Crop**: click **Crop video**, drag the rectangle, optionally pick an aspect, hit Apply.
-   - **Resize**: toggle it on, then pick a preset or type a size.
-   - **Export**: pick a **Share** target, a **Quality** preset, or go **Custom**.
-3. Check the summary line, then click **Process**.
+1. **Open:** drag a video onto the window, or press <kbd>Ctrl</kbd>+<kbd>O</kbd>.
+2. **Edit:** trim on the timeline, click **Crop video**, and toggle **Resize** if you need it.
+3. **Export:** pick a **Share** target, a **Quality** preset, or go **Custom**. The summary line shows exactly what you'll get.
+4. **Process:** the output lands next to the original as `name_VideoCrop.mp4`, and never overwrites anything.
 
-The output filename is the original with `_VideoCrop` appended (collisions get `_VideoCrop2`, `_VideoCrop3`, etc.).
+### Keyboard shortcuts
 
-## Keyboard shortcuts
+| Key | Action | Key | Action |
+|---|---|---|---|
+| <kbd>Space</kbd> | Play / pause | <kbd>I</kbd> / <kbd>O</kbd> | Set cut start / end |
+| <kbd>←</kbd> / <kbd>→</kbd> | Step one frame | <kbd>Shift</kbd>+<kbd>←</kbd> / <kbd>→</kbd> | Jump one second |
+| <kbd>Home</kbd> / <kbd>End</kbd> | Go to cut start / end | <kbd>+</kbd> / <kbd>-</kbd> | Zoom timeline |
+| <kbd>Ctrl</kbd>+<kbd>O</kbd> | Open file | <kbd>Ctrl</kbd>+<kbd>Enter</kbd> | Process |
 
-| Key | Action |
-|---|---|
-| `Ctrl + O` | Open file |
-| `Space` | Play / pause |
-| `I` / `O` | Set cut start / end to the playhead |
-| `←` / `→` | Step one frame |
-| `Shift + ←` / `→` | Jump one second |
-| `Home` / `End` | Go to cut start / end |
-| `+` / `-` | Zoom the timeline |
-| `Ctrl + Enter` | Process |
+## FAQ
 
-## Updates
+<details>
+<summary><b>Windows SmartScreen says "Windows protected your PC"</b></summary>
 
-A few seconds after starting, VideoCrop checks GitHub for a new release. If there is one, a small popup links to the release page. Download the new installer whenever you like, or skip that version.
+The builds aren't code-signed yet, so SmartScreen doesn't recognise them. Click **More info → Run anyway**. Every release is built from this repository by [GitHub Actions](https://github.com/Azmekk/VideoCrop/actions/workflows/release.yml), so you can check exactly what went into it.
+</details>
 
-## Building
+<details>
+<summary><b>Does it upload my videos anywhere?</b></summary>
 
-Needs [Rust](https://rustup.rs/), Node 24 and [pnpm](https://pnpm.io/).
+No. Everything is processed locally by ffmpeg. VideoCrop only goes online to check GitHub for a new release, and to download ffmpeg the first time if you don't already have it. There's no telemetry.
+</details>
 
-```
+<details>
+<summary><b>Why does a video say "Streaming preview"?</b></summary>
+
+Windows can't decode that file directly (common with HEVC, AV1 or MKV recordings), so VideoCrop converts the part you're watching on the fly. It uses your GPU when it can. Your export is always made from the original file at full quality.
+</details>
+
+<details>
+<summary><b>How do updates work?</b></summary>
+
+A few seconds after launch, VideoCrop checks for a newer release. If there is one, a small popup links to it. You download the new installer when it suits you, or skip that version. Nothing installs itself.
+</details>
+
+<details>
+<summary><b>Where are settings and the downloaded ffmpeg stored?</b></summary>
+
+Under `%APPDATA%\com.azmek.videocrop` (settings) and `%LOCALAPPDATA%\com.azmek.videocrop\tools` (ffmpeg). Uninstalling removes the app. Delete those folders too if you want a completely clean slate.
+</details>
+
+## Building from source
+
+You need [Rust](https://rustup.rs/), Node 24 and [pnpm](https://pnpm.io/).
+
+```bash
 cd tauri
 pnpm install
-pnpm tauri dev      # run with hot reload
-pnpm tauri build    # installer in src-tauri/target/release/bundle/nsis
+pnpm tauri dev      # run the app with hot reload
+pnpm tauri build    # NSIS installer in src-tauri/target/release/bundle/nsis
 ```
 
-- `pnpm dev` runs just the UI in a browser against a mock backend.
-- Checks: `pnpm check`, plus `cargo test` and `cargo clippy` in `tauri/src-tauri`.
-- See [`tauri/ARCHITECTURE.md`](tauri/ARCHITECTURE.md) for how it fits together.
-- Push a `vX.Y.Z` tag to have GitHub Actions build x64 and ARM64 natively and publish a release.
+- `pnpm dev` runs just the UI in a browser against a mock backend, which is handy for UI work.
+- Checks: `pnpm check`, plus `cargo test` and `cargo clippy --all-targets -- -D warnings` in `tauri/src-tauri`.
+- [`tauri/ARCHITECTURE.md`](tauri/ARCHITECTURE.md) explains how it fits together.
 
-The original WinUI 3 / .NET version (2.x) still lives in `src/` for reference.
+Contributions are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Credits
 
-- [ffmpeg / ffprobe](https://ffmpeg.org/): the encoding workhorses.
-- [Tauri](https://tauri.app/), [Svelte](https://svelte.dev/) and [hls.js](https://github.com/video-dev/hls.js): the app shell, UI and streaming preview.
+- [FFmpeg](https://ffmpeg.org/) does all the decoding and encoding.
+- Built with [Tauri](https://tauri.app/), [Svelte](https://svelte.dev/) and [hls.js](https://github.com/video-dev/hls.js).

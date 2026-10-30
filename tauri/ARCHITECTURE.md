@@ -1,6 +1,6 @@
 # VideoCrop 3 (Tauri) — architecture
 
-Port of the WinUI 3 app (`../src`, `../VideoCrop_Plan.md`) to Tauri 2 + Svelte 5.
+Rewrite of the WinUI 3 app (2.x, see git history) on Tauri 2 + Svelte 5.
 Product goals, in priority order: **small bundle, fast startup**, plays every file
 (3-hour HEVC OBS recordings included) with no up-front processing, modern light/dark UI,
 feature parity (cut, crop, resize, compress, output modes).
@@ -19,9 +19,9 @@ tauri/
       models.rs  data contract (serde camelCase)
       probe.rs   ffprobe args + JSON -> VideoInfo
       progress.rs  -progress pipe:1 parser
-      encode.rs  final-encode argument builder (port of EncodeCommandBuilder.cs)
-      naming.rs  _VideoCrop output names (port of OutputNamer.cs)
-      presets.rs quality presets (port of PresetLibrary.cs) + platform presets
+      encode.rs  final-encode argument builder (ported from the 2.x C# builder)
+      naming.rs  _VideoCrop output names 
+      presets.rs quality presets + platform presets
       planner.rs JobDraft -> JobPlan (single source of truth for the summary)
       preview.rs HLS playlist/job args, frame-grab args, encoder probe, direct-play hint
     media/       runtime: processes, files, network
@@ -109,7 +109,7 @@ Used for scrubbing (`fast=1`, `w≈640`, keyframe-snapped, ~50–200 ms anywhere
 the timeline filmstrip (`fast=1`, `w=160`) and the crop editor (`fast=0`, native size, exact
 frame). The frontend keeps at most one scrub request in flight and coalesces to the latest.
 
-## Editing rules (unchanged from the WinUI app, see ../CLAUDE.md)
+## Editing rules (unchanged from 2.x, see ../CLAUDE.md)
 - Filter order fixed: `crop=W:H:X:Y,scale=W2:H2:flags=lanczos`. Crop in source pixels;
   resize sees the post-crop frame; even dimensions; `-2` for the derived axis when locked.
 - `-ss` before `-i` = fast cut, after `-i` = accurate cut.

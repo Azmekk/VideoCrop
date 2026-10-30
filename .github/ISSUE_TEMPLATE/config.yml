@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Download the latest version
+    url: https://github.com/Azmekk/VideoCrop/releases/latest
+    about: Check you're on the newest release before reporting a bug.
