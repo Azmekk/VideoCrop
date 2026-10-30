@@ -11,7 +11,7 @@
 ![Windows 10/11 · x64 · ARM64](https://img.shields.io/badge/Windows-10%20%7C%2011%20%C2%B7%20x64%20%7C%20ARM64-0078d4)
 [![Downloads](https://img.shields.io/github/downloads/Azmekk/VideoCrop/total?color=555)](https://github.com/Azmekk/VideoCrop/releases)
 
-[**Download**](https://github.com/Azmekk/VideoCrop/releases/latest) · [Features](#features) · [FAQ](#faq) · [Building](#building-from-source)
+[**Website**](https://videocrop.vexbyte.com/) · [**Download**](https://github.com/Azmekk/VideoCrop/releases/latest) · [Features](#features) · [FAQ](#faq) · [Building](#building-from-source)
 
 <img src="assets/screenshots/editor-dark.webp" alt="VideoCrop editor with the timeline, cut handles and Discord share preset selected" width="900">
 
@@ -57,7 +57,7 @@ Multi-hour OBS recordings in HEVC, AV1 or MKV open instantly. Anything Windows c
 
 ## Download
 
-Get the latest version from the [**Releases page**](https://github.com/Azmekk/VideoCrop/releases/latest):
+Get the latest version from the [**website**](https://videocrop.vexbyte.com/) or the [**Releases page**](https://github.com/Azmekk/VideoCrop/releases/latest):
 
 | File | What it is |
 |---|---|
