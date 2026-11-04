@@ -210,7 +210,7 @@ fn extract(zip_path: &Path, tools_dir: &Path) -> Result<(), String> {
         if entry.is_dir() {
             continue;
         }
-        let Some(target) = install_name(entry.name()) else { continue };
+        let Some(target) = entry.name().ok().and_then(|name| install_name(&name)) else { continue };
         let flag = match target {
             FFMPEG_EXE => &mut got_ffmpeg,
             FFPROBE_EXE => &mut got_ffprobe,
@@ -256,6 +256,41 @@ mod tests {
         assert_eq!(install_name("x/LICENSE.txt"), Some(LICENSE_NAME));
         assert_eq!(install_name("x/bin/ffplay.exe"), None);
         assert_eq!(install_name("x/doc/ffmpeg.html"), None);
+    }
+
+    #[test]
+    fn extract_installs_deflated_tools() {
+        use std::io::Write;
+        use zip::write::SimpleFileOptions;
+
+        let dir = std::env::temp_dir().join(format!("videocrop-extract-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let zip_path = dir.join("tools.zip");
+        let mut writer = zip::ZipWriter::new(fs::File::create(&zip_path).unwrap());
+        let options = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+        for (name, body) in [
+            ("build/bin/ffmpeg.exe", "ffmpeg body"),
+            ("build/bin/ffprobe.exe", "ffprobe body"),
+            ("build/bin/ffplay.exe", "ffplay body"),
+            ("build/LICENSE.txt", "license body"),
+        ] {
+            writer.start_file(name, options).unwrap();
+            writer.write_all(body.as_bytes()).unwrap();
+        }
+        writer.finish().unwrap();
+
+        let result = extract(&zip_path, &dir);
+        let ffmpeg = fs::read_to_string(dir.join(FFMPEG_EXE));
+        let ffprobe = fs::read_to_string(dir.join(FFPROBE_EXE));
+        let license = fs::read_to_string(dir.join(LICENSE_NAME));
+        let ffplay_installed = dir.join("ffplay.exe").exists();
+        let _ = fs::remove_dir_all(&dir);
+
+        assert_eq!(result, Ok(()));
+        assert_eq!(ffmpeg.unwrap(), "ffmpeg body");
+        assert_eq!(ffprobe.unwrap(), "ffprobe body");
+        assert_eq!(license.unwrap(), "license body");
+        assert!(!ffplay_installed);
     }
 
     #[test]
